@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 text: 'GOLD',
                                 style: TextStyle(
                                   color: Color(0xFFF59E0B),
-                                  fontSize: 32,
+                                  fontSize: 38,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.5,
                                 ),
@@ -121,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 text: 'IFY',
                                 style: TextStyle(
                                   color: Colors.black,
-                                  fontSize: 32,
+                                  fontSize: 38,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.5,
                                 ),
@@ -137,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                           'By PT Equityworld Futures',
                           style: TextStyle(
                             color: Color(0xFF4B5563),
-                            fontSize: 15,
+                            fontSize: 24,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.3,
                           ),
