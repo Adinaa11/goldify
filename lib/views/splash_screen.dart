@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+import 'register_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) {
-            return const HomePage();
+            return const RegisterPage();
           },
           transitionsBuilder:
               (context, animation, secondaryAnimation, child) {
