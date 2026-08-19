@@ -136,13 +136,13 @@ class _OtpPageState extends State<OtpPage> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: Colors.grey.shade300,
+          color: Colors.grey.shade500,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: Colors.grey.shade300,
+          color: Colors.grey.shade500,
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -205,7 +205,7 @@ class _OtpPageState extends State<OtpPage> {
                       style: TextStyle(
                         fontSize: 16,
                         height: 1.5,
-                        color: Color(0xFF4B5563),
+                        color: Color.fromARGB(255, 52, 54, 57),
                       ),
                     ),
 
