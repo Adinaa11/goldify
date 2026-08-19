@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../viewmodels/otp_viewmodel.dart';
+import 'verification_success_page.dart';
+
 
 class OtpPage extends StatefulWidget {
   final String whatsapp;
@@ -102,11 +104,10 @@ class _OtpPageState extends State<OtpPage> {
     debugPrint('OTP: ${otpData.otp}');
 
     if (_viewModel.verifyOtp(_otp)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Kode OTP berhasil diverifikasi.',
-          ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const VerificationSuccessPage(),
         ),
       );
     }
