@@ -31,10 +31,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // =========================================================
   // BOTTOM NAVIGATION
-  // =========================================================
-
   Widget _buildBottomNavigation() {
     return Container(
       height: 70,
@@ -127,11 +124,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
-// =========================================================
 // HALAMAN BERANDA
-// =========================================================
-
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
