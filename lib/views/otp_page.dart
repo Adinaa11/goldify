@@ -3,14 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../viewmodels/otp_viewmodel.dart';
 import 'verification_success_page.dart';
+import 'new_password_page.dart';
 
+enum OtpPurpose {
+  registration,
+  resetPassword,
+}
 
 class OtpPage extends StatefulWidget {
   final String whatsapp;
+  final OtpPurpose purpose;
 
   const OtpPage({
     super.key,
     required this.whatsapp,
+    required this.purpose,
   });
 
   @override
@@ -104,12 +111,23 @@ class _OtpPageState extends State<OtpPage> {
     debugPrint('OTP: ${otpData.otp}');
 
     if (_viewModel.verifyOtp(_otp)) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const VerificationSuccessPage(),
-        ),
-      );
+      if (widget.purpose == OtpPurpose.registration) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const VerificationSuccessPage(),
+          ),
+        );
+      } else if (widget.purpose == OtpPurpose.resetPassword) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const NewPasswordPage(),
+          ),
+        );
+      }
     }
   }
 

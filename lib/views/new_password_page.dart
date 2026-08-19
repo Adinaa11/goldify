@@ -1,38 +1,51 @@
 import 'package:flutter/material.dart';
-import 'register_page.dart';
-import 'forgot_password_page.dart';
+import 'login_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class NewPasswordPage extends StatefulWidget {
+  const NewPasswordPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<NewPasswordPage> createState() => _NewPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _loginController =
-    TextEditingController();
-
+class _NewPasswordPageState extends State<NewPasswordPage> {
   final TextEditingController _passwordController =
       TextEditingController();
 
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _loginController.dispose();
     _passwordController.dispose();
-
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _login() {
-    if (_loginController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+  void _savePassword() {
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Email/WhatsApp dan password wajib diisi.',
+            'Password wajib diisi.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Konfirmasi password tidak sesuai.',
           ),
         ),
       );
@@ -43,9 +56,17 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Login berhasil diproses.',
+          'Password berhasil diperbarui.',
         ),
       ),
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+      (route) => false,
     );
   }
 
@@ -90,15 +111,13 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            top: 24,
-            bottom: 0,
-          ),
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
+                padding: const EdgeInsets.only(
+                  top: 24,
+                  left: 24,
+                  right: 24,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +137,8 @@ class _LoginPageState extends State<LoginPage> {
                     // JUDUL
                     const Center(
                       child: Text(
-                        'MASUK',
+                        'Buat Kata Sandi Baru',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -127,13 +147,13 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // INFORMASI
                     const Center(
                       child: Text(
-                        'Silakan masuk menggunakan akun '
-                        'yang telah terdaftar.',
+                        'Silakan buat kata sandi baru untuk '
+                        'mengamankan akun Anda.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -143,33 +163,11 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 35),
 
-                    // EMAIL
+                    // PASSWORD BARU
                     const Text(
-                      'Email / WhatsApp',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    TextField(
-                      controller: _loginController,
-                      keyboardType: TextInputType.text,
-                      decoration: _inputDecoration(
-                        label: 'Email / Nomor WhatsApp',
-                        hint: 'Masukkan email atau nomor WhatsApp',
-                        icon: Icons.person_outline,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // PASSWORD
-                    const Text(
-                      'Password',
+                      'Kata Sandi Baru',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                       ),
@@ -181,16 +179,14 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: _inputDecoration(
-                        label: 'Password',
-                        hint: 'Masukkan password',
+                        label: 'Kata Sandi Baru',
+                        hint: 'Masukkan kata sandi baru',
                         icon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons
-                                    .visibility_off_outlined
-                                : Icons
-                                    .visibility_outlined,
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                           ),
                           onPressed: () {
                             setState(() {
@@ -202,41 +198,49 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 18),
 
-                    // LUPA PASSWORD
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
+                    // KONFIRMASI PASSWORD
+                    const Text(
+                      'Konfirmasi Kata Sandi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
 
-                        child: const Text(
-                          'Lupa password?',
-                          style: TextStyle(
-                            color: Color(0xFFF7931E),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                    const SizedBox(height: 8),
+
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: _inputDecoration(
+                        label: 'Konfirmasi Kata Sandi',
+                        hint: 'Masukkan kembali kata sandi',
+                        icon: Icons.lock_outline,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                           ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 30),
 
-                    // TOMBOL LOGIN
+                    // BUTTON
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _login,
+                        onPressed: _savePassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               const Color(0xFFF7931E),
@@ -248,7 +252,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         child: const Text(
-                          'Masuk',
+                          'Simpan Kata Sandi',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -257,45 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
-
-                    // REGISTER
-                    Center(
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Belum memiliki akun? ',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                          children: [
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RegisterPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Daftar',
-                                  style: TextStyle(
-                                    color: Color(0xFFF7931E),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 200),
                   ],
                 ),
               ),
