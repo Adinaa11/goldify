@@ -104,14 +104,15 @@ class _VerificationSuccessPageState
                           height: 52,
                           child: ElevatedButton(
                             onPressed: () {
-                               Navigator.pushReplacement(
+                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const LoginPage(),
                                 ),
+                                (route) => false,
                               );
                             },
-                            
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   const Color(0xFFF7931E),
