@@ -121,7 +121,7 @@ class _ForgotPasswordPageState
 
                     // INFORMASI
                     const Text(
-                      'Masukkan email atau nomor WhatsApp '
+                      'Masukkan nomor WhatsApp '
                       'yang terdaftar untuk menerima kode OTP.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -133,11 +133,11 @@ class _ForgotPasswordPageState
 
                     const SizedBox(height: 35),
 
-                    // EMAIL / WHATSAPP
+                    // NOMOR WHATSAPP
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Email / WhatsApp',
+                        'No WhatsApp',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                         ),
@@ -150,10 +150,10 @@ class _ForgotPasswordPageState
                       controller: _accountController,
                       keyboardType: TextInputType.text,
                       decoration: _inputDecoration(
-                        label: 'Email / Nomor WhatsApp',
+                        label: 'Nomor WhatsApp',
                         hint:
-                            'Masukkan email atau nomor WhatsApp',
-                        icon: Icons.person_outline,
+                            'Masukkan nomor WhatsApp',
+                        icon: Icons.phone_outlined,
                       ),
                     ),
 
