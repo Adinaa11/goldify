@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import 'login_page.dart';
 
 class VerificationSuccessPage extends StatefulWidget {
   const VerificationSuccessPage({super.key});
@@ -103,8 +104,14 @@ class _VerificationSuccessPageState
                           height: 52,
                           child: ElevatedButton(
                             onPressed: () {
-                              // Nanti diarahkan ke LoginPage
+                               Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
                             },
+                            
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   const Color(0xFFF7931E),

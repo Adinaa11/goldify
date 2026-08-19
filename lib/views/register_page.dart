@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../viewmodels/register_viewmodel.dart';
 import 'otp_page.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -368,25 +369,38 @@ class _RegisterPageState extends State<RegisterPage> {
               // LOGIN
               Center(
                 child: RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     text: 'Sudah memiliki akun? ',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 14,
                     ),
                     children: [
-                      TextSpan(
-                        text: 'Login',
-                        style: TextStyle(
-                          color: Color(0xFFF7931E),
-                          fontWeight: FontWeight.bold,
+                      WidgetSpan(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(
+                              color: Color(0xFFF7931E),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-
+              
               const SizedBox(height: 3),
               ],
             ),
