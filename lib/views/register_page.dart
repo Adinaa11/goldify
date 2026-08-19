@@ -73,6 +73,7 @@ class _RegisterPageState extends State<RegisterPage> {
     MaterialPageRoute(
       builder: (context) => OtpPage(
         whatsapp: _whatsappController.text,
+        purpose: OtpPurpose.registration,
       ),
     ),
   );
@@ -400,7 +401,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 3),
               ],
             ),
