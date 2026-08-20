@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'calculator/calculator_page.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,28 +12,33 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  late final List<Widget> _pages;
+late final List<Widget> _pages;
 
-  @override
-  void initState() {
-    super.initState();
+@override
+void initState() {
+  super.initState();
 
-    _pages = [
-      const HomeContent(),
+  _pages = [
+    HomeContent(
+      onProfileTap: () {
+        setState(() {
+          _selectedIndex = 3;
+        });
+      },
+    ),
 
-      CalculatorPage(
-        onBack: () {
-          setState(() {
-            _selectedIndex = 0;
-          });
-        },
-      ),
+    CalculatorPage(
+      onBack: () {
+        setState(() {
+          _selectedIndex = 0;
+        });
+      },
+    ),
 
-      const HistoryPage(),
-      const ProfilePage(),
-    ];
-  }
-
+    const HistoryPage(),
+    const ProfilePage(),
+  ];
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,7 +153,12 @@ class _HomePageState extends State<HomePage> {
 // ============================================================
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  final VoidCallback onProfileTap;
+
+  const HomeContent({
+    super.key,
+    required this.onProfileTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -716,8 +727,6 @@ class HomeContent extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
 // HALAMAN RIWAYAT
 // ============================================================
 
@@ -729,27 +738,6 @@ class HistoryPage extends StatelessWidget {
     return const Center(
       child: Text(
         'Riwayat',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// HALAMAN PROFIL
-// ============================================================
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Profil',
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
