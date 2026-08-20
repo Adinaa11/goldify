@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'physical_gold_page.dart';
 import 'pivot_point_page.dart';
+import 'physical_gold_info_page.dart';
 
 class CalculatorPage extends StatelessWidget {
   final VoidCallback onBack;
 
-   const CalculatorPage({
+  const CalculatorPage({
     super.key,
     required this.onBack,
   });
@@ -15,7 +17,9 @@ class CalculatorPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
+      // ==============================================================
       // HEADER
+      // ==============================================================
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -43,7 +47,9 @@ class CalculatorPage extends StatelessWidget {
         titleSpacing: 0,
       ),
 
+      // ==============================================================
       // BODY
+      // ==============================================================
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -53,8 +59,9 @@ class CalculatorPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-            
+              // ========================================================
               // JUDUL
+              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -79,9 +86,9 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // ======================================================
+              // ========================================================
               // SUBJUDUL
-              // ======================================================
+              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -111,37 +118,36 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // ======================================================
+              // ========================================================
               // KALKULATOR EMAS FISIK
-              // ======================================================
+              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.calculate_outlined,
                 title: 'Kalkulator Emas Fisik',
                 description:
-                    'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
-
-                // GRADASI EMAS
+                    'Platform kalkulator emas yang membantu Anda melakukan perhitungan potensi keuntungan atau kerugian emas fisik dengan lebih mudah dan informatif.',
                 gradientColors: const [
                   Color(0xFFFFF8F0),
                   Color(0xFFFFE6C9),
                   Color(0xFFFFF3E6),
                 ],
 
+                // ------------------------------------------------------
+                // INFORMASI EMAS FISIK
+                // ------------------------------------------------------
                 onInformation: () {
-                  _showInformation(
-                    context,
-                    title: 'Informasi Emas Fisik',
-                    content:
-                        'Pada kalkulator emas fisik, Anda dapat melakukan '
-                        'perhitungan berdasarkan modal, kurs, harga beli, '
-                        'dan harga jual.\n\n'
-                        'Hasil perhitungan meliputi selisih harga beli '
-                        'dan harga jual serta estimasi keuntungan atau '
-                        'kerugian.',
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const PhysicalGoldInfoDialog();
+                    },
                   );
                 },
 
+                // ------------------------------------------------------
+                // HITUNG EMAS FISIK
+                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
@@ -154,23 +160,24 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ======================================================
+              // ========================================================
               // KALKULATOR PIVOT POINT
-              // ======================================================
+              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.show_chart,
                 title: 'Kalkulator Pivot Point',
                 description:
                     'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
-
-                // GRADASI PIVOT POINT
                 gradientColors: const [
                   Color(0xFFFFFCF8),
                   Color(0xFFFFF0DF),
                   Color(0xFFFFF7ED),
                 ],
 
+                // ------------------------------------------------------
+                // INFORMASI PIVOT POINT
+                // ------------------------------------------------------
                 onInformation: () {
                   _showInformation(
                     context,
@@ -185,6 +192,9 @@ class CalculatorPage extends StatelessWidget {
                   );
                 },
 
+                // ------------------------------------------------------
+                // HITUNG PIVOT POINT
+                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
@@ -220,28 +230,28 @@ class CalculatorPage extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        // ----------------------------------------------------------
-        // GRADASI
-        // ----------------------------------------------------------
+        // ------------------------------------------------------------
+        // GRADASI CARD
+        // ------------------------------------------------------------
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: gradientColors,
         ),
 
-        // ----------------------------------------------------------
-        // BORDER CARD
-        // ----------------------------------------------------------
         borderRadius: BorderRadius.circular(12),
 
+        // ------------------------------------------------------------
+        // BORDER
+        // ------------------------------------------------------------
         border: Border.all(
           color: const Color(0xFFE8B77D),
           width: 1.2,
         ),
 
-        // ----------------------------------------------------------
-        // SHADOW CARD
-        // ----------------------------------------------------------
+        // ------------------------------------------------------------
+        // SHADOW
+        // ------------------------------------------------------------
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -260,7 +270,9 @@ class CalculatorPage extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ------------------------------------------------------
               // ICON
+              // ------------------------------------------------------
               Container(
                 width: 42,
                 height: 42,
@@ -268,13 +280,11 @@ class CalculatorPage extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.80),
                   shape: BoxShape.circle,
 
-                  // BORDER ICON
                   border: Border.all(
                     color: const Color(0xFFF7931E),
                     width: 1.5,
                   ),
 
-                  // SHADOW ICON
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFFF7931E).withValues(
@@ -296,7 +306,7 @@ class CalculatorPage extends StatelessWidget {
               const SizedBox(width: 12),
 
               // ------------------------------------------------------
-              // JUDUL CARD
+              // JUDUL
               // ------------------------------------------------------
               Expanded(
                 child: RichText(
@@ -364,6 +374,7 @@ class CalculatorPage extends StatelessWidget {
                   height: 42,
                   child: OutlinedButton(
                     onPressed: onInformation,
+
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFF7931E),
 
@@ -402,6 +413,7 @@ class CalculatorPage extends StatelessWidget {
                   height: 42,
                   child: ElevatedButton(
                     onPressed: onCalculate,
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF7931E),
                       foregroundColor: Colors.white,
@@ -442,7 +454,7 @@ class CalculatorPage extends StatelessWidget {
   }
 
   // ================================================================
-  // POPUP INFORMASI
+  // INFORMASI UMUM
   // ================================================================
   void _showInformation(
     BuildContext context, {
@@ -473,9 +485,9 @@ class CalculatorPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ======================================================
+              // ------------------------------------------------------
               // HANDLE
-              // ======================================================
+              // ------------------------------------------------------
               Center(
                 child: Container(
                   width: 40,
@@ -489,9 +501,9 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ======================================================
-              // ICON + JUDUL POPUP
-              // ======================================================
+              // ------------------------------------------------------
+              // ICON + JUDUL
+              // ------------------------------------------------------
               Row(
                 children: [
                   Container(
@@ -531,9 +543,9 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // ======================================================
-              // ISI INFORMASI
-              // ======================================================
+              // ------------------------------------------------------
+              // ISI
+              // ------------------------------------------------------
               Text(
                 content,
                 style: const TextStyle(
@@ -545,9 +557,9 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ======================================================
-              // TOMBOL TUTUP
-              // ======================================================
+              // ------------------------------------------------------
+              // TUTUP
+              // ------------------------------------------------------
               SizedBox(
                 width: double.infinity,
                 height: 45,
