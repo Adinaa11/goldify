@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'physical_gold_page.dart';
 import 'pivot_point_page.dart';
 import 'physical_gold_info_page.dart';
+import 'pivot_point_info_page.dart';
 
 class CalculatorPage extends StatelessWidget {
   final VoidCallback onBack;
@@ -179,16 +180,11 @@ class CalculatorPage extends StatelessWidget {
                 // INFORMASI PIVOT POINT
                 // ------------------------------------------------------
                 onInformation: () {
-                  _showInformation(
-                    context,
-                    title: 'Informasi Pivot Point',
-                    content:
-                        'Pivot Point digunakan untuk membantu menentukan '
-                        'level support dan resistance berdasarkan data '
-                        'harga sebelumnya.\n\n'
-                        'Perhitungan Pivot Point menggunakan nilai '
-                        'High, Low, dan Close untuk menghasilkan level '
-                        'Pivot, Support, dan Resistance.',
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const PivotPointInfoDialog();
+                    },
                   );
                 },
 
@@ -450,148 +446,6 @@ class CalculatorPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  // ================================================================
-  // INFORMASI UMUM
-  // ================================================================
-  void _showInformation(
-    BuildContext context, {
-    required String title,
-    required String content,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-      ),
-
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            30,
-          ),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ------------------------------------------------------
-              // HANDLE
-              // ------------------------------------------------------
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ------------------------------------------------------
-              // ICON + JUDUL
-              // ------------------------------------------------------
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E6),
-                      shape: BoxShape.circle,
-
-                      border: Border.all(
-                        color: const Color(0xFFF7931E),
-                        width: 1.2,
-                      ),
-                    ),
-
-                    child: const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFFF7931E),
-                      size: 22,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // ------------------------------------------------------
-              // ISI
-              // ------------------------------------------------------
-              Text(
-                content,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.6,
-                  color: Color(0xFF444444),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ------------------------------------------------------
-              // TUTUP
-              // ------------------------------------------------------
-              SizedBox(
-                width: double.infinity,
-                height: 45,
-
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF7931E),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-
-                  child: const Text(
-                    'TUTUP',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
