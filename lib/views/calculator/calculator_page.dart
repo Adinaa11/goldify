@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+
 import 'physical_gold_page.dart';
 import 'pivot_point_page.dart';
+import 'physical_gold_info_page.dart';
+import 'pivot_point_info_page.dart';
 
 class CalculatorPage extends StatelessWidget {
   final VoidCallback onBack;
 
-   const CalculatorPage({
+  const CalculatorPage({
     super.key,
     required this.onBack,
   });
@@ -15,7 +18,9 @@ class CalculatorPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
+      // ==============================================================
       // HEADER
+      // ==============================================================
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -43,7 +48,9 @@ class CalculatorPage extends StatelessWidget {
         titleSpacing: 0,
       ),
 
+      // ==============================================================
       // BODY
+      // ==============================================================
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -53,8 +60,9 @@ class CalculatorPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-            
+              // ========================================================
               // JUDUL
+              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -79,9 +87,9 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // ======================================================
+              // ========================================================
               // SUBJUDUL
-              // ======================================================
+              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -111,37 +119,36 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // ======================================================
+              // ========================================================
               // KALKULATOR EMAS FISIK
-              // ======================================================
+              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.calculate_outlined,
                 title: 'Kalkulator Emas Fisik',
                 description:
-                    'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
-
-                // GRADASI EMAS
+                    'Platform kalkulator emas yang membantu Anda melakukan perhitungan potensi keuntungan atau kerugian emas fisik dengan lebih mudah dan informatif.',
                 gradientColors: const [
                   Color(0xFFFFF8F0),
                   Color(0xFFFFE6C9),
                   Color(0xFFFFF3E6),
                 ],
 
+                // ------------------------------------------------------
+                // INFORMASI EMAS FISIK
+                // ------------------------------------------------------
                 onInformation: () {
-                  _showInformation(
-                    context,
-                    title: 'Informasi Emas Fisik',
-                    content:
-                        'Pada kalkulator emas fisik, Anda dapat melakukan '
-                        'perhitungan berdasarkan modal, kurs, harga beli, '
-                        'dan harga jual.\n\n'
-                        'Hasil perhitungan meliputi selisih harga beli '
-                        'dan harga jual serta estimasi keuntungan atau '
-                        'kerugian.',
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const PhysicalGoldInfoDialog();
+                    },
                   );
                 },
 
+                // ------------------------------------------------------
+                // HITUNG EMAS FISIK
+                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
@@ -154,37 +161,36 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ======================================================
+              // ========================================================
               // KALKULATOR PIVOT POINT
-              // ======================================================
+              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.show_chart,
                 title: 'Kalkulator Pivot Point',
                 description:
                     'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
-
-                // GRADASI PIVOT POINT
                 gradientColors: const [
                   Color(0xFFFFFCF8),
                   Color(0xFFFFF0DF),
                   Color(0xFFFFF7ED),
                 ],
 
+                // ------------------------------------------------------
+                // INFORMASI PIVOT POINT
+                // ------------------------------------------------------
                 onInformation: () {
-                  _showInformation(
-                    context,
-                    title: 'Informasi Pivot Point',
-                    content:
-                        'Pivot Point digunakan untuk membantu menentukan '
-                        'level support dan resistance berdasarkan data '
-                        'harga sebelumnya.\n\n'
-                        'Perhitungan Pivot Point menggunakan nilai '
-                        'High, Low, dan Close untuk menghasilkan level '
-                        'Pivot, Support, dan Resistance.',
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const PivotPointInfoDialog();
+                    },
                   );
                 },
 
+                // ------------------------------------------------------
+                // HITUNG PIVOT POINT
+                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
@@ -220,28 +226,28 @@ class CalculatorPage extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        // ----------------------------------------------------------
-        // GRADASI
-        // ----------------------------------------------------------
+        // ------------------------------------------------------------
+        // GRADASI CARD
+        // ------------------------------------------------------------
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: gradientColors,
         ),
 
-        // ----------------------------------------------------------
-        // BORDER CARD
-        // ----------------------------------------------------------
         borderRadius: BorderRadius.circular(12),
 
+        // ------------------------------------------------------------
+        // BORDER
+        // ------------------------------------------------------------
         border: Border.all(
           color: const Color(0xFFE8B77D),
           width: 1.2,
         ),
 
-        // ----------------------------------------------------------
-        // SHADOW CARD
-        // ----------------------------------------------------------
+        // ------------------------------------------------------------
+        // SHADOW
+        // ------------------------------------------------------------
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -260,7 +266,9 @@ class CalculatorPage extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ------------------------------------------------------
               // ICON
+              // ------------------------------------------------------
               Container(
                 width: 42,
                 height: 42,
@@ -268,13 +276,11 @@ class CalculatorPage extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.80),
                   shape: BoxShape.circle,
 
-                  // BORDER ICON
                   border: Border.all(
                     color: const Color(0xFFF7931E),
                     width: 1.5,
                   ),
 
-                  // SHADOW ICON
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFFF7931E).withValues(
@@ -296,7 +302,7 @@ class CalculatorPage extends StatelessWidget {
               const SizedBox(width: 12),
 
               // ------------------------------------------------------
-              // JUDUL CARD
+              // JUDUL
               // ------------------------------------------------------
               Expanded(
                 child: RichText(
@@ -364,6 +370,7 @@ class CalculatorPage extends StatelessWidget {
                   height: 42,
                   child: OutlinedButton(
                     onPressed: onInformation,
+
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFF7931E),
 
@@ -402,6 +409,7 @@ class CalculatorPage extends StatelessWidget {
                   height: 42,
                   child: ElevatedButton(
                     onPressed: onCalculate,
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF7931E),
                       foregroundColor: Colors.white,
@@ -438,148 +446,6 @@ class CalculatorPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  // ================================================================
-  // POPUP INFORMASI
-  // ================================================================
-  void _showInformation(
-    BuildContext context, {
-    required String title,
-    required String content,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-      ),
-
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            30,
-          ),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ======================================================
-              // HANDLE
-              // ======================================================
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ======================================================
-              // ICON + JUDUL POPUP
-              // ======================================================
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E6),
-                      shape: BoxShape.circle,
-
-                      border: Border.all(
-                        color: const Color(0xFFF7931E),
-                        width: 1.2,
-                      ),
-                    ),
-
-                    child: const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFFF7931E),
-                      size: 22,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // ======================================================
-              // ISI INFORMASI
-              // ======================================================
-              Text(
-                content,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.6,
-                  color: Color(0xFF444444),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ======================================================
-              // TOMBOL TUTUP
-              // ======================================================
-              SizedBox(
-                width: double.infinity,
-                height: 45,
-
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF7931E),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-
-                  child: const Text(
-                    'TUTUP',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
