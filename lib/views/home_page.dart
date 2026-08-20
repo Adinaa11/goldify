@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'calculator/calculator_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,12 +11,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeContent(),
-    CalculatorPage(),
-    HistoryPage(),
-    ProfilePage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = [
+      const HomeContent(),
+
+      CalculatorPage(
+        onBack: () {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        },
+      ),
+
+      const HistoryPage(),
+      const ProfilePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +42,14 @@ class _HomePageState extends State<HomePage> {
         child: _pages[_selectedIndex],
       ),
 
-      // BOTTOM NAVIGATION
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
+  // ============================================================
   // BOTTOM NAVIGATION
+  // ============================================================
+
   Widget _buildBottomNavigation() {
     return Container(
       height: 70,
@@ -124,7 +142,10 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// ============================================================
 // HALAMAN BERANDA
+// ============================================================
+
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
@@ -133,7 +154,10 @@ class HomeContent extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // ====================================================
           // HEADER
+          // ====================================================
+
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 20,
@@ -143,7 +167,7 @@ class HomeContent extends StatelessWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -164,7 +188,7 @@ class HomeContent extends StatelessWidget {
                   child: Text(
                     'PT.EQUITY WORLD FUTURES',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF8B6B3F),
                     ),
@@ -187,13 +211,19 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ====================================================
           // ISI HALAMAN
+          // ====================================================
+
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ==================================================
                 // WELCOME
+                // ==================================================
+
                 const Text(
                   'Selamat Datang,',
                   style: TextStyle(
@@ -228,12 +258,18 @@ class HomeContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
+                // ==================================================
                 // TENTANG GOLDIFY
+                // ==================================================
+
                 _buildAboutCard(),
 
                 const SizedBox(height: 28),
 
+                // ==================================================
                 // FITUR UTAMA
+                // ==================================================
+
                 const Text(
                   'Fitur Utama',
                   style: TextStyle(
@@ -249,10 +285,10 @@ class HomeContent extends StatelessWidget {
                   icon: Icons.calculate_outlined,
                   title: 'Kalkulator Emas Fisik',
                   description:
-                      'Konversi dan perhitungan berdasarkan harga beli, harga jual, kurs, dan modal.',
+                      'Konversi dan perhitungan berdasarkan harga beli, '
+                      'harga jual, kurs, dan modal.',
                   onTap: () {
-                    // Nanti arahkan ke halaman
-                    // Kalkulator Emas Fisik
+                    // Nanti arahkan ke halaman Kalkulator Emas Fisik
                   },
                 ),
 
@@ -262,10 +298,10 @@ class HomeContent extends StatelessWidget {
                   icon: Icons.show_chart,
                   title: 'Analisis Pivot Point',
                   description:
-                      'Strategi trading yang lebih baik dengan kalkulasi level support dan resistance.',
+                      'Strategi trading yang lebih baik dengan kalkulasi '
+                      'level support dan resistance.',
                   onTap: () {
-                    // Nanti arahkan ke halaman
-                    // Pivot Point
+                    // Nanti arahkan ke halaman Pivot Point
                   },
                 ),
 
@@ -275,22 +311,28 @@ class HomeContent extends StatelessWidget {
                   icon: Icons.history,
                   title: 'Riwayat Perhitungan',
                   description:
-                      'Simpan dan lihat kembali hasil perhitungan untuk referensi Anda.',
+                      'Simpan dan lihat kembali hasil perhitungan '
+                      'untuk referensi Anda.',
                   onTap: () {
-                    // Nanti arahkan ke halaman
-                    // Riwayat
+                    // Nanti arahkan ke halaman Riwayat
                   },
                 ),
 
                 const SizedBox(height: 28),
 
+                // ==================================================
                 // TIPS
+                // ==================================================
+
                 _buildTipsCard(),
               ],
             ),
           ),
 
+          // ====================================================
           // GAMBAR BAWAH
+          // ====================================================
+
           SizedBox(
             width: double.infinity,
             child: Image.asset(
@@ -304,50 +346,132 @@ class HomeContent extends StatelessWidget {
     );
   }
 
+  // ============================================================
   // CARD TENTANG GOLDIFY
+  // ============================================================
+
   Widget _buildAboutCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE8D5C0),
+
+        // ======================================================
+        // GRADASI DIPERTEGAS
+        // ======================================================
+
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFFCF8),
+            Color(0xFFFFE8CC),
+            Color(0xFFFFC77D),
+          ],
+          stops: [
+            0.0,
+            0.50,
+            1.0,
+          ],
         ),
+
+        borderRadius: BorderRadius.circular(16),
+
+        // ======================================================
+        // BORDER
+        // ======================================================
+
+        border: Border.all(
+          color: Color(0xFFF0B56B),
+          width: 1.3,
+        ),
+
+        // ======================================================
+        // SHADOW
+        // ======================================================
+
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFFF7931E).withValues(alpha: 0.18),
+            blurRadius: 14,
+            spreadRadius: 1,
+            offset: Offset(0, 6),
+          ),
+
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ====================================================
+          // ICON + JUDUL
+          // ====================================================
+
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFE6CC),
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+
+                  // GRADASI ICON
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFFF1DE),
+                      Color(0xFFFFC36F),
+                    ],
+                  ),
+
                   shape: BoxShape.circle,
+
+                  border: Border.all(
+                    color: Color(0xFFF7931E),
+                    width: 1.3,
+                  ),
+
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFFF7931E)
+                          .withValues(alpha: 0.20),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
+
                 child: const Icon(
                   Icons.info_outline,
-                  color: Color(0xFF9C651E),
+                  color: Color(0xFFE47700),
+                  size: 22,
                 ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
 
               const Text(
                 'Tentang Goldify',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
+                  color: Color(0xFF222222),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+
+          // ====================================================
+          // DESKRIPSI
+          // ====================================================
 
           const Text(
             'Goldify merupakan aplikasi digital yang memudahkan '
@@ -358,12 +482,16 @@ class HomeContent extends StatelessWidget {
             textAlign: TextAlign.justify,
             style: TextStyle(
               fontSize: 14,
-              height: 1.5,
-              color: Color(0xFF4B5563),
+              height: 1.55,
+              color: Color(0xFF303030),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
+
+          // ====================================================
+          // TAG
+          // ====================================================
 
           Row(
             children: [
@@ -392,26 +520,35 @@ class HomeContent extends StatelessWidget {
     );
   }
 
+  // ============================================================
   // TAG
+  // ============================================================
+
   Widget _buildTag({
     required IconData icon,
     required String text,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 5,
+        horizontal: 9,
+        vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F1F1),
+        color: Colors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(20),
+
+        border: Border.all(
+          color: const Color(0xFFF3C28D),
+          width: 0.8,
+        ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
             size: 13,
-            color: Colors.grey,
+            color: const Color(0xFFE47700),
           ),
 
           const SizedBox(width: 4),
@@ -420,7 +557,8 @@ class HomeContent extends StatelessWidget {
             text,
             style: const TextStyle(
               fontSize: 11,
-              color: Colors.grey,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF555555),
             ),
           ),
         ],
@@ -428,7 +566,10 @@ class HomeContent extends StatelessWidget {
     );
   }
 
+  // ============================================================
   // FEATURE CARD
+  // ============================================================
+
   Widget _buildFeatureCard({
     required IconData icon,
     required String title,
@@ -438,30 +579,36 @@ class HomeContent extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
+
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
+
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
+
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
+
         child: Row(
           children: [
             // ICON
             Container(
               width: 46,
               height: 46,
+
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF3E6),
                 borderRadius: BorderRadius.circular(10),
               ),
+
               child: Icon(
                 icon,
                 color: const Color(0xFFF7931E),
@@ -512,15 +659,20 @@ class HomeContent extends StatelessWidget {
     );
   }
 
+  // ============================================================
   // TIPS CARD
+  // ============================================================
+
   Widget _buildTipsCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
+
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8ED),
         borderRadius: BorderRadius.circular(14),
       ),
+
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -565,32 +717,9 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-
-// =========================================================
-// HALAMAN KALKULATOR
-// =========================================================
-
-class CalculatorPage extends StatelessWidget {
-  const CalculatorPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Kalkulator',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-
-// =========================================================
+// ============================================================
 // HALAMAN RIWAYAT
-// =========================================================
+// ============================================================
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -609,10 +738,9 @@ class HistoryPage extends StatelessWidget {
   }
 }
 
-
-// =========================================================
+// ============================================================
 // HALAMAN PROFIL
-// =========================================================
+// ============================================================
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});

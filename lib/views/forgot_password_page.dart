@@ -202,7 +202,7 @@ class _ForgotPasswordPageState
                       ),
                     ),
 
-                    const SizedBox(height: 200),
+                    const SizedBox(height: 210),
                   ],
                 ),
               ),

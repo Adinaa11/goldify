@@ -271,7 +271,6 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                 width: double.infinity,
                 child: Image.asset(
                   'assets/images/bawah.png',
-                  width: double.infinity,
                   fit: BoxFit.fitWidth,
                 ),
               ),
