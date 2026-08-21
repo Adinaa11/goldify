@@ -86,233 +86,228 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            top: 24,
-            bottom: 0,
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // LOGO
-                    Center(
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 90,
-                        height: 90,
-                        fit: BoxFit.contain,
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      bottom: false,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // LOGO
+                  Center(
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // JUDUL
+                  const Center(
+                    child: Text(
+                      'MASUK',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                    // JUDUL
-                    const Center(
-                      child: Text(
-                        'MASUK',
+                  // INFORMASI
+                  const Center(
+                    child: Text(
+                      'Silakan masuk menggunakan akun '
+                      'yang telah terdaftar.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: Color(0xFF4B5563),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // EMAIL
+                  const Text(
+                    'Email / WhatsApp',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  TextField(
+                    controller: _loginController,
+                    keyboardType: TextInputType.text,
+                    decoration: _inputDecoration(
+                      label: 'Email / Nomor WhatsApp',
+                      hint: 'Masukkan email atau nomor WhatsApp',
+                      icon: Icons.person_outline,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // PASSWORD
+                  const Text(
+                    'Password',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: _inputDecoration(
+                      label: 'Password',
+                      hint: 'Masukkan password',
+                      icon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword =
+                                !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // LUPA PASSWORD
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Lupa password?',
                         style: TextStyle(
-                          fontSize: 28,
+                          color: Color(0xFFF7931E),
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          fontSize: 14,
                         ),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 10),
+                  const SizedBox(height: 25),
 
-                    // INFORMASI
-                    const Center(
-                      child: Text(
-                        'Silakan masuk menggunakan akun '
-                        'yang telah terdaftar.',
-                        textAlign: TextAlign.center,
+                  // TOMBOL LOGIN
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFFF7931E),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Masuk',
                         style: TextStyle(
                           fontSize: 16,
-                          height: 1.5,
-                          color: Color(0xFF4B5563),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
-                    // EMAIL
-                    const Text(
-                      'Email / WhatsApp',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    TextField(
-                      controller: _loginController,
-                      keyboardType: TextInputType.text,
-                      decoration: _inputDecoration(
-                        label: 'Email / Nomor WhatsApp',
-                        hint: 'Masukkan email atau nomor WhatsApp',
-                        icon: Icons.person_outline,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // PASSWORD
-                    const Text(
-                      'Password',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: _inputDecoration(
-                        label: 'Password',
-                        hint: 'Masukkan password',
-                        icon: Icons.lock_outline,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons
-                                    .visibility_off_outlined
-                                : Icons
-                                    .visibility_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword =
-                                  !_obscurePassword;
-                            });
-                          },
+                  // REGISTER
+                  Center(
+                    child: RichText(
+                      text: TextSpan(
+                        text: 'Belum memiliki akun? ',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // LUPA PASSWORD
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
-
-                        child: const Text(
-                          'Lupa password?',
-                          style: TextStyle(
-                            color: Color(0xFFF7931E),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // TOMBOL LOGIN
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFFF7931E),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Masuk',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // REGISTER
-                    Center(
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Belum memiliki akun? ',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                          children: [
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RegisterPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Daftar',
-                                  style: TextStyle(
-                                    color: Color(0xFFF7931E),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                        children: [
+                          WidgetSpan(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegisterPage(),
                                   ),
+                                );
+                              },
+                              child: const Text(
+                                'Daftar',
+                                style: TextStyle(
+                                  color: Color(0xFFF7931E),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 130),
-                  ],
-                ),
+                  const SizedBox(height: 130),
+                ],
               ),
+            ),
 
-              // GAMBAR BAWAH
-              SizedBox(
+            // GAMBAR BAWAH
+            SizedBox(
                 width: double.infinity,
                 child: Image.asset(
                   'assets/images/bawah.png',
+                  width: double.infinity,
                   fit: BoxFit.fitWidth,
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
