@@ -144,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 15),
 
                     // EMAIL
                     const Text(
@@ -166,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 10),
 
                     // PASSWORD
                     const Text(
@@ -203,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
                     // LUPA PASSWORD
                     Align(
@@ -296,7 +296,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 130),
                   ],
                 ),
               ),
@@ -306,7 +306,6 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 child: Image.asset(
                   'assets/images/bawah.png',
-                  width: double.infinity,
                   fit: BoxFit.fitWidth,
                 ),
               ),
