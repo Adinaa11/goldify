@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'calculator/calculator_page.dart';
-import 'profile_page.dart';
+import 'profile/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

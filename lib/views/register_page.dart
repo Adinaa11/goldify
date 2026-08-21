@@ -143,7 +143,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 0),
 
               // JUDUL
               const Center(
@@ -157,7 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 4),
 
               // INFORMASI
               Center(
@@ -173,7 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 15),
 
               // NAMA
               const Text(
@@ -194,7 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
 
               // WHATSAPP
               const Text(
@@ -216,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
 
               // EMAIL
               const Text(
@@ -238,7 +238,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
 
               // PASSWORD
               const Text(
@@ -272,7 +272,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
 
               // KONFIRMASI PASSWORD
               const Text(
@@ -307,7 +307,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 5),
 
               // TERMS
               Row(
@@ -339,7 +339,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 10),
 
               // BUTTON DAFTAR
               SizedBox(
@@ -365,7 +365,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // LOGIN
               Center(
@@ -401,8 +401,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 3),
               ],
             ),
           ),
