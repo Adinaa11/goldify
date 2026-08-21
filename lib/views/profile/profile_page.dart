@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'personal_info_page.dart';
 import 'security_page.dart';
+import 'notification_page.dart';
+import 'language_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -89,8 +91,31 @@ class ProfilePage extends StatelessWidget {
                 );
               },
             ),
-            _buildMenuItem(Icons.notifications_none, "Notifikasi"),
-            _buildMenuItem(Icons.language, "Bahasa", trailing: "Indonesia"),
+          _buildMenuItem(
+            Icons.notifications_none,
+            "Notifikasi",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationPage(),
+                ),
+              );
+            },
+          ),
+          _buildMenuItem(
+            Icons.language,
+            "Bahasa",
+            trailing: "Indonesia",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LanguagePage(),
+                ),
+              );
+            },
+          ),
 
             const SizedBox(height: 10),
 

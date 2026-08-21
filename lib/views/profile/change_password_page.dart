@@ -12,6 +12,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool isNewHidden = true;
   bool isConfirmHidden = true;
 
+  // ✅ TAMBAHAN: controller
+  final TextEditingController oldPasswordController = TextEditingController();
+  final TextEditingController newPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +78,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             _buildField(
               label: "Password Lama",
               isHidden: isOldHidden,
+              controller: oldPasswordController,
               onToggle: () {
                 setState(() => isOldHidden = !isOldHidden);
               },
@@ -81,6 +87,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             _buildField(
               label: "Password Baru",
               isHidden: isNewHidden,
+              controller: newPasswordController,
               onToggle: () {
                 setState(() => isNewHidden = !isNewHidden);
               },
@@ -89,6 +96,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             _buildField(
               label: "Konfirmasi Password",
               isHidden: isConfirmHidden,
+              controller: confirmPasswordController,
               onToggle: () {
                 setState(() => isConfirmHidden = !isConfirmHidden);
               },
@@ -103,7 +111,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: logic simpan password
+                    _handleChangePassword(); // ✅ TAMBAHAN
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF7931E),
@@ -175,11 +183,52 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
+  // ================= VALIDATION FUNCTION =================
+  void _handleChangePassword() {
+    String oldPass = oldPasswordController.text;
+    String newPass = newPasswordController.text;
+    String confirmPass = confirmPasswordController.text;
+
+    final passwordRegex =
+        RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$');
+
+    if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
+      _showMessage("Semua field harus diisi", false);
+      return;
+    }
+
+    if (!passwordRegex.hasMatch(newPass)) {
+      _showMessage(
+          "Password harus minimal 8 karakter, ada huruf besar, kecil, angka, dan simbol",
+          false);
+      return;
+    }
+
+    if (newPass != confirmPass) {
+      _showMessage("Konfirmasi password tidak sama", false);
+      return;
+    }
+
+    // ✅ SUCCESS
+    _showMessage("Kata sandi berhasil diperbarui", true);
+  }
+
+  // ================= POPUP =================
+  void _showMessage(String message, bool isSuccess) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
   // ================= FIELD =================
   Widget _buildField({
     required String label,
     required bool isHidden,
     required VoidCallback onToggle,
+    required TextEditingController controller, // ✅ TAMBAHAN
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -195,6 +244,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ],
       ),
       child: TextField(
+        controller: controller, // ✅ TAMBAHAN
         obscureText: isHidden,
         decoration: InputDecoration(
           border: InputBorder.none,

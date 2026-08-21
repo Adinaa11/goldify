@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
 
-class LoginActivityPage extends StatelessWidget {
+class LoginActivityPage extends StatefulWidget {
   const LoginActivityPage({super.key});
+
+  @override
+  State<LoginActivityPage> createState() => _LoginActivityPageState();
+}
+
+class _LoginActivityPageState extends State<LoginActivityPage> {
+
+  // ✅ DATA DEVICE
+  List<Map<String, dynamic>> devices = [
+    {
+      "icon": Icons.laptop,
+      "device": "Windows - Chrome",
+      "location": "Surabaya, Indonesia",
+      "time": "Kemarin, 21:00",
+    },
+    {
+      "icon": Icons.phone_android,
+      "device": "Android - Xiaomi",
+      "location": "Malang, Indonesia",
+      "time": "2 hari lalu, 14:10",
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -29,29 +51,24 @@ class LoginActivityPage extends StatelessWidget {
 
             // ================= PERANGKAT SAAT INI =================
             _sectionTitle("PERANGKAT SAAT INI"),
-
             _currentDevice(),
 
             const SizedBox(height: 16),
 
-            // ================= RIWAYAT =================
+            // ================= PERANGKAT LAIN =================
             _sectionTitle("PERANGKAT LAIN"),
 
-            _deviceItem(
-              context,
-              icon: Icons.laptop,
-              device: "Windows - Chrome",
-              location: "Surabaya, Indonesia",
-              time: "Kemarin, 21:00",
-            ),
-
-            _deviceItem(
-              context,
-              icon: Icons.phone_android,
-              device: "Android - Xiaomi",
-              location: "Malang, Indonesia",
-              time: "2 hari lalu, 14:10",
-            ),
+            // ✅ LOOP DEVICE
+            if (devices.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  "Tidak ada perangkat lain",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ...devices.map((device) => _deviceItem(context, device)).toList(),
 
             const SizedBox(height: 20),
 
@@ -111,14 +128,13 @@ class LoginActivityPage extends StatelessWidget {
         border: Border.all(color: const Color(0xFFF5D2A9)),
       ),
       child: Row(
-        children: [
-          const Icon(Icons.phone_android, color: Color(0xFFF7931E)),
-          const SizedBox(width: 12),
-
+        children: const [
+          Icon(Icons.phone_android, color: Color(0xFFF7931E)),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   "Android - Samsung A35",
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -130,27 +146,20 @@ class LoginActivityPage extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  "Aktif sekarang • Login sejak hari ini, 10:30",
+                  "Aktif sekarang",
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
-
-          const Icon(Icons.check_circle, color: Colors.green, size: 18),
+          Icon(Icons.check_circle, color: Colors.green, size: 18),
         ],
       ),
     );
   }
 
   // ================= DEVICE ITEM =================
-  Widget _deviceItem(
-    BuildContext context, {
-    required IconData icon,
-    required String device,
-    required String location,
-    required String time,
-  }) {
+  Widget _deviceItem(BuildContext context, Map device) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
@@ -164,18 +173,27 @@ class LoginActivityPage extends StatelessWidget {
         ],
       ),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFF7931E)),
-        title: Text(device),
+        leading: Icon(device["icon"], color: const Color(0xFFF7931E)),
+        title: Text(device["device"]),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Lokasi: $location"),
-            Text("Login terakhir: $time"),
+            Text("Lokasi: ${device["location"]}"),
+            Text("Login terakhir: ${device["time"]}"),
           ],
         ),
-        trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            const PopupMenuItem(
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == "logout") {
+              setState(() {
+                devices.remove(device); // ✅ hapus device
+              });
+
+              _showSnack("Berhasil keluar dari perangkat");
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
               value: "logout",
               child: Text("Keluar dari perangkat ini"),
             ),
@@ -185,7 +203,7 @@ class LoginActivityPage extends StatelessWidget {
     );
   }
 
-  // ================= POPUP LOGOUT =================
+  // ================= POPUP LOGOUT ALL =================
   void _showLogoutDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
@@ -242,6 +260,12 @@ class LoginActivityPage extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
+
+                          setState(() {
+                            devices.clear(); // ✅ hapus semua device
+                          });
+
+                          _showSnack("Berhasil keluar dari semua perangkat");
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
@@ -256,6 +280,13 @@ class LoginActivityPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  // ================= SNACKBAR =================
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
