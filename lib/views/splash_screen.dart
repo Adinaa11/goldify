@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _controller.forward();
 
-    Timer(const Duration(seconds: 10), () {
+    Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(

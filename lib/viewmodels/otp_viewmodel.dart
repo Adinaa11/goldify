@@ -2,6 +2,8 @@ import '../models/otp_model.dart';
 
 class OtpViewModel {
   bool isLoading = false;
+  
+  String? _generatedOtp;
 
   String? validateOtp({
     required String otp,
@@ -31,10 +33,25 @@ class OtpViewModel {
     );
   }
 
-  // Sementara untuk pengecekan UI.
-  // Nanti akan diganti dengan proses verifikasi
-  // melalui backend.
+  // MEMBUAT OTP
+  // Untuk testing sementara, OTP selalu 123456.
+  String generateOtp() {
+    _generatedOtp = '123456';
+
+    return _generatedOtp!;
+  }
+
+  // VERIFIKASI OTP
   bool verifyOtp(String otp) {
-    return otp.length == 6;
+    if (_generatedOtp == null) {
+      return false;
+    }
+
+    return otp == _generatedOtp;
+  }
+
+  // HAPUS OTP
+  void clearOtp() {
+    _generatedOtp = null;
   }
 }

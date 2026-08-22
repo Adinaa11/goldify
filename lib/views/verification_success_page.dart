@@ -36,6 +36,8 @@ class _VerificationSuccessPageState
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
+        
         child: Stack(
           alignment: Alignment.topCenter,
           children: [
