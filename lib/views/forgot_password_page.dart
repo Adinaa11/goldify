@@ -84,6 +84,7 @@ class _ForgotPasswordPageState
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           child: Column(
             children: [

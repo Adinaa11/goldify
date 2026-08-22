@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import '../viewmodels/otp_viewmodel.dart';
 import 'verification_success_page.dart';
 import 'new_password_page.dart';
@@ -26,27 +27,9 @@ class OtpPage extends StatefulWidget {
 
 class _OtpPageState extends State<OtpPage> {
   final OtpViewModel _viewModel = OtpViewModel();
+
   Timer? _timer;
   int _remainingSeconds = 60;
-
-  void _startTimer() {
-  _timer?.cancel();
-
-  _remainingSeconds = 60;
-
-  _timer = Timer.periodic(
-    const Duration(seconds: 1),
-    (timer) {
-      if (_remainingSeconds > 0) {
-        setState(() {
-          _remainingSeconds--;
-        });
-      } else {
-        timer.cancel();
-      }
-    },
-  );
-}
 
   final List<TextEditingController> _otpControllers =
       List.generate(
@@ -63,7 +46,45 @@ class _OtpPageState extends State<OtpPage> {
   @override
   void initState() {
     super.initState();
+
+    // Membuat OTP saat halaman OTP dibuka.
+    final generatedOtp = _viewModel.generateOtp();
+
+    // Untuk testing sementara.
+    // Nanti bagian ini dihapus ketika OTP sudah
+    // dikirim melalui backend/WhatsApp.
+    debugPrint('=================================');
+    debugPrint('OTP TESTING: $generatedOtp');
+    debugPrint('WhatsApp: ${widget.whatsapp}');
+    debugPrint('=================================');
+
     _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+
+    setState(() {
+      _remainingSeconds = 60;
+    });
+
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (timer) {
+        if (_remainingSeconds > 0) {
+          if (!mounted) {
+            timer.cancel();
+            return;
+          }
+
+          setState(() {
+            _remainingSeconds--;
+          });
+        } else {
+          timer.cancel();
+        }
+      },
+    );
   }
 
   @override
@@ -87,9 +108,15 @@ class _OtpPageState extends State<OtpPage> {
         .join();
   }
 
+  // ============================================================
+  // VERIFIKASI OTP
+  // ============================================================
   void _verifyOtp() {
+    final otp = _otp;
+
+    // Validasi terlebih dahulu.
     final error = _viewModel.validateOtp(
-      otp: _otp,
+      otp: otp,
     );
 
     if (error != null) {
@@ -102,42 +129,63 @@ class _OtpPageState extends State<OtpPage> {
       return;
     }
 
-    final otpData = _viewModel.createOtpData(
-      whatsapp: widget.whatsapp,
-      otp: _otp,
-    );
+    // Cek apakah OTP benar.
+    final isCorrect = _viewModel.verifyOtp(otp);
 
-    debugPrint('WhatsApp: ${otpData.whatsapp}');
-    debugPrint('OTP: ${otpData.otp}');
+    if (!isCorrect) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Kode OTP salah. Silakan masukkan kode yang benar.',
+          ),
+        ),
+      );
 
-    if (_viewModel.verifyOtp(_otp)) {
-      if (widget.purpose == OtpPurpose.registration) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const VerificationSuccessPage(),
-          ),
-        );
-      } else if (widget.purpose == OtpPurpose.resetPassword) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const NewPasswordPage(),
-          ),
-        );
-      }
+      return;
+    }
+
+    // OTP benar.
+    _viewModel.clearOtp();
+
+    if (!mounted) return;
+
+    if (widget.purpose == OtpPurpose.registration) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const VerificationSuccessPage(),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const NewPasswordPage(),
+        ),
+      );
     }
   }
 
+  // ============================================================
+  // KIRIM ULANG OTP
+  // ============================================================
   void _resendOtp() {
+    final generatedOtp = _viewModel.generateOtp();
+
     _startTimer();
+
+    // Untuk testing.
+    debugPrint('=================================');
+    debugPrint('OTP BARU: $generatedOtp');
+    debugPrint('WhatsApp: ${widget.whatsapp}');
+    debugPrint('=================================');
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Kode OTP akan dikirim ulang.',
+          'Kode OTP berhasil dibuat ulang.',
         ),
       ),
     );
@@ -178,6 +226,7 @@ class _OtpPageState extends State<OtpPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(
             top: 24,
@@ -191,7 +240,9 @@ class _OtpPageState extends State<OtpPage> {
                 ),
                 child: Column(
                   children: [
+                    // ==================================================
                     // LOGO
+                    // ==================================================
                     Center(
                       child: Image.asset(
                         'assets/images/logo.png',
@@ -203,7 +254,9 @@ class _OtpPageState extends State<OtpPage> {
 
                     const SizedBox(height: 10),
 
+                    // ==================================================
                     // JUDUL
+                    // ==================================================
                     const Text(
                       'Verifikasi OTP',
                       style: TextStyle(
@@ -215,7 +268,9 @@ class _OtpPageState extends State<OtpPage> {
 
                     const SizedBox(height: 12),
 
+                    // ==================================================
                     // INFORMASI
+                    // ==================================================
                     const Text(
                       'Masukkan kode OTP yang telah dikirim '
                       'ke nomor WhatsApp Anda.',
@@ -223,25 +278,58 @@ class _OtpPageState extends State<OtpPage> {
                       style: TextStyle(
                         fontSize: 16,
                         height: 1.5,
-                        color: Color.fromARGB(255, 52, 54, 57),
+                        color: Color.fromARGB(
+                          255,
+                          52,
+                          54,
+                          57,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 12),
 
-                    // NOMOR WHATSAPP
-                    Text(
-                      widget.whatsapp,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFF7931E),
-                      ),
+                    // ==================================================
+                    // NOMOR + SALAH NOMOR
+                    // ==================================================
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.whatsapp,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF7931E),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text(
+                            'Salah nomor?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF555555),
+                              decoration:
+                                  TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 35),
 
+                    // ==================================================
                     // OTP INPUT
+                    // ==================================================
                     Row(
                       mainAxisAlignment:
                           MainAxisAlignment.spaceBetween,
@@ -266,12 +354,15 @@ class _OtpPageState extends State<OtpPage> {
                               decoration:
                                   _otpDecoration(),
                               onChanged: (value) {
+                                // Maju ke kotak berikutnya.
                                 if (value.isNotEmpty &&
                                     index < 5) {
                                   _focusNodes[index + 1]
                                       .requestFocus();
                                 }
 
+                                // Kembali ke kotak sebelumnya
+                                // jika angka dihapus.
                                 if (value.isEmpty &&
                                     index > 0) {
                                   _focusNodes[index - 1]
@@ -286,7 +377,9 @@ class _OtpPageState extends State<OtpPage> {
 
                     const SizedBox(height: 30),
 
+                    // ==================================================
                     // TOMBOL VERIFIKASI
+                    // ==================================================
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -316,6 +409,9 @@ class _OtpPageState extends State<OtpPage> {
 
                     const SizedBox(height: 20),
 
+                    // ==================================================
+                    // TIMER / KIRIM ULANG
+                    // ==================================================
                     if (_remainingSeconds > 0)
                       Text(
                         'Kode OTP dapat dikirim ulang dalam '
@@ -343,7 +439,9 @@ class _OtpPageState extends State<OtpPage> {
                 ),
               ),
 
+              // ========================================================
               // GAMBAR BAWAH
+              // ========================================================
               SizedBox(
                 width: double.infinity,
                 child: Image.asset(
