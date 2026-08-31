@@ -3,6 +3,9 @@ import 'personal_info_page.dart';
 import 'security_page.dart';
 import 'notification_page.dart';
 import 'language_page.dart';
+import 'app_version_page.dart';
+import 'terms_page.dart';
+import 'privacy_policy_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -124,10 +127,41 @@ class ProfilePage extends StatelessWidget {
             // ========================
             _buildSectionTitle("INFORMASI APLIKASI"),
 
-            _buildMenuItem(Icons.info_outline, "Versi Aplikasi", trailing: "v2.1.4"),
-            _buildMenuItem(Icons.description_outlined, "Syarat & Ketentuan"),
-            _buildMenuItem(Icons.privacy_tip_outlined, "Kebijakan Privasi"),
-
+            _buildMenuItem(
+              Icons.info_outline,
+              "Versi Aplikasi",
+              trailing: "v2.1.4",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AppVersionPage(),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              Icons.description_outlined,
+              "Syarat & Ketentuan",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TermsPage(),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              Icons.privacy_tip_outlined,
+              "Kebijakan Privasi",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                );
+              },
+            ),
             const SizedBox(height: 20),
 
             // LOGOUT BUTTON

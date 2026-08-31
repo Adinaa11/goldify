@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_goldify/views/history/history_page.dart';
 
 import 'calculator/calculator_page.dart';
 import 'profile/profile_page.dart';
@@ -18,56 +19,55 @@ class _HomePageState extends State<HomePage> {
 
   late final List<Widget> _pages;
 
-  @override
-  void initState() {
-    super.initState();
+  @override 
+void initState() { 
+  super.initState(); 
 
-    _pages = [
-      HomeContent(
-        onCalculatorTap: () {
-          setState(() {
-            _selectedIndex = 1;
-          });
-        },
+  _pages = [ 
+    HomeContent( 
+      onCalculatorTap: () { 
+        setState(() { 
+          _selectedIndex = 1; 
+        }); 
+      }, 
 
-        onPivotTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PivotPointPage(),
-            ),
-          );
-        },
+      onPivotTap: () { 
+        Navigator.push( 
+          context, 
+          MaterialPageRoute( 
+            builder: (context) => const PivotPointPage(), 
+          ), 
+        ); 
+      }, 
 
-        onHistoryTap: () {
-          setState(() {
-            _selectedIndex = 2;
-          });
-        },
-      ),
+      onHistoryTap: () { 
+        setState(() { 
+          _selectedIndex = 2; 
+        }); 
+      }, 
+    ), 
 
-      CalculatorPage(
-        onBack: () {
-          setState(() {
-            _selectedIndex = 0;
-          });
-        },
-      ),
+    CalculatorPage( 
+      onBack: () { 
+        setState(() { 
+          _selectedIndex = 0; 
+        }); 
+      }, 
+    ), 
 
-      const HistoryPage(),
+    const HistoryPage(), 
 
-      const ProfilePage(),
-    ];
-  }
-
+    const ProfilePage(), 
+  ]; 
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
 
       body: SafeArea(
-        child: _pages[_selectedIndex],
-      ),
+      child: _pages[_selectedIndex],
+    ),
 
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -689,24 +689,6 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-//RIWAYAT
-class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Riwayat',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
