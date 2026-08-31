@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/market_service.dart';
+
 import 'calculator/calculator_page.dart';
 import 'profile/profile_page.dart';
 import 'calculator/pivot_point_page.dart';
+import 'history_page.dart';
+import 'historical_data_page.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,13 +43,25 @@ class _HomePageState extends State<HomePage> {
           );
         },
 
+        // RIWAYAT PERHITUNGAN
         onHistoryTap: () {
           setState(() {
             _selectedIndex = 2;
           });
         },
+
+        // HISTORICAL DATA EMAS
+        onHistoricalDataTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HistoricalDataPage(),
+            ),
+          );
+        },
       ),
 
+      // KALKULATOR
       CalculatorPage(
         onBack: () {
           setState(() {
@@ -54,8 +70,10 @@ class _HomePageState extends State<HomePage> {
         },
       ),
 
+      // RIWAYAT PERHITUNGAN
       const HistoryPage(),
 
+      // PROFIL
       const ProfilePage(),
     ];
   }
@@ -172,11 +190,15 @@ class HomeContent extends StatefulWidget {
   final VoidCallback onPivotTap;
   final VoidCallback onHistoryTap;
 
+  // TAMBAHAN UNTUK HISTORICAL DATA
+  final VoidCallback onHistoricalDataTap;
+
   const HomeContent({
     super.key,
     required this.onCalculatorTap,
     required this.onPivotTap,
     required this.onHistoryTap,
+    required this.onHistoricalDataTap,
   });
 
   @override
@@ -184,16 +206,21 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  // NAMA USER
+
   String _userName = '';
+
+  late Future<List<Map<String, dynamic>>> _historicalGoldFuture;
 
   @override
   void initState() {
     super.initState();
+
     _loadUserName();
+
+    _loadHistoricalData();
   }
 
-  // AMBIL NAMA USER
+  // LOAD USN
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -215,13 +242,25 @@ class _HomeContentState extends State<HomeContent> {
     });
   }
 
+  // LOAD HISTORICAL DATA
+  void _loadHistoricalData() {
+    _historicalGoldFuture =
+        MarketService.getHistoricalGoldData();
+  }
+
+  // REFRESH
+  void _refreshHistoricalData() {
+    setState(() {
+      _loadHistoricalData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          
           _buildHeader(),
 
           Padding(
@@ -229,12 +268,12 @@ class _HomeContentState extends State<HomeContent> {
               25,
               20,
               25,
-              20,
+              30,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // WELCOME TEXT
+              
                 Text(
                   _userName.isNotEmpty
                       ? 'Selamat Datang, $_userName 👋'
@@ -271,18 +310,15 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 18),
 
-                // ==================================================
-                // TENTANG GOLDIFY
-                // ==================================================
-
                 _buildAboutCard(),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 28),
 
-                // ==================================================
+                _buildHistoricalSection(),
+
+                const SizedBox(height: 32),
+
                 // FITUR UTAMA
-                // ==================================================
-
                 const Text(
                   'Fitur Utama',
                   style: TextStyle(
@@ -294,10 +330,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // ==================================================
-                // FITUR 1
-                // ==================================================
-
+                // FITUR1
                 _buildFeatureCard(
                   icon: Icons.calculate_outlined,
                   title: 'Kalkulator Emas Fisik',
@@ -309,10 +342,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // ==================================================
-                // FITUR 2
-                // ==================================================
-
+                // FITUR2
                 _buildFeatureCard(
                   icon: Icons.show_chart,
                   title: 'Analisis Pivot Point',
@@ -325,10 +355,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // ==================================================
-                // FITUR 3
-                // ==================================================
-
+                // FITUR3
                 _buildFeatureCard(
                   icon: Icons.history,
                   title: 'Riwayat Perhitungan',
@@ -347,10 +374,6 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  // ============================================================
-  // HEADER
-  // ============================================================
-
   Widget _buildHeader() {
     return Container(
       height: 62,
@@ -360,23 +383,21 @@ class _HomeContentState extends State<HomeContent> {
       color: Colors.white,
       child: Row(
         children: [
-          // BTN BACK
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: () async {
-                // Hapus session login terlebih dahulu
                 final prefs =
                     await SharedPreferences.getInstance();
 
                 await prefs.remove('isLoggedIn');
 
-                // Kembali ke halaman Login
                 if (!mounted) return;
 
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
+                    builder: (context) =>
+                        const LoginPage(),
                   ),
                   (route) => false,
                 );
@@ -446,7 +467,6 @@ class _HomeContentState extends State<HomeContent> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-
           Positioned(
             top: -45,
             right: -12,
@@ -466,15 +486,16 @@ class _HomeContentState extends State<HomeContent> {
               12,
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
-                //TITLE
                 Row(
                   children: [
                     Container(
                       width: 31,
                       height: 31,
-                      decoration: const BoxDecoration(
+                      decoration:
+                          const BoxDecoration(
                         color: Color(0xFFD88D00),
                         shape: BoxShape.circle,
                       ),
@@ -500,7 +521,6 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 9),
 
-                // DESKRIPSI
                 const Padding(
                   padding: EdgeInsets.only(
                     right: 2,
@@ -527,7 +547,8 @@ class _HomeContentState extends State<HomeContent> {
                 Row(
                   children: [
                     _buildTag(
-                      icon: Icons.verified_user_outlined,
+                      icon:
+                          Icons.verified_user_outlined,
                       text: 'Aman',
                     ),
 
@@ -553,7 +574,6 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
 
   Widget _buildTag({
     required IconData icon,
@@ -594,7 +614,483 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  
+  // HISTORICAL SECTION
+  Widget _buildHistoricalSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // JUDUL SAJA
+        const Text(
+          'Historical Data',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
+
+        const SizedBox(height: 5),
+
+        const Text(
+          'Ringkasan harga emas LGD Daily terbaru.',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF777777),
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
+        _buildHistoricalSummaryCard(),
+      ],
+    );
+  }
+
+  Widget _buildHistoricalSummaryCard() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _historicalGoldFuture,
+
+      builder: (context, snapshot) {
+       
+        if (snapshot.connectionState ==
+            ConnectionState.waiting) {
+          return Container(
+            width: double.infinity,
+            height: 260,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBF1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFF0DDA8),
+              ),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Color(0xFFF3AA16),
+              ),
+            ),
+          );
+        }
+
+        // ERROR
+        if (snapshot.hasError) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8EC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFF0DDA8),
+              ),
+            ),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 35,
+                  color: Color(0xFFD28A00),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  'Data historis belum tersedia.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF444444),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                OutlinedButton.icon(
+                  onPressed:
+                      _refreshHistoricalData,
+                  icon: const Icon(
+                    Icons.refresh,
+                    size: 17,
+                  ),
+                  label:
+                      const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // DATA
+        final List<Map<String, dynamic>> data =
+            snapshot.data ?? [];
+
+        if (data.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBF1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFF0DDA8),
+              ),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.bar_chart_outlined,
+                  size: 38,
+                  color: Color(0xFFD39A25),
+                ),
+
+                SizedBox(height: 10),
+
+                Text(
+                  'Data LGD Daily tidak ditemukan.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF555555),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // DATA SUDAH DI-SORTING DARI SERVICE
+        final Map<String, dynamic> latest =
+            data.first;
+
+        final String tanggal =
+            latest['tanggal']?.toString() ?? '-';
+
+        final String open =
+            latest['open']?.toString() ?? '-';
+
+        final String high =
+            latest['high']?.toString() ?? '-';
+
+        final String low =
+            latest['low']?.toString() ?? '-';
+
+        final String close =
+            latest['close']?.toString() ?? '-';
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFFCF4),
+                Color(0xFFFFF8E7),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFEFDCA7),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD9A12B)
+                    .withValues(alpha: 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              // TOP
+              Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF5AE17),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.auto_graph,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'LGD Daily',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight:
+                                FontWeight.w800,
+                            color: Color(0xFF252525),
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          'Data terbaru • ${_formatTanggal(tanggal)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w600,
+                            color: Color(0xFF777777),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // STATUS
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.circular(20),
+                      border: Border.all(
+                        color:
+                            const Color(0xFFE7D39A),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize:
+                          MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration:
+                              const BoxDecoration(
+                            color: Color(0xFF43A047),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        const Text(
+                          'Terbaru',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight:
+                                FontWeight.w700,
+                            color:
+                                Color(0xFF666666),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // CLOSE
+              Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.end,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'CLOSE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            FontWeight.w700,
+                        letterSpacing: 1.2,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                  ),
+
+                  Text(
+                    close,
+                    style: const TextStyle(
+                      fontSize: 31,
+                      fontWeight:
+                          FontWeight.w800,
+                      color: Color(0xFF292929),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 15),
+
+              // OHLC
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildPriceBox(
+                      label: 'OPEN',
+                      value: open,
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Expanded(
+                    child: _buildPriceBox(
+                      label: 'HIGH',
+                      value: high,
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Expanded(
+                    child: _buildPriceBox(
+                      label: 'LOW',
+                      value: low,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed:
+                      widget.onHistoricalDataTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFFF5AD17),
+                    foregroundColor:
+                        Colors.white,
+                    elevation: 0,
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(13),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Lihat Historical Data',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight:
+                              FontWeight.w800,
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 21,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // PRICE BOX
+  Widget _buildPriceBox({
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: const Color(0xFFEADCB9),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: Color(0xFF999999),
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF383838),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // FORMAT TANGGAL
+  String _formatTanggal(String value) {
+    try {
+      final DateTime date =
+          DateTime.parse(value);
+
+      final String day =
+          date.day.toString().padLeft(2, '0');
+
+      final String month =
+          date.month.toString().padLeft(2, '0');
+
+      final String year =
+          date.year.toString();
+
+      return '$day/$month/$year';
+    } catch (_) {
+      return value;
+    }
+  }
+
   Widget _buildFeatureCard({
     required IconData icon,
     required String title,
@@ -633,15 +1129,16 @@ class _HomeContentState extends State<HomeContent> {
             ],
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment:
+                CrossAxisAlignment.center,
             children: [
-            
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F1F2),
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius:
+                      BorderRadius.circular(9),
                 ),
                 child: Icon(
                   icon,
@@ -654,8 +1151,10 @@ class _HomeContentState extends State<HomeContent> {
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
@@ -689,24 +1188,6 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-//RIWAYAT
-class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Riwayat',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
