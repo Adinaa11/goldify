@@ -8,15 +8,19 @@ import 'package:gal/gal.dart';
 import 'pivot_point_page.dart';
 
 class PivotResultPage extends StatefulWidget {
+  final double open;
   final double high;
   final double low;
   final double close;
+  final bool hasDecimalInput;
 
   const PivotResultPage({
     super.key,
+    required this.open,
     required this.high,
     required this.low,
     required this.close,
+    required this.hasDecimalInput,
   });
 
   @override
@@ -25,10 +29,7 @@ class PivotResultPage extends StatefulWidget {
 }
 
 class _PivotResultPageState extends State<PivotResultPage> {
-  // ============================================================
-  // COLORS
-  // ============================================================
-
+ 
   static const Color orange = Color(0xFFF7931E);
   static const Color darkText = Color(0xFF222222);
   static const Color greyText = Color(0xFF666666);
@@ -46,52 +47,26 @@ class _PivotResultPageState extends State<PivotResultPage> {
   // Midpoint
   static const Color midpointBackground = Color(0xFFF4F1EE);
 
-  // ============================================================
-  // SCREENSHOT
-  // ============================================================
-
   final ScreenshotController screenshotController =
       ScreenshotController();
 
-  // ============================================================
-  // STATE
-  // ============================================================
-
   bool _showDetails = false;
 
-  // ============================================================
-  // INPUT
-  // ============================================================
-
-  int _integer(double value) {
-    return value.truncate();
-  }
-
-  int get highInt => _integer(widget.high);
-
-  int get lowInt => _integer(widget.low);
-
-  int get closeInt => _integer(widget.close);
-
-  // ============================================================
+  bool get _hasDecimalInput => widget.hasDecimalInput;
+  
   // PIVOT POINT
-  // ============================================================
-
   // PP = (High + Low + Close) / 3
   double get pp =>
-      (highInt + lowInt + closeInt) / 3;
+      (widget.high + widget.low + widget.close) / 3;
 
   // High - Low
   double get range =>
-      highInt.toDouble() - lowInt.toDouble();
+       widget.high - widget.low;
 
-  // ============================================================
   // RESISTANCE
-  // ============================================================
-
   // R1 = 2 x PP - Low
   double get r1 =>
-      (2 * pp) - lowInt;
+      (2 * pp) - widget.low;
 
   // R2 = PP + (High - Low)
   double get r2 =>
@@ -105,13 +80,10 @@ class _PivotResultPageState extends State<PivotResultPage> {
   double get r4 =>
       pp + (range * 3);
 
-  // ============================================================
   // SUPPORT
-  // ============================================================
-
   // S1 = 2 x PP - High
   double get s1 =>
-      (2 * pp) - highInt;
+      (2 * pp) - widget.high;
 
   // S2 = PP - (High - Low)
   double get s2 =>
@@ -125,10 +97,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
   double get s4 =>
       pp - (range * 3);
 
-  // ============================================================
   // MIDPOINT
-  // ============================================================
-
   double get midpointR4R3 =>
       (r4 + r3) / 2;
 
@@ -153,18 +122,17 @@ class _PivotResultPageState extends State<PivotResultPage> {
   double get midpointS3S4 =>
       (s3 + s4) / 2;
 
-  // ============================================================
-  // FORMAT
-  // ============================================================
-
   String _format(double value) {
+    if (_hasDecimalInput) {
+      return value
+          .toStringAsFixed(2)
+          .replaceAll('.', ',');
+    }
+
     return value.round().toString();
   }
 
-  // ============================================================
   // SAVE HISTORY
-  // ============================================================
-
   Future<void> _saveHistory(
     BuildContext context,
   ) async {
@@ -172,10 +140,10 @@ class _PivotResultPageState extends State<PivotResultPage> {
         await SharedPreferences.getInstance();
 
     final String historyItem =
-        'High: $highInt | '
-        'Low: $lowInt | '
-        'Close: $closeInt | '
-        'PP: ${pp.round()}';
+        'High: ${_format(widget.high)} | '
+        'Low: ${_format(widget.low)} | '
+        'Close: ${_format(widget.close)} | '
+        'PP: ${_format(pp)}';
 
     final List<String> history =
         prefs.getStringList('pivot_history') ?? [];
@@ -200,10 +168,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // ============================================================
-  // DOWNLOAD CURRENT VIEW
-  // ============================================================
-
   Future<void> _downloadResult(
     BuildContext context,
   ) async {
@@ -224,10 +188,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
         );
       }
 
-      // ========================================================
-      // GALERI ACCESS
-      // ========================================================
-
       final bool hasAccess =
           await Gal.hasAccess(
         toAlbum: true,
@@ -246,17 +206,9 @@ class _PivotResultPageState extends State<PivotResultPage> {
         }
       }
 
-      // ========================================================
-      // FILE NAME
-      // ========================================================
-
       final String fileName = _showDetails
           ? 'pivot_detail_${DateTime.now().millisecondsSinceEpoch}'
           : 'pivot_ringkasan_${DateTime.now().millisecondsSinceEpoch}';
-
-      // ========================================================
-      // SAVE IMAGE
-      // ========================================================
 
       await Gal.putImageBytes(
         image,
@@ -291,10 +243,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
     }
   }
 
-  // ============================================================
   // RESULT ROW
-  // ============================================================
-
   Widget _buildResultRow({
     required String title,
     required double value,
@@ -343,10 +292,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // ============================================================
   // MIDPOINT ROW
-  // ============================================================
-
   Widget _buildMidpointRow({
     required String title,
     required double value,
@@ -407,10 +353,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // ============================================================
-  // INPUT SUMMARY
-  // ============================================================
-
   Widget _buildInputSummary() {
     return Container(
       width: double.infinity,
@@ -446,15 +388,15 @@ class _PivotResultPageState extends State<PivotResultPage> {
             children: [
               _buildInputItem(
                 'High',
-                highInt,
+                widget.high,
               ),
               _buildInputItem(
                 'Low',
-                lowInt,
+                widget.low,
               ),
               _buildInputItem(
                 'Close',
-                closeInt,
+                widget.close,
               ),
             ],
           ),
@@ -465,7 +407,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
 
   Widget _buildInputItem(
     String label,
-    int value,
+    double value,
   ) {
     return Column(
       crossAxisAlignment:
@@ -483,7 +425,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
         const SizedBox(height: 3),
 
         Text(
-          value.toString(),
+          _format(value),
           style: const TextStyle(
             fontFamily: 'monospace',
             fontSize: 13,
@@ -495,10 +437,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // ============================================================
   // RESISTANCE
-  // ============================================================
-
   Widget _buildResistanceSection() {
     return Container(
       width: double.infinity,
@@ -597,10 +536,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // ============================================================
   // SUPPORT
-  // ============================================================
-
   Widget _buildSupportSection() {
     return Container(
       width: double.infinity,

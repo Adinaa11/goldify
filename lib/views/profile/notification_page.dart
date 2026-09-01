@@ -18,12 +18,11 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.green,
+      ),
     );
-  }
-
-  void _updateSetting(String text) {
-    _showSnack("Pengaturan $text diperbarui");
   }
 
   @override
@@ -52,30 +51,44 @@ class _NotificationPageState extends State<NotificationPage> {
 
             _sectionTitle("NOTIFIKASI UTAMA"),
 
+            // ================= MASTER SWITCH =================
             _switchItem(
               title: "Notifikasi Sistem",
               value: systemNotif,
               onChanged: (val) {
-                setState(() => systemNotif = val);
-                _updateSetting("Sistem");
+                setState(() {
+                  systemNotif = val;
+
+                  // 🔥 kalau dimatiin → semua ikut mati
+                  if (!val) {
+                    emailNotif = false;
+                    promoNotif = false;
+                    sound = false;
+                    vibration = false;
+                  }
+                });
+
+                _showSnack("Notifikasi Sistem ${val ? 'aktif' : 'mati'}");
               },
             ),
 
             _switchItem(
               title: "Notifikasi Email",
               value: emailNotif,
+              enabled: systemNotif, // 🔥 disable kalau sistem off
               onChanged: (val) {
                 setState(() => emailNotif = val);
-                _updateSetting("Email");
+                _showSnack("Notifikasi Email ${val ? 'aktif' : 'mati'}");
               },
             ),
 
             _switchItem(
               title: "Notifikasi Promo",
               value: promoNotif,
+              enabled: systemNotif,
               onChanged: (val) {
                 setState(() => promoNotif = val);
-                _updateSetting("Promo");
+                _showSnack("Notifikasi Promo ${val ? 'aktif' : 'mati'}");
               },
             ),
 
@@ -86,18 +99,20 @@ class _NotificationPageState extends State<NotificationPage> {
             _switchItem(
               title: "Suara",
               value: sound,
+              enabled: systemNotif,
               onChanged: (val) {
                 setState(() => sound = val);
-                _updateSetting("Suara");
+                _showSnack("Suara ${val ? 'aktif' : 'mati'}");
               },
             ),
 
             _switchItem(
               title: "Getaran",
               value: vibration,
+              enabled: systemNotif,
               onChanged: (val) {
                 setState(() => vibration = val);
-                _updateSetting("Getaran");
+                _showSnack("Getaran ${val ? 'aktif' : 'mati'}");
               },
             ),
 
@@ -129,6 +144,7 @@ class _NotificationPageState extends State<NotificationPage> {
     required String title,
     required bool value,
     required Function(bool) onChanged,
+    bool enabled = true,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -142,22 +158,16 @@ class _NotificationPageState extends State<NotificationPage> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(
+                fontSize: 14,
+                color: enabled ? Colors.black : Colors.grey,
+              ),
             ),
           ),
           Switch(
             activeColor: const Color(0xFFF7931E),
-            value: value,
-            onChanged: (val) {
-              onChanged(val);
-
-              // popup feedback
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("$title ${val ? 'aktif' : 'mati'}"),
-                ),
-              );
-            },
+            value: enabled ? value : false,
+            onChanged: enabled ? onChanged : null, // 🔥 disable switch
           ),
         ],
       ),

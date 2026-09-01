@@ -1,82 +1,82 @@
+// lib/views/history/history_empty.dart
 import 'package:flutter/material.dart';
-import 'dart:math';
 
-class HistoryEmpty extends StatefulWidget {
-  final VoidCallback onStart;
-  const HistoryEmpty({super.key, required this.onStart});
-
-  @override
-  State<HistoryEmpty> createState() => _HistoryEmptyState();
-}
-
-class _HistoryEmptyState extends State<HistoryEmpty> with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+class HistoryEmpty extends StatelessWidget {
+  final VoidCallback? onStart;
+  const HistoryEmpty({super.key, this.onStart});
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final iconCircleSize = width * 0.28;
-
-    return SafeArea(
+    return Container(
+      color: const Color(0xFFF5F6F8),
+      width: double.infinity,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            AnimatedBuilder(
-              animation: _ctrl,
-              builder: (context, child) {
-                final angle = _ctrl.value * 2 * pi;
-                return Transform.rotate(angle: angle, child: child);
-              },
-              child: Container(
-                width: iconCircleSize,
-                height: iconCircleSize,
+          padding: const EdgeInsets.fromLTRB(25, 40, 25, 30),
+          child: Column(
+            children: [
+              // Circular icon with soft gradient
+              Container(
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(colors: [Color(0xFFFFF3E6), Color(0xFFFFE6C8)], center: Alignment.center, radius: 0.8),
-                  boxShadow: [BoxShadow(color: const Color(0xFFF7931E).withOpacity(0.12), blurRadius: 30, spreadRadius: 2, offset: const Offset(0, 8))],
+                  gradient: RadialGradient(
+                    colors: [const Color(0xFFFFF3E6), const Color(0xFFFEE6C7)],
+                    center: Alignment.center,
+                    radius: 0.9,
+                  ),
                 ),
                 child: Center(
                   child: Container(
-                    width: iconCircleSize * 0.45,
-                    height: iconCircleSize * 0.45,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: Center(
-                      child: Icon(Icons.access_time, size: iconCircleSize * 0.22, color: const Color(0xFFF7931E)),
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
                     ),
+                    child: const Icon(Icons.history, color: Color(0xFFF7931E), size: 34),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 22),
-            const Text('Belum Ada Riwayat', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
-            const SizedBox(height: 8),
-            const Text('Mulai lakukan perhitungan emas fisik atau pivot point\nuntuk melihat riwayat Anda di sini.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, height: 1.4, color: Colors.grey)),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: widget.onStart,
-                icon: const Icon(Icons.calculate, color: Colors.white),
-                label: const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Text('Mulai Menghitung', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF7931E), elevation: 6, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), shadowColor: const Color(0xFFF7931E).withOpacity(0.35)),
+
+              const SizedBox(height: 18),
+
+              const Text(
+                'Belum Ada Riwayat',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 8),
-          ]),
+
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18),
+                child: Text(
+                  'Mulai lakukan perhitungan emas fisik atau pivot point untuk melihat riwayat Anda di sini.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF6B6B6B)),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              SizedBox(
+                width: 220,
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: onStart,
+                  icon: const Icon(Icons.calculate_outlined),
+                  label: const Text('Mulai Menghitung'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7931E),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
