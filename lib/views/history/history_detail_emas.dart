@@ -5,14 +5,19 @@ class HistoryDetailEmasPage extends StatelessWidget {
 
   const HistoryDetailEmasPage({super.key, required this.item});
 
+  Map<String, dynamic> get detail => item['detail'] ?? {};
+
+  /// ======================
+  /// LOGIC BUY / SELL
+  /// ======================
   bool get isProfit {
-    final result = item['result'].toString();
-    return result.startsWith('+');
+    final result = item['result']?.toString() ?? '';
+    return result.contains('+') || result.contains('untung');
   }
 
   @override
   Widget build(BuildContext context) {
-    final detail = item['detail'] ?? {};
+    final date = item['date'] as DateTime?;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
@@ -32,7 +37,7 @@ class HistoryDetailEmasPage extends StatelessWidget {
 
       body: Stack(
         children: [
-          /// BACKGROUND EWF
+          /// BACKGROUND
           Positioned.fill(
             child: Opacity(
               opacity: 0.05,
@@ -49,7 +54,7 @@ class HistoryDetailEmasPage extends StatelessWidget {
             child: Column(
               children: [
                 /// ======================
-                /// CARD HASIL (FOCUS)
+                /// CARD HASIL
                 /// ======================
                 Container(
                   width: double.infinity,
@@ -58,38 +63,72 @@ class HistoryDetailEmasPage extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Column(
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      const Text(
-                        "TOTAL HASIL",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 10),
-
-                      Icon(
-                        isProfit ? Icons.trending_up : Icons.trending_down,
-                        color: isProfit ? Colors.green : Colors.red,
-                        size: 28,
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      Text(
-                        isProfit ? "Profit" : "Loss",
-                        style: TextStyle(
-                          color: isProfit ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
+                      /// 🔥 WATERMARK FIX (CENTER + LEBIH KELIHATAN)
+                      Positioned.fill(
+                        child: Center(
+                          child: Opacity(
+                            opacity: 0.12, // ⬅️ lebih jelas tapi aman
+                            child: Image.asset(
+                              'assets/images/ewf.png',
+                              width: 180, // ⬅️ diperbesar biar kelihatan
+                              fit: BoxFit.contain,
+                              color: Colors.grey.withOpacity(0.25), // ⬅️ biar kontras
+                              colorBlendMode: BlendMode.srcATop,
+                            ),
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      /// 🔥 CONTENT
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            "HASIL PERHITUNGAN",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 10),
 
-                      Text(
-                        item['result'],
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                          Icon(
+                            isProfit ? Icons.trending_up : Icons.trending_down,
+                            color: isProfit ? Colors.green : Colors.red,
+                            size: 30,
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            isProfit ? "PROFIT" : "LOSS",
+                            style: TextStyle(
+                              color: isProfit ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            item['result'] ?? "-",
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            "${_formatDate(date)} • ${item['time'] ?? ''} WIB",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -189,9 +228,7 @@ class HistoryDetailEmasPage extends StatelessWidget {
     );
   }
 
-  Widget _divider() {
-    return const Divider(height: 16);
-  }
+  Widget _divider() => const Divider(height: 16);
 
   Widget _button(String text, VoidCallback onTap) {
     return SizedBox(
@@ -210,5 +247,30 @@ class HistoryDetailEmasPage extends StatelessWidget {
   String _rp(dynamic v) {
     if (v == null) return "-";
     return "Rp ${v.toString()}";
+  }
+
+  /// ======================
+  /// FORMAT TANGGAL INDONESIA
+  /// ======================
+  String _formatDate(DateTime? d) {
+    if (d == null) return "-";
+
+    const months = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember'
+    ];
+
+    return "${d.day} ${months[d.month]} ${d.year}";
   }
 }

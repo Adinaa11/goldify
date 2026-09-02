@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:gal/gal.dart';
+import 'dart:typed_data';
 
 class HistoryDetailPivotPage extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -14,228 +17,297 @@ class _HistoryDetailPivotPageState
     extends State<HistoryDetailPivotPage> {
   bool showDetail = false;
 
+  final ScreenshotController screenshotController =
+      ScreenshotController();
+
   @override
   Widget build(BuildContext context) {
-    final detail =
+    final d =
         Map<String, dynamic>.from(widget.item['detail'] ?? {});
-
-    final pp = detail['pp'];
-
-    final r1 = detail['r1'];
-    final r2 = detail['r2'];
-    final r3 = detail['r3'];
-    final r4 = detail['r4'];
-
-    final s1 = detail['s1'];
-    final s2 = detail['s2'];
-    final s3 = detail['s3'];
-    final s4 = detail['s4'];
+    final date = widget.item['date'];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
+
       appBar: AppBar(
         title: const Text("Riwayat Pivot Point"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          /// BACKGROUND LOGO
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.05,
-              child: Image.asset(
-                'assets/images/ewf.png',
-                fit: BoxFit.contain,
+
+      /// 🔥 FIX WATERMARK DI DALAM CONTENT
+      body: Screenshot(
+        controller: screenshotController,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+
+            /// 🔥 WATERMARK BESAR (DI DALAM CONTENT)
+            Positioned.fill(
+              child: Center(
+                child: Transform.rotate(
+                  angle: -0.2, // 🔥 biar lebih aesthetic (miring dikit)
+                  child: Opacity(
+                    opacity: 0.18, // 🔥 lebih kelihatan (0.15 - 0.25)
+                    child: Image.asset(
+                      'assets/images/ewf.png',
+                      width: 420, // 🔥 BESAR BANGET biar kelihatan di download
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
 
-          /// CONTENT
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                /// ======================
-                /// PIVOT POINT
-                /// ======================
-                _card(
-                  child: Column(
-                    children: [
-                      const Text("PIVOT POINT"),
-                      const SizedBox(height: 6),
-                      Text(
-                        "${pp ?? '-'}",
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            /// 🔥 CONTENT
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
 
-                const SizedBox(height: 16),
-
-                /// ======================
-                /// RESISTANCE
-                /// ======================
-                _levelCard("Resistance", [r1, r2, r3, r4], Colors.green),
-
-                const SizedBox(height: 12),
-
-                /// ======================
-                /// SUPPORT
-                /// ======================
-                _levelCard("Support", [s1, s2, s3, s4], Colors.red),
-
-                const SizedBox(height: 16),
-
-                /// ======================
-                /// TOGGLE DETAIL
-                /// ======================
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => showDetail = !showDetail),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        showDetail
-                            ? "Sembunyikan Detail"
-                            : "Lihat Detail",
-                        style: const TextStyle(
-                          color: Color(0xFFF7931E),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Icon(showDetail
-                          ? Icons.expand_less
-                          : Icons.expand_more),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                /// ======================
-                /// MIDPOINT
-                /// ======================
-                if (showDetail)
+                  /// ======================
+                  /// HASIL PIVOT
+                  /// ======================
                   _card(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "MIDPOINT",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold),
+                          "HASIL PIVOT POINT",
+                          style: TextStyle(color: Colors.grey),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 6),
 
-                        _row("R4 - R3", _mid(r4, r3)),
-                        _row("R3 - R2", _mid(r3, r2)),
-                        _row("R2 - R1", _mid(r2, r1)),
-                        _row("R1 - PP", _mid(r1, pp)),
-                        _row("PP - S1", _mid(pp, s1)),
-                        _row("S1 - S2", _mid(s1, s2)),
-                        _row("S2 - S3", _mid(s2, s3)),
-                        _row("S3 - S4", _mid(s3, s4)),
+                        Text(
+                          d['pp']?.toString() ?? "-",
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF7931E),
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          _formatDate(date),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                /// ======================
-                /// HITUNG ULANG
-                /// ======================
-                _button(
-                  "HITUNG ULANG",
-                  () {
+                  /// ======================
+                  /// DATA INPUT
+                  /// ======================
+                  _card(
+                    child: Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceAround,
+                      children: [
+                        _dataItem("High", d['high']),
+                        _dataItem("Low", d['low']),
+                        _dataItem("Close", d['close']),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  /// ======================
+                  /// RESISTANCE
+                  /// ======================
+                  _sectionTitle("RESISTANCE"),
+
+                  _level("R4", d['r4']),
+                  if (showDetail)
+                    _mid("Midpoint R4 - R3",
+                        _calcMid(d['r4'], d['r3'])),
+
+                  _level("R3", d['r3']),
+                  if (showDetail)
+                    _mid("Midpoint R3 - R2",
+                        _calcMid(d['r3'], d['r2'])),
+
+                  _level("R2", d['r2']),
+                  if (showDetail)
+                    _mid("Midpoint R2 - R1",
+                        _calcMid(d['r2'], d['r1'])),
+
+                  _level("R1", d['r1']),
+                  if (showDetail)
+                    _mid("Midpoint R1 - PP",
+                        _calcMid(d['r1'], d['pp'])),
+
+                  const SizedBox(height: 12),
+
+                  /// ======================
+                  /// PIVOT POINT
+                  /// ======================
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7931E),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "PIVOT POINT (PP)",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          d['pp']?.toString() ?? "-",
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// ======================
+                  /// SUPPORT
+                  /// ======================
+                  _sectionTitle("SUPPORT"),
+
+                  _level("S1", d['s1']),
+                  if (showDetail)
+                    _mid("Midpoint PP - S1",
+                        _calcMid(d['pp'], d['s1'])),
+
+                  _level("S2", d['s2']),
+                  if (showDetail)
+                    _mid("Midpoint S1 - S2",
+                        _calcMid(d['s1'], d['s2'])),
+
+                  _level("S3", d['s3']),
+                  if (showDetail)
+                    _mid("Midpoint S2 - S3",
+                        _calcMid(d['s2'], d['s3'])),
+
+                  _level("S4", d['s4']),
+                  if (showDetail)
+                    _mid("Midpoint S3 - S4",
+                        _calcMid(d['s3'], d['s4'])),
+
+                  const SizedBox(height: 16),
+
+                  /// TOGGLE DETAIL
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => showDetail = !showDetail),
+                    child: Text(
+                      showDetail
+                          ? "Sembunyikan Detail"
+                          : "Lihat Detail",
+                      style: const TextStyle(
+                        color: Color(0xFFF7931E),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// HITUNG ULANG
+                  _button("HITUNG ULANG", () {
                     Navigator.pushNamed(
                       context,
                       '/calculator_pivot',
-                      arguments: detail,
+                      arguments: d,
                     );
-                  },
-                ),
+                  }),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                /// ======================
-                /// HAPUS
-                /// ======================
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context, {"deleted": true});
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
+                  /// DOWNLOAD
+                  _button("DOWNLOAD HASIL", _download),
+
+                  const SizedBox(height: 10),
+
+                  /// HAPUS
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context, {"deleted": true});
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                    child: const Text("HAPUS RIWAYAT"),
                   ),
-                  child: const Text("HAPUS RIWAYAT"),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// ======================
-  /// UI COMPONENT
-  /// ======================
+  /// ================= UI =================
+
   Widget _card({required Widget child}) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: child,
     );
   }
 
-  Widget _button(String text, VoidCallback onTap) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF7931E),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+  Widget _dataItem(String title, dynamic value) {
+    return Column(
+      children: [
+        Text(title),
+        const SizedBox(height: 4),
+        Text(
+          value?.toString() ?? "-",
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        child: Text(text),
-      ),
+      ],
     );
   }
 
-  Widget _levelCard(String title, List levels, Color color) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style:
-                TextStyle(fontWeight: FontWeight.bold, color: color),
+  Widget _sectionTitle(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Color(0xFFF7931E),
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 10),
-          ...levels.asMap().entries.map((e) {
-            return _row("${title[0]}${e.key + 1}", e.value);
-          }),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _row(String label, dynamic value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _level(String label, dynamic value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
           Text(
@@ -247,12 +319,74 @@ class _HistoryDetailPivotPageState
     );
   }
 
-  String _mid(dynamic a, dynamic b) {
+  Widget _mid(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _button(String text, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF7931E),
+        ),
+        child: Text(text),
+      ),
+    );
+  }
+
+  String _calcMid(dynamic a, dynamic b) {
     if (a == null || b == null) return "-";
-
-    final double da = double.tryParse(a.toString()) ?? 0;
-    final double db = double.tryParse(b.toString()) ?? 0;
-
+    final da = double.tryParse(a.toString()) ?? 0;
+    final db = double.tryParse(b.toString()) ?? 0;
     return ((da + db) / 2).toStringAsFixed(2);
+  }
+
+  String _formatDate(dynamic d) {
+    if (d == null) return "-";
+    if (d is DateTime) {
+      return "${d.day} ${_month(d.month)} ${d.year}";
+    }
+    return d.toString();
+  }
+
+  String _month(int m) {
+    const months = [
+      "Januari","Februari","Maret","April","Mei","Juni",
+      "Juli","Agustus","September","Oktober","November","Desember"
+    ];
+    return months[m - 1];
+  }
+
+  Future<void> _download() async {
+    final Uint8List? image =
+        await screenshotController.capture();
+    if (image == null) return;
+
+    await Gal.putImageBytes(image);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Berhasil disimpan ke galeri"),
+      ),
+    );
   }
 }
