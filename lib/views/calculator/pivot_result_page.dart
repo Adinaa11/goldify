@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'pivot_point_page.dart';
 
@@ -13,6 +14,7 @@ class PivotResultPage extends StatefulWidget {
   final double low;
   final double close;
   final bool hasDecimalInput;
+  final String? dataDate;
 
   const PivotResultPage({
     super.key,
@@ -21,83 +23,88 @@ class PivotResultPage extends StatefulWidget {
     required this.low,
     required this.close,
     required this.hasDecimalInput,
+    this.dataDate,
   });
 
   @override
-  State<PivotResultPage> createState() =>
-      _PivotResultPageState();
+  State<PivotResultPage> createState() => _PivotResultPageState();
 }
 
 class _PivotResultPageState extends State<PivotResultPage> {
- 
   static const Color orange = Color(0xFFF7931E);
   static const Color darkText = Color(0xFF222222);
   static const Color greyText = Color(0xFF666666);
-
   static const Color lightBackground = Color(0xFFFFFCFA);
-
-  // Resistance
   static const Color resistanceBackground = Color(0xFFFFF7EF);
   static const Color resistanceBorder = Color(0xFFE8C9A9);
-
-  // Support
   static const Color supportBackground = Color(0xFFF7F9FA);
   static const Color supportBorder = Color(0xFFC9D8DD);
-
-  // Midpoint
   static const Color midpointBackground = Color(0xFFF4F1EE);
 
   final ScreenshotController screenshotController =
       ScreenshotController();
 
   bool _showDetails = false;
+  bool _historySaved = false;
 
-  bool get _hasDecimalInput => widget.hasDecimalInput;
-  
-  // PIVOT POINT
-  // PP = (High + Low + Close) / 3
   double get pp =>
       (widget.high + widget.low + widget.close) / 3;
 
-  // High - Low
-  double get range =>
-       widget.high - widget.low;
+  String get tradeSignal {
+    if (widget.open > pp) return 'SELL';
+    if (widget.open < pp) return 'BUY';
+    return 'BUY / SELL';
+  }
 
-  // RESISTANCE
-  // R1 = 2 x PP - Low
+  Color get tradeSignalColor {
+    switch (tradeSignal) {
+      case 'BUY':
+        return const Color(0xFF2E7D32);
+      case 'SELL':
+        return const Color(0xFFD32F2F);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData get tradeSignalIcon {
+    switch (tradeSignal) {
+      case 'BUY':
+        return Icons.trending_up;
+      case 'SELL':
+        return Icons.trending_down;
+      default:
+        return Icons.remove;
+    }
+  }
+
+  double get range =>
+      widget.high - widget.low;
+
   double get r1 =>
       (2 * pp) - widget.low;
 
-  // R2 = PP + (High - Low)
   double get r2 =>
       pp + range;
 
-  // R3 = PP + (High - Low) x 2
   double get r3 =>
       pp + (range * 2);
 
-  // R4 = PP + (High - Low) x 3
   double get r4 =>
       pp + (range * 3);
 
-  // SUPPORT
-  // S1 = 2 x PP - High
   double get s1 =>
       (2 * pp) - widget.high;
 
-  // S2 = PP - (High - Low)
   double get s2 =>
       pp - range;
 
-  // S3 = PP - (High - Low) x 2
   double get s3 =>
       pp - (range * 2);
 
-  // S4 = PP - (High - Low) x 3
   double get s4 =>
       pp - (range * 3);
 
-  // MIDPOINT
   double get midpointR4R3 =>
       (r4 + r3) / 2;
 
@@ -123,75 +130,81 @@ class _PivotResultPageState extends State<PivotResultPage> {
       (s3 + s4) / 2;
 
   String _format(double value) {
-    if (_hasDecimalInput) {
-      return value
-          .toStringAsFixed(2)
-          .replaceAll('.', ',');
-    }
-
-    return value.round().toString();
+    return value
+        .toStringAsFixed(2)
+        .replaceAll('.', ',');
   }
 
-  // SAVE HISTORY
-  Future<void> _saveHistory(
-    BuildContext context,
-  ) async {
-    final prefs =
-        await SharedPreferences.getInstance();
+  @override
+  void initState() {
+    super.initState();
+    _saveHistory();
+  }
 
-    final String historyItem =
-        'High: ${_format(widget.high)} | '
-        'Low: ${_format(widget.low)} | '
-        'Close: ${_format(widget.close)} | '
-        'PP: ${_format(pp)}';
+  Future<void> _saveHistory() async {
+    if (_historySaved) return;
 
-    final List<String> history =
-        prefs.getStringList('pivot_history') ?? [];
+    _historySaved = true;
 
-    history.insert(0, historyItem);
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
 
-    await prefs.setStringList(
-      'pivot_history',
-      history,
-    );
+      final data =
+          prefs.getStringList("history_data") ?? [];
 
-    if (!context.mounted) return;
+      final historyDate =
+          DateTime.now().toString().substring(0, 16);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Perhitungan berhasil disimpan ke riwayat.',
-        ),
-        backgroundColor: orange,
-        duration: Duration(seconds: 2),
-      ),
-    );
+      final item = {
+        "type": "pivot",
+        "date": historyDate,
+        "marketDate": widget.dataDate,
+        "detail": {
+          "open": widget.open,
+          "high": widget.high,
+          "low": widget.low,
+          "close": widget.close,
+          "pp": pp,
+          "r1": r1,
+          "r2": r2,
+          "r3": r3,
+          "r4": r4,
+          "s1": s1,
+          "s2": s2,
+          "s3": s3,
+          "s4": s4,
+        },
+        "result": tradeSignal,
+      };
+
+      data.add(jsonEncode(item));
+
+      await prefs.setStringList(
+        "history_data",
+        data,
+      );
+    } catch (_) {}
   }
 
   Future<void> _downloadResult(
     BuildContext context,
   ) async {
     try {
-      // Pastikan UI terbaru sudah selesai dirender
-      await Future.delayed(
-        const Duration(milliseconds: 150),
+      final Uint8List image =
+          await screenshotController.captureFromLongWidget(
+        _buildDownloadWidget(),
+        context: context,
+        pixelRatio: 3.0,
+        delay: const Duration(seconds: 1),
+        constraints: const BoxConstraints(
+          minWidth: 420,
+          maxWidth: 420,
+        ),
       );
-
-      final Uint8List? image =
-          await screenshotController.capture(
-        pixelRatio: 3,
-      );
-
-      if (image == null) {
-        throw Exception(
-          'Gagal mengambil gambar.',
-        );
-      }
 
       final bool hasAccess =
-          await Gal.hasAccess(
-        toAlbum: true,
-      );
+          await Gal.hasAccess(toAlbum: true);
 
       if (!hasAccess) {
         final bool granted =
@@ -206,9 +219,10 @@ class _PivotResultPageState extends State<PivotResultPage> {
         }
       }
 
-      final String fileName = _showDetails
-          ? 'pivot_detail_${DateTime.now().millisecondsSinceEpoch}'
-          : 'pivot_ringkasan_${DateTime.now().millisecondsSinceEpoch}';
+      final String fileName =
+          _showDetails
+              ? 'pivot_detail_${DateTime.now().millisecondsSinceEpoch}'
+              : 'pivot_hasil_${DateTime.now().millisecondsSinceEpoch}';
 
       await Gal.putImageBytes(
         image,
@@ -223,7 +237,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
           content: Text(
             _showDetails
                 ? 'Hasil detail berhasil disimpan ke galeri.'
-                : 'Hasil ringkasan berhasil disimpan ke galeri.',
+                : 'Hasil Pivot berhasil disimpan ke galeri.',
           ),
           backgroundColor: orange,
           duration: const Duration(seconds: 2),
@@ -243,16 +257,434 @@ class _PivotResultPageState extends State<PivotResultPage> {
     }
   }
 
-  // RESULT ROW
+  Widget _buildDownloadWidget() {
+  return Material(
+    color: Colors.white,
+    child: Container(
+      width: 420,
+      padding: const EdgeInsets.fromLTRB(
+        28,
+        28,
+        28,
+        32,
+      ),
+      color: Colors.white,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _buildDownloadContent(),
+          Transform.translate(
+            offset: const Offset(0, -35),
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.50,
+                child: Image.asset(
+                  'assets/images/ewf.jpg',
+                  width: 180,
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildDownloadContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'EWF • PIVOT POINT',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: orange,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _showDetails
+              ? 'HASIL DETAIL PIVOT POINT'
+              : 'HASIL PIVOT POINT',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: darkText,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _showDetails
+              ? 'Rincian Level Pivot & Midpoint'
+              : 'Rincian Level Pivot',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 12,
+            color: greyText,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildTradeSignal(),
+        const SizedBox(height: 18),
+        _buildDownloadInput(),
+        const SizedBox(height: 14),
+        _buildDownloadResistance(),
+        const SizedBox(height: 12),
+        _buildDownloadPP(),
+        const SizedBox(height: 12),
+        _buildDownloadSupport(),
+      ],
+    );
+  }
+
+  Widget _buildDownloadInput() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(
+          alpha: 0.80,
+        ),
+        borderRadius:
+            BorderRadius.circular(9),
+        border: Border.all(
+          color: const Color(0xFFE3E3E3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'DATA INPUT',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: greyText,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              _downloadInputItem(
+                'Open',
+                widget.open,
+              ),
+              _downloadInputItem(
+                'High',
+                widget.high,
+              ),
+              _downloadInputItem(
+                'Low',
+                widget.low,
+              ),
+              _downloadInputItem(
+                'Close',
+                widget.close,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _downloadInputItem(
+    String title,
+    double value,
+  ) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 10,
+            color: greyText,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          _format(value),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: darkText,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDownloadResistance() {
+    return _downloadSection(
+      title: 'RESISTANCE',
+      icon: Icons.trending_up,
+      color: orange,
+      background: resistanceBackground,
+      border: resistanceBorder,
+      children: [
+        _downloadLevel('R4', r4),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint R4 - R3',
+            midpointR4R3,
+          ),
+        _downloadLevel('R3', r3),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint R3 - R2',
+            midpointR3R2,
+          ),
+        _downloadLevel('R2', r2),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint R2 - R1',
+            midpointR2R1,
+          ),
+        _downloadLevel('R1', r1),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint R1 - PP',
+            midpointR1PP,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDownloadSupport() {
+    return _downloadSection(
+      title: 'SUPPORT',
+      icon: Icons.trending_down,
+      color: const Color(0xFF607D86),
+      background: supportBackground,
+      border: supportBorder,
+      children: [
+        _downloadLevel('S1', s1),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint PP - S1',
+            midpointPPS1,
+          ),
+        _downloadLevel('S2', s2),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint S1 - S2',
+            midpointS1S2,
+          ),
+        _downloadLevel('S3', s3),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint S2 - S3',
+            midpointS2S3,
+          ),
+        _downloadLevel('S4', s4),
+        if (_showDetails)
+          _downloadMid(
+            'Midpoint S3 - S4',
+            midpointS3S4,
+          ),
+      ],
+    );
+  }
+
+  Widget _downloadSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Color background,
+    required Color border,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: background.withValues(
+          alpha: 0.72,
+        ),
+        borderRadius:
+            BorderRadius.circular(9),
+        border: Border.all(
+          color: border,
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _downloadLevel(
+    String label,
+    double value,
+  ) {
+    return Container(
+      margin:
+          const EdgeInsets.only(bottom: 6),
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(
+          alpha: 0.78,
+        ),
+        borderRadius:
+            BorderRadius.circular(7),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: darkText,
+            ),
+          ),
+          Text(
+            _format(value),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: darkText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _downloadMid(
+    String title,
+    double value,
+  ) {
+    return Container(
+      margin:
+          const EdgeInsets.only(
+        left: 10,
+        right: 10,
+        bottom: 6,
+      ),
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: midpointBackground.withValues(
+          alpha: 0.76,
+        ),
+        borderRadius:
+            BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 10,
+              color: greyText,
+            ),
+          ),
+          Text(
+            _format(value),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: greyText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDownloadPP() {
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 14,
+      ),
+      decoration: BoxDecoration(
+        color: orange,
+        borderRadius:
+            BorderRadius.circular(9),
+      ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'PIVOT POINT (PP)',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            _format(pp),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResultRow({
     required String title,
     required double value,
   }) {
     return Container(
-      margin: const EdgeInsets.only(
-        bottom: 5,
-      ),
-      padding: const EdgeInsets.symmetric(
+      margin:
+          const EdgeInsets.only(bottom: 5),
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 10,
       ),
@@ -292,18 +724,19 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // MIDPOINT ROW
   Widget _buildMidpointRow({
     required String title,
     required double value,
   }) {
     return Container(
-      margin: const EdgeInsets.only(
+      margin:
+          const EdgeInsets.only(
         left: 12,
         right: 12,
         bottom: 7,
       ),
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 8,
       ),
@@ -356,8 +789,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
   Widget _buildInputSummary() {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius:
@@ -379,13 +811,15 @@ class _PivotResultPageState extends State<PivotResultPage> {
               color: darkText,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 25,
+            runSpacing: 10,
             children: [
+              _buildInputItem(
+                'Open',
+                widget.open,
+              ),
               _buildInputItem(
                 'High',
                 widget.high,
@@ -421,9 +855,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             color: Colors.grey,
           ),
         ),
-
         const SizedBox(height: 3),
-
         Text(
           _format(value),
           style: const TextStyle(
@@ -437,7 +869,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // RESISTANCE
   Widget _buildResistanceSection() {
     return Container(
       width: double.infinity,
@@ -481,51 +912,38 @@ class _PivotResultPageState extends State<PivotResultPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
-          // R4
           _buildResultRow(
             title: 'R4',
             value: r4,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint R4 - R3',
               value: midpointR4R3,
             ),
-
-          // R3
           _buildResultRow(
             title: 'R3',
             value: r3,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint R3 - R2',
               value: midpointR3R2,
             ),
-
-          // R2
           _buildResultRow(
             title: 'R2',
             value: r2,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint R2 - R1',
               value: midpointR2R1,
             ),
-
-          // R1
           _buildResultRow(
             title: 'R1',
             value: r1,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint R1 - PP',
@@ -536,7 +954,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // SUPPORT
   Widget _buildSupportSection() {
     return Container(
       width: double.infinity,
@@ -580,51 +997,38 @@ class _PivotResultPageState extends State<PivotResultPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
-          // S1
           _buildResultRow(
             title: 'S1',
             value: s1,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint PP - S1',
               value: midpointPPS1,
             ),
-
-          // S2
           _buildResultRow(
             title: 'S2',
             value: s2,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint S1 - S2',
               value: midpointS1S2,
             ),
-
-          // S3
           _buildResultRow(
             title: 'S3',
             value: s3,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint S2 - S3',
               value: midpointS2S3,
             ),
-
-          // S4
           _buildResultRow(
             title: 'S4',
             value: s4,
           ),
-
           if (_showDetails)
             _buildMidpointRow(
               title: 'Midpoint S3 - S4',
@@ -635,7 +1039,51 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
-  // PP BOX
+  Widget _buildTradeSignal() {
+    return Center(
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: tradeSignal == 'BUY'
+              ? const Color(0xFFE8F5E9)
+              : tradeSignal == 'SELL'
+                  ? const Color(0xFFFFEBEE)
+                  : const Color(0xFFF5F5F5),
+          borderRadius:
+              BorderRadius.circular(20),
+          border: Border.all(
+            color: tradeSignalColor,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              tradeSignalIcon,
+              size: 16,
+              color: tradeSignalColor,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              tradeSignal,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: tradeSignalColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPivotPointBox() {
     return Container(
       width: double.infinity,
@@ -720,7 +1168,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
- // WATERMARK
   Widget _buildWatermark() {
     return Positioned.fill(
       child: IgnorePointer(
@@ -728,8 +1175,9 @@ class _PivotResultPageState extends State<PivotResultPage> {
           child: Opacity(
             opacity: 0.50,
             child: Image.asset(
-              'assets/images/ewf.png',
-              width: 270,
+              'assets/images/ewf.jpg',
+              width: 180,
+              height: 200,
               fit: BoxFit.contain,
             ),
           ),
@@ -741,7 +1189,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
   Widget _buildCalculationFrame() {
     return Container(
       width: double.infinity,
-
       padding:
           const EdgeInsets.fromLTRB(
         12,
@@ -749,7 +1196,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
         10,
         10,
       ),
-
       decoration: BoxDecoration(
         color: lightBackground,
         borderRadius:
@@ -759,13 +1205,10 @@ class _PivotResultPageState extends State<PivotResultPage> {
           width: 1,
         ),
       ),
-
       child: Stack(
         children: [
-
           Container(
-            decoration:
-                const BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 left: BorderSide(
                   color: orange,
@@ -773,18 +1216,14 @@ class _PivotResultPageState extends State<PivotResultPage> {
                 ),
               ),
             ),
-
             padding:
                 const EdgeInsets.only(
               left: 9,
-              right: 0,
             ),
-
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-
                 const Row(
                   children: [
                     Icon(
@@ -804,9 +1243,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
-
                 const Center(
                   child: Text(
                     'HASIL PIVOT POINT',
@@ -820,69 +1257,44 @@ class _PivotResultPageState extends State<PivotResultPage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 Center(
-                  child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.trending_up,
-                        color: orange,
-                        size: 25,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        _format(pp),
-                        style:
-                            const TextStyle(
-                          fontFamily:
-                              'monospace',
-                          fontSize: 34,
-                          fontWeight:
-                              FontWeight.bold,
-                          color: orange,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    _format(pp),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 34,
+                      fontWeight:
+                          FontWeight.bold,
+                      color: orange,
+                    ),
                   ),
                 ),
-
                 const SizedBox(height: 7),
-
-                // STATUS
+                _buildTradeSignal(),
+                const SizedBox(height: 7),
                 Center(
                   child: Container(
                     padding:
-                        const EdgeInsets
-                            .symmetric(
+                        const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 4,
                     ),
                     decoration:
                         BoxDecoration(
                       color:
-                          const Color(
-                        0xFFF5F2EF,
-                      ),
+                          const Color(0xFFF5F2EF),
                       borderRadius:
-                          BorderRadius
-                              .circular(
-                        20,
-                      ),
+                          BorderRadius.circular(20),
                     ),
                     child: const Row(
                       mainAxisSize:
                           MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons
-                              .check_circle_outline,
+                          Icons.check_circle_outline,
                           size: 12,
-                          color:
-                              Colors.grey,
+                          color: Colors.grey,
                         ),
                         SizedBox(width: 4),
                         Text(
@@ -891,61 +1303,40 @@ class _PivotResultPageState extends State<PivotResultPage> {
                             fontFamily:
                                 'monospace',
                             fontSize: 9,
-                            color:
-                                Colors.grey,
+                            color: Colors.grey,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // INPUT DATA
                 _buildInputSummary(),
-
                 const SizedBox(height: 14),
-
                 const Divider(
-                  color:
-                      Color(0xFFE2D7CE),
+                  color: Color(0xFFE2D7CE),
                   thickness: 1,
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   _showDetails
                       ? 'Rincian Level Pivot & Midpoint'
                       : 'Rincian Level Pivot',
                   style: const TextStyle(
-                    fontFamily:
-                        'monospace',
+                    fontFamily: 'monospace',
                     fontSize: 13,
                     fontWeight:
                         FontWeight.bold,
                     color: darkText,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
-                // RESISTANCE
                 _buildResistanceSection(),
-
                 const SizedBox(height: 12),
-
-                // PIVOT POINT
                 _buildPivotPointBox(),
-
                 const SizedBox(height: 8),
-
-                // SUPPORT
                 _buildSupportSection(),
-
                 const SizedBox(height: 3),
-
                 _buildDetailToggle(),
               ],
             ),
@@ -957,19 +1348,122 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                _downloadResult(context);
+              },
+              style:
+                  OutlinedButton.styleFrom(
+                backgroundColor:
+                    Colors.white,
+                foregroundColor: orange,
+                side: const BorderSide(
+                  color: orange,
+                  width: 1.3,
+                ),
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 8,
+                ),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(7),
+                ),
+              ),
+              icon: const Icon(
+                Icons.download_outlined,
+                size: 19,
+              ),
+              label: Text(
+                _showDetails
+                    ? 'Download Detail'
+                    : 'Download Hasil',
+                maxLines: 1,
+                overflow:
+                    TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const PivotPointPage(),
+                  ),
+                );
+              },
+              style:
+                  ElevatedButton.styleFrom(
+                backgroundColor: orange,
+                foregroundColor:
+                    Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 8,
+                ),
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(7),
+                ),
+              ),
+              icon: const Icon(
+                Icons.calculate_outlined,
+                size: 19,
+              ),
+              label: const Text(
+                'Hitung Lagi',
+                maxLines: 1,
+                overflow:
+                    TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 4,
-        shadowColor: Colors.black.withValues(
+        shadowColor:
+            Colors.black.withValues(
           alpha: 0.20,
         ),
-
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
@@ -980,9 +1474,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             Navigator.pop(context);
           },
         ),
-
         titleSpacing: 0,
-
         title: RichText(
           text: const TextSpan(
             style: TextStyle(
@@ -1004,29 +1496,26 @@ class _PivotResultPageState extends State<PivotResultPage> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
+        padding:
+            const EdgeInsets.fromLTRB(
           16,
           12,
           16,
           50,
         ),
-
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
+            constraints:
+                const BoxConstraints(
               maxWidth: 420,
             ),
-
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment:
+                  CrossAxisAlignment.stretch,
               children: [
-
                 const Text(
-                  'Level Pivot Point berdasarkan harga '
-                  'High, Low, dan Close pada periode yang '
-                  'dipilih.',
+                  'Level Pivot Point berdasarkan harga High, Low, dan Close pada periode yang dipilih.',
                   textAlign: TextAlign.left,
                   style: TextStyle(
                     fontSize: 14,
@@ -1034,161 +1523,15 @@ class _PivotResultPageState extends State<PivotResultPage> {
                     color: darkText,
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 Screenshot(
-                  controller: screenshotController,
-                  child: _buildCalculationFrame(),
+                  controller:
+                      screenshotController,
+                  child:
+                      _buildCalculationFrame(),
                 ),
-
                 const SizedBox(height: 16),
-
-                // DOWNLOAD
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _downloadResult(context);
-                    },
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: orange,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.download_outlined,
-                          size: 20,
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        Text(
-                          _showDetails
-                              ? 'Download Detail'
-                              : 'Download Hasil',
-
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // SIMPAN RIWAYAT
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-
-                  child: OutlinedButton(
-                    onPressed: () {
-                      _saveHistory(context);
-                    },
-
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: orange,
-
-                      side: const BorderSide(
-                        color: orange,
-                        width: 1.2,
-                      ),
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.save_outlined,
-                          size: 19,
-                        ),
-
-                        SizedBox(width: 8),
-
-                        Text(
-                          'Simpan Riwayat',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // HITUNG LAGI
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const PivotPointPage(),
-                        ),
-                      );
-                    },
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: orange,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.calculate,
-                          size: 19,
-                        ),
-
-                        SizedBox(width: 7),
-
-                        Text(
-                          'Hitung Lagi',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
+                _buildActionButtons(),
               ],
             ),
           ),

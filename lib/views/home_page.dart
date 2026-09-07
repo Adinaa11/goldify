@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/market_service.dart';
 
 import 'calculator/calculator_page.dart';
+import 'calculator/physical_gold_page.dart';
 import 'profile/profile_page.dart';
 import 'calculator/pivot_point_page.dart';
 import 'history/history_page.dart';   
@@ -28,9 +29,12 @@ class _HomePageState extends State<HomePage> {
     _pages = [
       HomeContent(
         onCalculatorTap: () {
-          setState(() {
-            _selectedIndex = 1;
-          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PhysicalGoldPage(),
+            ),
+          );
         },
         onPivotTap: () {
           Navigator.push(
@@ -61,21 +65,49 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
-      const HistoryPage(),
+      HistoryPage(
+        onBack: () {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        },
+      ),
       const ProfilePage(),
     ];
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: _pages[_selectedIndex],
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
+    body: SafeArea(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: _pages[_selectedIndex],
+          ),
+          Positioned(
+            right: 7,
+            bottom: 3,
+            child: IgnorePointer(
+              child: ClipOval(
+                child: SizedBox(
+                  width: 38,
+                  height: 38,
+                  child: Image.asset(
+                    'assets/images/kepompong.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
-    );
-  }
+    ),
+    bottomNavigationBar: _buildBottomNavigation(),
+  );
+}
 
   Widget _buildBottomNavigation() {
     return Container(
