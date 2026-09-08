@@ -610,7 +610,6 @@ class _PivotPointPageState extends State<PivotPointPage> {
                           label: 'Harga Open',
                           hint: 'Menunggu data realtime...',
                           controller: _openController,
-                          readOnly: true,
                         ),
                         _buildInputField(
                           label: 'Harga High',

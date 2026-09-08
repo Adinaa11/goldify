@@ -277,7 +277,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             offset: const Offset(0, -35),
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.50,
+                opacity: 0.20,
                 child: Image.asset(
                   'assets/images/ewf.jpg',
                   width: 180,
@@ -566,7 +566,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
         borderRadius:
             BorderRadius.circular(7),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: const Color.fromARGB(255, 176, 175, 175),
         ),
       ),
       child: Row(
@@ -623,7 +623,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             title,
             style: const TextStyle(
               fontSize: 10,
-              color: greyText,
+              color: Color.fromARGB(255, 58, 58, 58),
             ),
           ),
           Text(
@@ -631,7 +631,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: greyText,
+              color: Color.fromARGB(255, 79, 79, 79),
             ),
           ),
         ],
@@ -745,7 +745,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
         borderRadius:
             BorderRadius.circular(5),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: const Color.fromARGB(255, 145, 145, 145),
           width: 0.8,
         ),
       ),
@@ -1173,7 +1173,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
       child: IgnorePointer(
         child: Center(
           child: Opacity(
-            opacity: 0.50,
+            opacity: 0.20,
             child: Image.asset(
               'assets/images/ewf.jpg',
               width: 180,
