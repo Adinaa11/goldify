@@ -5,13 +5,14 @@ import '../config/api_config.dart';
 class MarketService {
   static String _normalizeCategory(dynamic value) {
     return value
-        ?.toString()
-        .trim()
-        .toLowerCase()
-        .replaceAll('—', '-')
-        .replaceAll('–', '-')
-        .replaceAll('_', ' ')
-        .replaceAll(RegExp(r'\s+'), ' ') ?? '';
+            ?.toString()
+            .trim()
+            .toLowerCase()
+            .replaceAll('—', '-')
+            .replaceAll('–', '-')
+            .replaceAll('_', ' ')
+            .replaceAll(RegExp(r'\s+'), ' ') ??
+        '';
   }
 
   static bool _categoryMatches(
@@ -99,7 +100,6 @@ class MarketService {
         );
       }
 
-      // TAMPILKAN CATEGORY YANG TERSEDIA DI API
       final Set<String> availableCategories = {};
 
       for (final item in rawData) {
@@ -149,7 +149,6 @@ class MarketService {
         );
       }
 
-      // SORT BARU KE LAMA
       result.sort((a, b) {
         final String? dateA =
             a['tanggal']?.toString();
@@ -186,10 +185,7 @@ class MarketService {
     }
   }
 
-  // =========================================================
-  // DATA LGD DAILY
-  // =========================================================
-
+  // DATA UNTUK LGD DAILY
   static Future<List<Map<String, dynamic>>>
       _fetchGoldData() async {
     return _fetchMarketData(
@@ -197,10 +193,7 @@ class MarketService {
     );
   }
 
-  // =========================================================
-  // DATA TERBARU UNTUK PIVOT POINT
-  // =========================================================
-
+  // DATA UNTUK PIVOT POINT
   static Future<Map<String, dynamic>>
       getLatestGoldData({
     String? date,
@@ -236,10 +229,50 @@ class MarketService {
     return goldData.first;
   }
 
-  // =========================================================
-  // DATA HISTORIS MARKET
-  // =========================================================
+  // DATA HANGSENG / HSI
+  static Future<List<Map<String, dynamic>>>
+      _fetchHangsengData() async {
+    return _fetchMarketData(
+      category: 'HSI',
+    );
+  }
 
+  static Future<Map<String, dynamic>>
+      getLatestHangsengData({
+    String? date,
+  }) async {
+    final List<Map<String, dynamic>> hangsengData =
+        await _fetchHangsengData();
+
+    if (date != null &&
+        date.trim().isNotEmpty) {
+      final String selectedDate =
+          date.trim();
+
+      final selectedData =
+          hangsengData.where((item) {
+        final String? itemDate =
+            item['tanggal']
+                ?.toString()
+                .trim();
+
+        return itemDate == selectedDate;
+      }).toList();
+
+      if (selectedData.isEmpty) {
+        throw Exception(
+          'Data Hangseng untuk tanggal '
+          '$selectedDate tidak ditemukan.',
+        );
+      }
+
+      return selectedData.first;
+    }
+
+    return hangsengData.first;
+  }
+
+  // DATA HISTORIS
   static Future<List<Map<String, dynamic>>>
       getHistoricalMarketData({
     required String category,
@@ -313,10 +346,6 @@ class MarketService {
 
     return result;
   }
-
-  // =========================================================
-  // BACKWARD COMPATIBILITY
-  // =========================================================
 
   static Future<List<Map<String, dynamic>>>
       getHistoricalGoldData({

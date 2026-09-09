@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'history_detail_pivot.dart';
 import 'history_detail_emas.dart';
+import 'history_detail_hangseng.dart';
 
 class HistoryPage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -63,6 +64,11 @@ class _HistoryPageState extends State<HistoryPage> {
 
       if (selectedFilter == "Pivot") {
         return type.contains("pivot");
+      }
+
+      if (selectedFilter == "Hangseng") {
+        return type.contains("hangseng") ||
+            type.contains("hsi");
       }
 
       if (selectedFilter == "Emas Fisik") {
@@ -225,6 +231,14 @@ class _HistoryPageState extends State<HistoryPage> {
         builder: (_) {
           if (type.contains("pivot")) {
             return HistoryDetailPivotPage(
+              item: item,
+              index: rawIndex ?? -1,
+            );
+          }
+
+          if (type.contains("hangseng") ||
+              type.contains("hsi")) {
+            return HistoryDetailHangsengPage(
               item: item,
               index: rawIndex ?? -1,
             );
@@ -393,6 +407,7 @@ class _HistoryPageState extends State<HistoryPage> {
     final list = [
       "Semua",
       "Pivot",
+      "Hangseng",
       "Emas Fisik",
     ];
 
@@ -419,7 +434,7 @@ class _HistoryPageState extends State<HistoryPage> {
               child: Container(
                 margin:
                     const EdgeInsets.symmetric(
-                  horizontal: 4,
+                  horizontal: 3,
                 ),
                 padding:
                     const EdgeInsets.symmetric(
@@ -438,7 +453,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     style: TextStyle(
                       fontWeight:
                           FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 11,
                       color: active
                           ? Colors.white
                           : Colors.black,
@@ -485,6 +500,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
     final bool pivot =
         type.contains("pivot");
+
+    final bool hangseng =
+        type.contains("hangseng") ||
+        type.contains("hsi");
 
     final detail =
         Map<String, dynamic>.from(
@@ -537,7 +556,9 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Icon(
                     pivot
                         ? Icons.analytics_outlined
-                        : Icons.calculate_outlined,
+                        : hangseng
+                            ? Icons.trending_up
+                            : Icons.calculate_outlined,
                     color: orange,
                     size: 20,
                   ),
@@ -551,7 +572,9 @@ class _HistoryPageState extends State<HistoryPage> {
                       Text(
                         pivot
                             ? "Pivot Point"
-                            : "Emas Fisik",
+                            : hangseng
+                                ? "Hangseng"
+                                : "Emas Fisik",
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight:
@@ -595,16 +618,18 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Text(
                     pivot
                         ? "Pivot : ${_formatPivot(detail['pp'])}"
-                        : "$result : Rp ${_formatRupiah(amount)}",
+                        : hangseng
+                            ? "$result : ${_formatPivot(detail['pp'])}"
+                            : "$result : Rp ${_formatRupiah(amount)}",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight:
                           FontWeight.w600,
-                      color: pivot
-                      ? orange
-                      : profit
+                      color: pivot || hangseng
                           ? orange
-                          : Colors.red,
+                          : profit
+                              ? orange
+                              : Colors.red,
                     ),
                   ),
                 ),

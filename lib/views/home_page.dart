@@ -7,7 +7,8 @@ import 'calculator/calculator_page.dart';
 import 'calculator/physical_gold_page.dart';
 import 'profile/profile_page.dart';
 import 'calculator/pivot_point_page.dart';
-import 'history/history_page.dart';   
+import 'calculator/hangseng_page.dart';
+import 'history/history_page.dart';
 import 'historical_data_page.dart';
 import 'login_page.dart';
 
@@ -44,6 +45,14 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+        onHangsengTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HangsengPage(),
+            ),
+          );
+        },
         onHistoryTap: () {
           setState(() {
             _selectedIndex = 2;
@@ -77,37 +86,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    body: SafeArea(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: _pages[_selectedIndex],
-          ),
-          Positioned(
-            right: 7,
-            bottom: 3,
-            child: IgnorePointer(
-              child: ClipOval(
-                child: SizedBox(
-                  width: 38,
-                  height: 38,
-                  child: Image.asset(
-                    'assets/images/kepompong.jpg',
-                    fit: BoxFit.cover,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _pages[_selectedIndex],
+            ),
+            Positioned(
+              right: 7,
+              bottom: 3,
+              child: IgnorePointer(
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 38,
+                    height: 38,
+                    child: Image.asset(
+                      'assets/images/kepompong.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-    bottomNavigationBar: _buildBottomNavigation(),
-  );
-}
+      bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
 
   Widget _buildBottomNavigation() {
     return Container(
@@ -121,10 +130,26 @@ Widget build(BuildContext context) {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(icon: Icons.home, label: 'Beranda', index: 0),
-          _buildNavItem(icon: Icons.calculate_outlined, label: 'Kalkulator', index: 1),
-          _buildNavItem(icon: Icons.history, label: 'Riwayat', index: 2),
-          _buildNavItem(icon: Icons.person_outline, label: 'Profil', index: 3),
+          _buildNavItem(
+            icon: Icons.home,
+            label: 'Beranda',
+            index: 0,
+          ),
+          _buildNavItem(
+            icon: Icons.calculate_outlined,
+            label: 'Kalkulator',
+            index: 1,
+          ),
+          _buildNavItem(
+            icon: Icons.history,
+            label: 'Riwayat',
+            index: 2,
+          ),
+          _buildNavItem(
+            icon: Icons.person_outline,
+            label: 'Profil',
+            index: 3,
+          ),
         ],
       ),
     );
@@ -145,18 +170,30 @@ Widget build(BuildContext context) {
       },
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 6,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? const Color(0xFFF7931E) : Colors.grey),
+            Icon(
+              icon,
+              color: isActive
+                  ? const Color(0xFFF7931E)
+                  : Colors.grey,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: isActive ? const Color(0xFFF7931E) : Colors.grey,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive
+                    ? const Color(0xFFF7931E)
+                    : Colors.grey,
+                fontWeight: isActive
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ],
@@ -170,15 +207,15 @@ Widget build(BuildContext context) {
 class HomeContent extends StatefulWidget {
   final VoidCallback onCalculatorTap;
   final VoidCallback onPivotTap;
+  final VoidCallback onHangsengTap;
   final VoidCallback onHistoryTap;
-
-  // TAMBAHAN UNTUK HISTORICAL DATA
   final VoidCallback onHistoricalDataTap;
 
   const HomeContent({
     super.key,
     required this.onCalculatorTap,
     required this.onPivotTap,
+    required this.onHangsengTap,
     required this.onHistoryTap,
     required this.onHistoricalDataTap,
   });
@@ -188,7 +225,6 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-
   String _userName = '';
 
   late Future<List<Map<String, dynamic>>> _historicalGoldFuture;
@@ -255,7 +291,6 @@ class _HomeContentState extends State<HomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              
                 Text(
                   _userName.isNotEmpty
                       ? 'Selamat Datang, $_userName 👋'
@@ -312,7 +347,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR1
+                // FITUR 1
                 _buildFeatureCard(
                   icon: Icons.calculate_outlined,
                   title: 'Kalkulator Emas Fisik',
@@ -324,7 +359,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR2
+                // FITUR 2
                 _buildFeatureCard(
                   icon: Icons.show_chart,
                   title: 'Analisis Pivot Point',
@@ -337,7 +372,20 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR3
+                // FITUR 3 - HANGSENG
+                _buildFeatureCard(
+                  icon: Icons.candlestick_chart_outlined,
+                  title: 'Analisis Hangseng',
+                  description:
+                      'Analisis indeks Hangseng berdasarkan '
+                      'Open, High, Low, dan Close untuk '
+                      'menentukan level support dan resistance.',
+                  onTap: widget.onHangsengTap,
+                ),
+
+                const SizedBox(height: 12),
+
+                // FITUR 4
                 _buildFeatureCard(
                   icon: Icons.history,
                   title: 'Riwayat Perhitungan',
@@ -378,8 +426,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (context) =>
-                        const LoginPage(),
+                    builder: (context) => const LoginPage(),
                   ),
                   (route) => false,
                 );
@@ -633,7 +680,6 @@ class _HomeContentState extends State<HomeContent> {
       future: _historicalGoldFuture,
 
       builder: (context, snapshot) {
-       
         if (snapshot.connectionState ==
             ConnectionState.waiting) {
           return Container(
