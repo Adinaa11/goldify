@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'register_page.dart';
 import 'forgot_password_page.dart';
@@ -13,6 +13,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
   final TextEditingController _loginController =
       TextEditingController();
 
@@ -30,18 +32,48 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    final String login = _loginController.text.trim();
-    final String password = _passwordController.text;
+    if (_isLoading) return;
+
+    FocusScope.of(context).unfocus();
+
+    final String email =
+        _loginController.text.trim().toLowerCase();
+    final String password =
+        _passwordController.text;
 
     // CEK INPUT KOSONG
-    if (login.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Email/WhatsApp dan password wajib diisi.',
+            'Email dan password wajib diisi.',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
+
+      return;
+    }
+
+    // CEK FORMAT EMAIL
+    final bool emailValid = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    ).hasMatch(email);
+
+    if (!emailValid) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Format email tidak valid.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       return;
     }
 
@@ -50,33 +82,29 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final SharedPreferences prefs =
-          await SharedPreferences.getInstance();
-
-      // AMBIL DATA YANG DISIMPAN SAAT REGISTER
-      final String? registeredName =
-          prefs.getString('registered_name');
-
-      final String? registeredEmail =
-          prefs.getString('registered_email');
-
-      final String? registeredWhatsapp =
-          prefs.getString('registered_whatsapp');
-
-      final String? registeredPassword =
-          prefs.getString('registered_password');
-
-      await Future.delayed(
-        const Duration(milliseconds: 300),
+      // LOGIN KE SUPABASE
+      final response =
+          await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
 
       if (!mounted) return;
 
-      // CEK APAKAH DATA AKUN ADA
-      if (registeredName == null ||
-          registeredEmail == null ||
-          registeredWhatsapp == null ||
-          registeredPassword == null) {
+      final user = response.user;
+
+      if (user == null) {
+        throw const AuthException(
+          'Login gagal. Silakan coba lagi.',
+        );
+      }
+
+      // CEK EMAIL SUDAH DIVERIFIKASI
+      if (user.emailConfirmedAt == null) {
+        await _supabase.auth.signOut();
+
+        if (!mounted) return;
+
         setState(() {
           _isLoading = false;
         });
@@ -84,67 +112,15 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Akun belum terdaftar. Silakan daftar terlebih dahulu.',
+              'Email Anda belum diverifikasi. '
+              'Silakan buka email konfirmasi terlebih dahulu.',
             ),
+            behavior: SnackBarBehavior.floating,
           ),
         );
 
         return;
       }
-
-      // CEK EMAIL ATAU WHATSAPP
-      final bool loginDenganEmail =
-          login.toLowerCase() ==
-          registeredEmail.trim().toLowerCase();
-
-      final bool loginDenganWhatsapp =
-          login ==
-          registeredWhatsapp.trim();
-
-      if (!loginDenganEmail && !loginDenganWhatsapp) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Email/WhatsApp tidak sesuai dengan akun yang terdaftar.',
-            ),
-          ),
-        );
-
-        return;
-      }
-
-      // CEK PASSWORD
-      if (password != registeredPassword) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Password salah. Silakan masukkan password yang sesuai.',
-            ),
-          ),
-        );
-
-        return;
-      }
-
-      // LOGIN BERHASIL
-      await prefs.setBool(
-        'is_logged_in',
-        true,
-      );
-
-      // SIMPAN NAMA USER YANG SEDANG LOGIN
-      await prefs.setString(
-        'logged_in_name',
-        registeredName.trim(),
-      );
 
       if (!mounted) return;
 
@@ -152,13 +128,46 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
 
-      // MASUK KE HOME
+      // LOGIN BERHASIL
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (context) => const HomePage(),
         ),
         (route) => false,
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      String message = e.message;
+
+      final String lowerMessage =
+          message.toLowerCase();
+
+      if (lowerMessage.contains('invalid login credentials') ||
+          lowerMessage.contains('invalid credentials')) {
+        message =
+            'Email atau password salah.';
+      } else if (lowerMessage.contains('email not confirmed')) {
+        message =
+            'Email Anda belum diverifikasi. '
+            'Silakan cek email konfirmasi terlebih dahulu.';
+      } else if (lowerMessage.contains('email')) {
+        message =
+            'Email atau password tidak sesuai.';
+      }
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -167,11 +176,14 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
 
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Terjadi kesalahan. Silakan coba lagi.',
+            'Terjadi kesalahan saat login. Silakan coba lagi.',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -186,29 +198,22 @@ class _LoginPageState extends State<LoginPage> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-
       prefixIcon: Icon(icon),
-
       suffixIcon: suffixIcon,
-
       filled: true,
-
       fillColor: Colors.grey.shade50,
-
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
           color: Colors.grey.shade300,
         ),
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
           color: Colors.grey.shade300,
         ),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
@@ -223,25 +228,19 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: SafeArea(
         bottom: false,
-
         child: SingleChildScrollView(
           child: Column(
             children: [
-
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                 ),
-
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-
                   children: [
-
                     Center(
                       child: Image.asset(
                         'assets/images/logo.png',
@@ -250,9 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                         fit: BoxFit.contain,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     const Center(
                       child: Text(
                         'MASUK',
@@ -263,10 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
-                    // INFO
                     const Center(
                       child: Text(
                         'Silakan masuk menggunakan akun '
@@ -279,38 +273,31 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 15),
 
-                    // EMAIL / WHATSAPP
+                    // EMAIL
                     const Text(
-                      'Email / WhatsApp',
+                      'Email',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     TextField(
                       controller: _loginController,
-
                       keyboardType:
-                          TextInputType.text,
-
+                          TextInputType.emailAddress,
                       textInputAction:
                           TextInputAction.next,
-
+                      enabled: !_isLoading,
                       decoration: _inputDecoration(
-                        label:
-                            'Email / Nomor WhatsApp',
+                        label: 'Email',
                         hint:
-                            'Masukkan email atau nomor WhatsApp',
+                            'Masukkan alamat email',
                         icon:
-                            Icons.person_outline,
+                            Icons.email_outlined,
                       ),
                     ),
-
                     const SizedBox(height: 10),
 
                     // PASSWORD
@@ -320,32 +307,26 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     TextField(
                       controller:
                           _passwordController,
-
                       obscureText:
                           _obscurePassword,
-
+                      enabled: !_isLoading,
                       textInputAction:
                           TextInputAction.done,
-
                       onSubmitted: (_) {
                         if (!_isLoading) {
                           _login();
                         }
                       },
-
                       decoration: _inputDecoration(
                         label: 'Password',
                         hint:
                             'Masukkan password',
                         icon:
                             Icons.lock_outline,
-
                         suffixIcon:
                             IconButton(
                           icon: Icon(
@@ -355,7 +336,6 @@ class _LoginPageState extends State<LoginPage> {
                                 : Icons
                                     .visibility_outlined,
                           ),
-
                           onPressed: () {
                             setState(() {
                               _obscurePassword =
@@ -365,25 +345,24 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 10),
 
                     // LUPA PASSWORD
                     Align(
                       alignment:
                           Alignment.centerRight,
-
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
-
+                        onTap: _isLoading
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgotPasswordPage(),
+                                  ),
+                                );
+                              },
                         child: const Text(
                           'Lupa password?',
                           style: TextStyle(
@@ -396,40 +375,32 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 25),
 
                     // BTN LOGIN
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-
                       child: ElevatedButton(
                         onPressed:
                             _isLoading
                                 ? null
                                 : _login,
-
                         style:
                             ElevatedButton.styleFrom(
                           backgroundColor:
                               const Color(
-                                0xFFF7931E,
-                              ),
-
+                            0xFFF7931E,
+                          ),
                           foregroundColor:
                               Colors.white,
-
                           disabledBackgroundColor:
                               const Color(
-                                0xFFF7931E,
-                              ),
-
+                            0xFFF7931E,
+                          ),
                           disabledForegroundColor:
                               Colors.white,
-
                           elevation: 0,
-
                           shape:
                               RoundedRectangleBorder(
                             borderRadius:
@@ -438,12 +409,10 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
-
                         child: _isLoading
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,
-
                                 child:
                                     CircularProgressIndicator(
                                   strokeWidth: 2,
@@ -462,7 +431,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
 
                     // REGISTER
@@ -471,28 +439,27 @@ class _LoginPageState extends State<LoginPage> {
                         text: TextSpan(
                           text:
                               'Belum memiliki akun? ',
-
                           style:
                               const TextStyle(
                             color: Colors.grey,
                             fontSize: 14,
                           ),
-
                           children: [
                             WidgetSpan(
                               child:
                                   GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const RegisterPage(),
-                                    ),
-                                  );
-                                },
-
+                                onTap: _isLoading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const RegisterPage(),
+                                          ),
+                                        );
+                                      },
                                 child: const Text(
                                   'Daftar',
                                   style:
@@ -513,15 +480,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 130),
                   ],
                 ),
               ),
-
               SizedBox(
                 width: double.infinity,
-
                 child: Image.asset(
                   'assets/images/bawah.png',
                   width: double.infinity,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../main.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});
@@ -9,27 +8,12 @@ class LanguagePage extends StatefulWidget {
 }
 
 class _LanguagePageState extends State<LanguagePage> {
-
-  late String selectedLanguage;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedLanguage =
-        appLocale.value.languageCode == 'id'
-            ? "Indonesia"
-            : "English";
-  }
+  String selectedLanguage = "Indonesia";
 
   void _changeLanguage(String lang) {
     setState(() {
       selectedLanguage = lang;
     });
-
-    appLocale.value =
-        lang == "Indonesia"
-            ? const Locale('id')
-            : const Locale('en');
 
     if (!mounted) return;
 
@@ -109,7 +93,6 @@ class _LanguagePageState extends State<LanguagePage> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-
             Container(
               width: 20,
               height: 20,
