@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../main.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});
@@ -8,63 +9,58 @@ class LanguagePage extends StatefulWidget {
 }
 
 class _LanguagePageState extends State<LanguagePage> {
-  final TextEditingController searchController = TextEditingController();
 
-  String selectedLanguage = "Indonesia";
-
-  List<String> allLanguages = [
-    "Indonesia",
-    "English",
-    "Arabic",
-    "Japanese",
-    "Korean",
-    "Chinese",
-    "French",
-    "German",
-    "Spanish",
-    "Russian",
-    "Hindi",
-    "Thai",
-  ];
-
-  List<String> filteredLanguages = [];
+  late String selectedLanguage;
 
   @override
   void initState() {
     super.initState();
-    filteredLanguages = allLanguages;
+    selectedLanguage =
+        appLocale.value.languageCode == 'id'
+            ? "Indonesia"
+            : "English";
   }
 
-  void _filterLanguage(String query) {
+  void _changeLanguage(String lang) {
     setState(() {
-      filteredLanguages = allLanguages
-          .where((lang) =>
-              lang.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      selectedLanguage = lang;
     });
-  }
 
-  void _saveLanguage() {
+    appLocale.value =
+        lang == "Indonesia"
+            ? const Locale('id')
+            : const Locale('en');
+
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Bahasa $selectedLanguage berhasil disimpan"),
-        backgroundColor: Colors.green,
+        content: Text(
+          lang == "Indonesia"
+              ? "Bahasa diubah ke Indonesia"
+              : "Language changed to English",
+        ),
+        duration: const Duration(seconds: 1),
       ),
     );
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) Navigator.pop(context, true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F6F8),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
         iconTheme: const IconThemeData(color: Color(0xFFF7931E)),
-        title: const Text(
-          "Bahasa",
-          style: TextStyle(
+        title: Text(
+          selectedLanguage == "Indonesia" ? "Bahasa" : "Language",
+          style: const TextStyle(
             color: Color(0xFF333333),
             fontWeight: FontWeight.bold,
           ),
@@ -73,73 +69,70 @@ class _LanguagePageState extends State<LanguagePage> {
 
       body: Column(
         children: [
+          const SizedBox(height: 20),
 
-          // ================= SEARCH =================
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: searchController,
-              onChanged: _filterLanguage,
-              decoration: InputDecoration(
-                hintText: "Cari bahasa...",
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-
-          // ================= LIST =================
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredLanguages.length,
-              itemBuilder: (context, index) {
-                String lang = filteredLanguages[index];
-
-                return RadioListTile(
-                  title: Text(lang),
-                  value: lang,
-                  groupValue: selectedLanguage,
-                  activeColor: const Color(0xFFF7931E),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedLanguage = value.toString();
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-
-          // ================= BUTTON =================
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saveLanguage,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF7931E),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Simpan Bahasa",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            child: Column(
+              children: [
+                _item("Indonesia"),
+                const Divider(height: 1),
+                _item("English"),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _item(String lang) {
+    final isSelected = selectedLanguage == lang;
+
+    return InkWell(
+      onTap: () => _changeLanguage(lang),
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              lang,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFFF7931E)
+                      : Colors.grey,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Center(
+                      child: CircleAvatar(
+                        radius: 5,
+                        backgroundColor: Color(0xFFF7931E),
+                      ),
+                    )
+                  : null,
+            ),
+          ],
+        ),
       ),
     );
   }
