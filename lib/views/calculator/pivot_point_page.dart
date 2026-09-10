@@ -109,29 +109,31 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
       debugPrint('Data gold berhasil diterima: $data');
 
-      final String? open = data['open']?.toString();
+      // OPEN TIDAK DIAMBIL DARI API.
+      // Open harus dimasukkan manual oleh user.
       final String? high = data['high']?.toString();
       final String? low = data['low']?.toString();
       final String? close = data['close']?.toString();
       final String? tanggal = data['tanggal']?.toString();
 
-      if (open == null ||
-          high == null ||
+      // Yang wajib tersedia dari API hanya HLC.
+      if (high == null ||
           low == null ||
           close == null ||
-          open.isEmpty ||
           high.isEmpty ||
           low.isEmpty ||
           close.isEmpty) {
         throw Exception(
-          'Data Open, High, Low, atau Close tidak tersedia.',
+          'Data High, Low, atau Close tidak tersedia.',
         );
       }
 
       if (!mounted) return;
 
       setState(() {
-        _openController.text = open;
+        // OPEN SENGAJA TIDAK DIUBAH.
+        // HLC tetap otomatis dari API tetapi tetap editable
+        // karena TextField tidak dibuat readOnly.
         _highController.text = high;
         _lowController.text = low;
         _closeController.text = close;
@@ -259,7 +261,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Data emas belum tersedia. Silakan pilih tanggal atau refresh data.',
+            'Silakan isi Harga Open dan pastikan data High, Low, serta Close tersedia.',
           ),
           backgroundColor: orange,
         ),
@@ -608,7 +610,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                         const SizedBox(height: 18),
                         _buildInputField(
                           label: 'Harga Open',
-                          hint: 'Menunggu data realtime...',
+                          hint: 'Masukkan harga Open...',
                           controller: _openController,
                         ),
                         _buildInputField(

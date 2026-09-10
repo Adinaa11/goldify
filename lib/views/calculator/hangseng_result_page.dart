@@ -1243,7 +1243,7 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
             MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'HANGSENG',
+            'PIVOT POINT (PP)',
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 15,

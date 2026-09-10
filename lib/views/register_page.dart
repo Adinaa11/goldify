@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../viewmodels/register_viewmodel.dart';
@@ -190,6 +191,284 @@ class _RegisterPageState extends State<RegisterPage> {
         content: Text(message),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  void _showTermsDialog() {
+    bool readAndUnderstand = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 8),
+              contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              title: const Center(
+                child: Text(
+                  'Syarat dan Ketentuan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+              ),
+              content: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.55,
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Selamat datang di Goldify. Dengan menggunakan '
+                        'aplikasi Goldify, Anda menyetujui dan bersedia '
+                        'mematuhi Syarat dan Ketentuan berikut.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '1. Tentang Goldify',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Goldify merupakan aplikasi yang menyediakan fitur '
+                        'kalkulator dan informasi terkait perhitungan emas '
+                        'serta analisis pasar, termasuk kalkulator Emas Fisik, '
+                        'Pivot Point, dan Hangseng.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '2. Penggunaan Aplikasi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Pengguna dapat menggunakan fitur Goldify untuk '
+                        'membantu melakukan perhitungan berdasarkan data '
+                        'yang dimasukkan ke dalam aplikasi.\n\n'
+                        'Pengguna bertanggung jawab atas data yang dimasukkan '
+                        'dan penggunaan hasil perhitungan yang diberikan '
+                        'oleh aplikasi.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '3. Hasil Perhitungan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Hasil yang ditampilkan oleh Goldify merupakan '
+                        'informasi dan alat bantu perhitungan, bukan '
+                        'merupakan rekomendasi atau jaminan keuntungan '
+                        'dalam melakukan investasi maupun perdagangan.\n\n'
+                        'Keputusan untuk melakukan transaksi atau investasi '
+                        'sepenuhnya menjadi tanggung jawab pengguna.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '4. Data Pasar',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Data pasar yang digunakan oleh aplikasi dapat '
+                        'berasal dari sumber data eksternal. Goldify tidak '
+                        'menjamin bahwa data tersebut selalu tersedia, '
+                        'lengkap, akurat, atau diperbarui secara real-time.\n\n'
+                        'Pengguna disarankan untuk melakukan verifikasi '
+                        'terhadap data sebelum menggunakannya sebagai dasar '
+                        'pengambilan keputusan.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '5. Akun Pengguna',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Pengguna bertanggung jawab untuk menjaga keamanan '
+                        'informasi akun, termasuk email, kata sandi, dan kode '
+                        'verifikasi yang digunakan untuk mengakses aplikasi.\n\n'
+                        'Pengguna tidak diperkenankan menggunakan akun untuk '
+                        'aktivitas yang melanggar hukum atau merugikan pihak lain.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '6. Hak dan Pembaruan Aplikasi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Goldify dapat melakukan perubahan, pembaruan, '
+                        'penambahan, atau penghentian fitur tertentu untuk '
+                        'meningkatkan kualitas aplikasi.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        '7. Persetujuan Pengguna',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Dengan mencentang “Saya menyetujui Syarat dan '
+                        'Ketentuan Penggunaan Aplikasi”, pengguna menyatakan '
+                        'telah membaca, memahami, dan menyetujui seluruh '
+                        'ketentuan yang berlaku dalam penggunaan Goldify.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: readAndUnderstand,
+                      activeColor: const Color(0xFFF7931E),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          readAndUnderstand = value ?? false;
+                        });
+                      },
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Saya telah membaca dan mengerti Syarat dan Ketentuan.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: readAndUnderstand
+                        ? () {
+                            Navigator.pop(dialogContext);
+
+                            if (mounted) {
+                              setState(() {
+                                _agreeTerms = true;
+                              });
+                            }
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF7931E),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor:
+                          const Color(0xFFF7931E).withValues(alpha: 0.35),
+                      disabledForegroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'SETUJU & LANJUTKAN',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -426,17 +705,36 @@ class _RegisterPageState extends State<RegisterPage> {
                                   });
                                 },
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Padding(
-                            padding: EdgeInsets.only(
+                            padding: const EdgeInsets.only(
                               top: 12,
                             ),
-                            child: Text(
-                              'Saya menyetujui syarat dan ketentuan '
-                              'penggunaan aplikasi.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text: 'Saya menyetujui ',
+                                  ),
+                                  TextSpan(
+                                    text: 'Syarat & Ketentuan',
+                                    style: const TextStyle(
+                                      color: Color(0xFFF7931E),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = _isLoading
+                                          ? null
+                                          : _showTermsDialog,
+                                  ),
+                                  const TextSpan(
+                                    text: ' Penggunaan Aplikasi.',
+                                  ),
+                                ],
                               ),
                             ),
                           ),

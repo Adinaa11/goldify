@@ -220,8 +220,8 @@ class _HangsengPageState extends State<HangsengPage> {
         'Data Hangseng berhasil diterima: $data',
       );
 
-      final String open =
-          _formatInitialNumber(data['open']);
+      // OPEN TIDAK DIAMBIL DARI API.
+      // Open harus dimasukkan manual oleh user.
       final String high =
           _formatInitialNumber(data['high']);
       final String low =
@@ -233,19 +233,20 @@ class _HangsengPageState extends State<HangsengPage> {
           data['tanggal']?.toString() ??
           data['date']?.toString();
 
-      if (open.isEmpty ||
-          high.isEmpty ||
+      // API hanya wajib menyediakan HLC.
+      if (high.isEmpty ||
           low.isEmpty ||
           close.isEmpty) {
         throw Exception(
-          'Data Open, High, Low, atau Close Hangseng tidak tersedia.',
+          'Data High, Low, atau Close Hangseng tidak tersedia.',
         );
       }
 
       if (!mounted) return;
 
       setState(() {
-        _openController.text = open;
+        // OPEN SENGAJA TIDAK DIUBAH.
+        // HLC otomatis dari API tetapi tetap editable.
         _highController.text = high;
         _lowController.text = low;
         _closeController.text = close;
@@ -836,7 +837,7 @@ class _HangsengPageState extends State<HangsengPage> {
                     const SizedBox(height: 18),
                     _buildInputField(
                       label: 'Harga Open',
-                      hint: 'Menunggu data HSI...',
+                      hint: 'Masukkan open HSI...',
                       controller:
                           _openController,
                       readOnly: false,
