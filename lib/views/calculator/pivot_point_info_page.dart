@@ -197,7 +197,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: ' = (H + L + C) / 3',
+                                  text:
+                                      ' = (H + L + C) / 3',
                                   style: TextStyle(
                                     fontSize: 25,
                                     fontWeight:
@@ -330,24 +331,29 @@ class PivotPointInfoDialog extends StatelessWidget {
 
                                 const SizedBox(height: 16),
 
-                                // =================================================
-                                // BULL
-                                // =================================================
+                                // BUY
                                 _buildSignal(
                                   isBull: true,
-                                  text: 'Jika Close > Pivot',
-                                  label: 'BULL',
+                                  text: 'Jika Open < Pivot',
+                                  label: 'BUY',
                                 ),
 
                                 const SizedBox(height: 10),
 
-                                // =================================================
-                                // BEAR
-                                // =================================================
+                                // SELL
                                 _buildSignal(
                                   isBull: false,
-                                  text: 'Jika Close < Pivot',
-                                  label: 'BEAR',
+                                  text: 'Jika Open > Pivot',
+                                  label: 'SELL',
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                // NETRAL
+                                _buildSignal(
+                                  isBull: null,
+                                  text: 'Jika Open = Pivot',
+                                  label: 'BUY or SELL',
                                 ),
                               ],
                             ),
@@ -355,16 +361,12 @@ class PivotPointInfoDialog extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 8),
                   ],
                 ),
               ),
             ),
 
-            // =========================================================
-            // TOMBOL TUTUP
-            // =========================================================
+            // TUTUP
             Container(
               padding: const EdgeInsets.fromLTRB(
                 18,
@@ -472,24 +474,37 @@ class PivotPointInfoDialog extends StatelessWidget {
   }
 
   // =============================================================
-  // SIGNAL BULL / BEAR
+  // SIGNAL BUY / SELL / NETRAL
   // =============================================================
   static Widget _buildSignal({
-    required bool isBull,
+    required bool? isBull,
     required String text,
     required String label,
   }) {
-    final Color mainColor = isBull
-        ? const Color(0xFF16B364)
-        : const Color(0xFFD20F39);
+    final Color mainColor;
+    final Color backgroundColor;
+    final Color iconBackground;
+    final IconData icon;
 
-    final Color backgroundColor = isBull
-        ? const Color(0xFFF1FBF5)
-        : const Color(0xFFFFF2F4);
-
-    final Color iconBackground = isBull
-        ? const Color(0xFFE2F8EA)
-        : const Color(0xFFFFE3E8);
+    if (isBull == true) {
+      // BUY
+      mainColor = const Color(0xFF16B364);
+      backgroundColor = const Color(0xFFF1FBF5);
+      iconBackground = const Color(0xFFE2F8EA);
+      icon = Icons.trending_up;
+    } else if (isBull == false) {
+      // SELL
+      mainColor = const Color(0xFFD20F39);
+      backgroundColor = const Color(0xFFFFF2F4);
+      iconBackground = const Color(0xFFFFE3E8);
+      icon = Icons.trending_down;
+    } else {
+      // NETRAL
+      mainColor = const Color(0xFF6B7280);
+      backgroundColor = const Color(0xFFF5F6F7);
+      iconBackground = const Color(0xFFE5E7EB);
+      icon = Icons.remove;
+    }
 
     return Container(
       width: double.infinity,
@@ -517,9 +532,7 @@ class PivotPointInfoDialog extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isBull
-                  ? Icons.trending_up
-                  : Icons.trending_down,
+              icon,
               color: mainColor,
               size: 20,
             ),

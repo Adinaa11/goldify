@@ -12,9 +12,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _controller;
-
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -39,9 +39,10 @@ class _SplashScreenState extends State<SplashScreen>
         curve: Curves.easeOutCubic,
       ),
     );
+
     _controller.forward();
 
-    Timer(const Duration(seconds: 10), () {
+    _timer = Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
@@ -64,6 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -77,88 +79,78 @@ class _SplashScreenState extends State<SplashScreen>
         color: Colors.white,
         child: FadeTransition(
           opacity: _fadeAnimation,
-            child: Column(
-              children: [
-                // GAMBAR ATAS
-                SizedBox(
-                  width: double.infinity,
-                  child: Image.asset(
-                    'assets/images/atas.png',
-                    fit: BoxFit.fitWidth,
-                  ),
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/images/atas.png',
+                  fit: BoxFit.fitWidth,
                 ),
-
-                // AREA TENGAH
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SlideTransition(
-                          position: _slideAnimation,
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            width: 180,
-                          ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 180,
                         ),
-
-                        const SizedBox(height: 15),
-
-                        // GOLDIFY
-                        RichText(
-                          text: const TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'GOLD',
-                                style: TextStyle(
-                                  color: Color(0xFFF59E0B),
-                                  fontSize: 38,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                ),
+                      ),
+                      const SizedBox(height: 15),
+                      RichText(
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'GOLD',
+                              style: TextStyle(
+                                color: Color(0xFFF59E0B),
+                                fontSize: 38,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
                               ),
-                              TextSpan(
-                                text: 'IFY',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 38,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                ),
+                            ),
+                            TextSpan(
+                              text: 'IFY',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 38,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(height: 3),
-
-                        // NAMA PERUSAHAAN
-                        const Text(
-                          'By PT Equityworld Futures',
-                          style: TextStyle(
-                            color: Color(0xFF4B5563),
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
-                          ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'By PT Equityworld Futures',
+                        style: TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-
-                // GAMBAR BAWAH
-                SizedBox(
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/images/bawah.png',
                   width: double.infinity,
-                  child: Image.asset(
-                    'assets/images/bawah.png',
-                    fit: BoxFit.fitWidth,
-                  ),
+                  fit: BoxFit.fitWidth,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
   }
+}
