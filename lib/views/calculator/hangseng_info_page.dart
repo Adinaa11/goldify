@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PivotPointInfoDialog extends StatelessWidget {
-  const PivotPointInfoDialog({super.key});
+class HangsengInfoDialog extends StatelessWidget {
+  const HangsengInfoDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +28,7 @@ class PivotPointInfoDialog extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // =========================================================
-            // HEADER
-            // =========================================================
+            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(
@@ -75,7 +73,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                       ),
                     ),
                     child: const Icon(
-                      Icons.calculate_outlined,
+                      Icons.candlestick_chart_outlined,
                       color: Color(0xFFE47700),
                       size: 23,
                     ),
@@ -90,7 +88,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                           CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Kalkulator Pivot',
+                          'Kalkulator Hangseng',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -113,9 +111,6 @@ class PivotPointInfoDialog extends StatelessWidget {
               ),
             ),
 
-            // =========================================================
-            // CONTENT
-            // =========================================================
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -128,11 +123,9 @@ class PivotPointInfoDialog extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    // =================================================
-                    // JUDUL RUMUS
-                    // =================================================
+                    
                     const Text(
-                      'Rumus Pivot Point',
+                      'Penjelasan Hangseng',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -143,7 +136,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     const Text(
-                      'Perhitungan titik keseimbangan pasar.',
+                      'Memahami komponen harga dan sinyal '
+                      'perdagangan pada indeks Hangseng.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF6B7280),
@@ -151,69 +145,6 @@ class PivotPointInfoDialog extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 14),
-
-                    // =================================================
-                    // FORMULA
-                    // =================================================
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 20,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius:
-                            BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFE5E7EB),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'TITIK PIVOT (P)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF555555),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          RichText(
-                            textAlign: TextAlign.center,
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'P',
-                                  style: TextStyle(
-                                    fontSize: 25,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    color: Color(0xFFC86B00),
-                                  ),
-                                ),
-                                TextSpan(
-                                  text:
-                                      ' = (H + L + C) / 3',
-                                  style: TextStyle(
-                                    fontSize: 25,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    color: Color(0xFF222222),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
 
                     // =================================================
                     // PENJELASAN KOMPONEN
@@ -253,10 +184,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 Container(
                                   width: 36,
                                   height: 36,
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFFFFF4E5,
-                                    ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFFF4E5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -295,15 +224,25 @@ class PivotPointInfoDialog extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
+                                // OPEN
+                                _buildComponent(
+                                  letter: 'O',
+                                  title: 'Open (Pembukaan)',
+                                  description:
+                                      'Harga indeks Hangseng pada saat '
+                                      'sesi perdagangan dimulai.',
+                                ),
+
+                                const SizedBox(height: 14),
+
                                 // HIGH
                                 _buildComponent(
                                   letter: 'H',
                                   title: 'High (Tertinggi)',
                                   description:
-                                      'Harga tertinggi yang dicapai oleh aset '
-                                      '(seperti saham, pasangan mata uang, '
-                                      'komoditas, dll) pada periode '
-                                      'perdagangan sebelumnya.',
+                                      'Harga tertinggi yang dicapai oleh '
+                                      'indeks Hangseng selama periode '
+                                      'perdagangan yang digunakan.',
                                 ),
 
                                 const SizedBox(height: 14),
@@ -313,9 +252,9 @@ class PivotPointInfoDialog extends StatelessWidget {
                                   letter: 'L',
                                   title: 'Low (Terendah)',
                                   description:
-                                      'Harga terendah yang disentuh oleh '
-                                      'aset selama periode perdagangan '
-                                      'sebelumnya.',
+                                      'Harga terendah yang dicapai oleh '
+                                      'indeks Hangseng selama periode '
+                                      'perdagangan yang digunakan.',
                                 ),
 
                                 const SizedBox(height: 14),
@@ -325,8 +264,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                   letter: 'C',
                                   title: 'Close (Penutupan)',
                                   description:
-                                      'Harga terakhir pada saat sesi '
-                                      'perdagangan sebelumnya ditutup.',
+                                      'Harga indeks Hangseng pada saat '
+                                      'sesi perdagangan berakhir.',
                                 ),
 
                                 const SizedBox(height: 16),
@@ -334,7 +273,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 // BUY
                                 _buildSignal(
                                   isBull: true,
-                                  text: 'Jika Open < Pivot',
+                                  text: 'Jika Open > Hangseng',
                                   label: 'BUY',
                                 ),
 
@@ -343,7 +282,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 // SELL
                                 _buildSignal(
                                   isBull: false,
-                                  text: 'Jika Open > Pivot',
+                                  text: 'Jika Open < Hangseng',
                                   label: 'SELL',
                                 ),
 
@@ -352,7 +291,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 // NETRAL
                                 _buildSignal(
                                   isBull: null,
-                                  text: 'Jika Open = Pivot',
+                                  text: 'Jika Open = Hangseng',
                                   label: 'BUY or SELL',
                                 ),
                               ],
@@ -366,7 +305,6 @@ class PivotPointInfoDialog extends StatelessWidget {
               ),
             ),
 
-            // TUTUP
             Container(
               padding: const EdgeInsets.fromLTRB(
                 18,
@@ -407,9 +345,6 @@ class PivotPointInfoDialog extends StatelessWidget {
     );
   }
 
-  // =============================================================
-  // COMPONENT H / L / C
-  // =============================================================
   static Widget _buildComponent({
     required String letter,
     required String title,
@@ -419,7 +354,7 @@ class PivotPointInfoDialog extends StatelessWidget {
       crossAxisAlignment:
           CrossAxisAlignment.start,
       children: [
-        // BULATAN H/L/C
+        // BULATAN O/H/L/C
         Container(
           width: 40,
           height: 40,
@@ -473,9 +408,6 @@ class PivotPointInfoDialog extends StatelessWidget {
     );
   }
 
-  // =============================================================
-  // SIGNAL BUY / SELL / NETRAL
-  // =============================================================
   static Widget _buildSignal({
     required bool? isBull,
     required String text,
