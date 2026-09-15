@@ -99,29 +99,6 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
 
-      // CEK EMAIL SUDAH DIVERIFIKASI
-      if (user.emailConfirmedAt == null) {
-        await _supabase.auth.signOut();
-
-        if (!mounted) return;
-
-        setState(() {
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Email Anda belum diverifikasi. '
-              'Silakan buka email konfirmasi terlebih dahulu.',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-
-        return;
-      }
-
       if (!mounted) return;
 
       setState(() {
@@ -152,10 +129,8 @@ class _LoginPageState extends State<LoginPage> {
           lowerMessage.contains('invalid credentials')) {
         message =
             'Email atau password salah.';
-      } else if (lowerMessage.contains('email not confirmed')) {
-        message =
-            'Email Anda belum diverifikasi. '
-            'Silakan cek email konfirmasi terlebih dahulu.';
+      } else if (lowerMessage.contains('email')) {
+        message = 'Email atau password tidak sesuai.';
       } else if (lowerMessage.contains('email')) {
         message =
             'Email atau password tidak sesuai.';

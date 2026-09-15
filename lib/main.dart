@@ -12,8 +12,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'https://xkfwmrwubfycwrxjyvbs.supabase.co',
-    anonKey: 'sb_publishable_MrVK5tquee3E_kfBaZV1AA_xOFTMEXb',
+    url: 'https://jupamzsisqtnyacefgby.supabase.co',
+    anonKey: 'sb_publishable_XhRZoezZ_8sjHKJ3bpG_YA_UKFgndxo',
   );
 
   runApp(const GoldifyApp());

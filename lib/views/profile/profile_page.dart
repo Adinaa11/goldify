@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'personal_info_page.dart';
 import 'security_page.dart';
@@ -8,11 +9,75 @@ import 'terms_page.dart';
 import 'privacy_policy_page.dart';
 import '../splash_screen.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final supabase = Supabase.instance.client;
+
+  Map<String, dynamic>? profileData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    getProfile();
+  }
+
+  /// ================= GET DATA FROM DATABASE =================
+  Future<void> getProfile() async {
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      setState(() => isLoading = false);
+      return;
+    }
+
+    try {
+      final data = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .single();
+
+      setState(() {
+        profileData = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("ERROR PROFILE: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  /// ================= REFRESH SETELAH EDIT =================
+  Future<void> _goToPersonalInfo() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PersonalInfoPage()),
+    );
+
+    if (result == true) {
+      getProfile();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final name = profileData?['name'] ?? 'Tidak ada nama';
+    final email = profileData?['email'] ?? 'Tidak ada email';
+    final avatarUrl = profileData?['avatar_url'];
+
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
 
@@ -21,10 +86,6 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
 
       body: SingleChildScrollView(
@@ -33,41 +94,38 @@ class ProfilePage extends StatelessWidget {
 
             /// ================= HEADER =================
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 28,
-                    backgroundImage:
-                        AssetImage('assets/images/profile.png'),
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: (avatarUrl != null &&
+                            avatarUrl.toString().isNotEmpty)
+                        ? NetworkImage(avatarUrl)
+                        : const AssetImage('assets/images/profile.png')
+                            as ImageProvider,
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
-                        "John Doe",
-                        style: TextStyle(
+                        name,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        "johndoe@email.com",
-                        style: TextStyle(
+                        email,
+                        style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 13,
                         ),
@@ -78,51 +136,73 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
 
-            /// ================= ACCOUNT =================
+            /// ================= MENU =================
             _sectionTitle("AKUN"),
 
             _menuItem(
-              context,
-              Icons.person,
-              "Informasi Pribadi",
-              const PersonalInfoPage(),
+              icon: Icons.person,
+              title: "Informasi Pribadi",
+              onTap: _goToPersonalInfo,
             ),
+
             _menuItem(
-              context,
-              Icons.shield_outlined,
-              "Keamanan",
-              const SecurityPage(),
+              icon: Icons.shield_outlined,
+              title: "Keamanan",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SecurityPage()),
+                );
+              },
             ),
+
             _menuItem(
-              context,
-              Icons.notifications_none,
-              "Notifikasi",
-              const NotificationPage(),
+              icon: Icons.notifications_none,
+              title: "Notifikasi",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationPage()),
+                );
+              },
             ),
 
             const SizedBox(height: 10),
 
-            /// ================= INFO APP =================
             _sectionTitle("INFO APLIKASI"),
 
             _menuItem(
-              context,
-              Icons.info_outline,
-              "Versi Aplikasi",
-              const AppVersionPage(),
+              icon: Icons.info_outline,
+              title: "Versi Aplikasi",
               trailing: "v2.1.4",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AppVersionPage()),
+                );
+              },
             ),
+
             _menuItem(
-              context,
-              Icons.description_outlined,
-              "Syarat & Ketentuan",
-              const TermsPage(),
+              icon: Icons.description_outlined,
+              title: "Syarat & Ketentuan",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TermsPage()),
+                );
+              },
             ),
+
             _menuItem(
-              context,
-              Icons.privacy_tip_outlined,
-              "Kebijakan Privasi",
-              const PrivacyPolicyPage(),
+              icon: Icons.privacy_tip_outlined,
+              title: "Kebijakan Privasi",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                );
+              },
             ),
 
             const SizedBox(height: 20),
@@ -133,7 +213,9 @@ class ProfilePage extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    await supabase.auth.signOut();
+
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
@@ -157,7 +239,8 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  /// ================= TITLE =================
+  /// ================= COMPONENT =================
+
   Widget _sectionTitle(String title) {
     return Container(
       width: double.infinity,
@@ -173,23 +256,16 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  /// ================= MENU =================
-  Widget _menuItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    Widget page, {
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
     String? trailing,
+    required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => page),
-          );
-        },
+        onTap: onTap,
         child: Column(
           children: [
             ListTile(

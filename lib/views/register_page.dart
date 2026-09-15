@@ -125,35 +125,46 @@ class _RegisterPageState extends State<RegisterPage> {
       _isLoading = true;
     });
 
-    try {
-      final response = await _supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': nama,
-          'whatsapp': whatsapp,
-        },
-      );
+  try {
+    final AuthResponse res = await _supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'name': nama,
+      },
+    );
 
-      if (response.user == null) {
-        throw const AuthException(
-          'Pendaftaran gagal. Silakan coba lagi.',
-        );
-      }
+    final user = res.user;
 
-      if (response.session != null) {
-        await _supabase.auth.signOut();
-      }
+    if (user == null) {
+      throw Exception('Pendaftaran gagal');
+    }
 
-      if (!mounted) return;
+    await _supabase.from('profiles').insert({
+      'id': user.id,
+      'name': nama,
+      'phone': whatsapp,
+      'email': email,
+    });
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const VerificationSuccessPage(),
-        ),
-      );
-    } on AuthException catch (e) {
+    if (!mounted) return;
+
+    /// ✅ NOTIF
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registrasi berhasil, silakan login'),
+      ),
+    );
+
+    /// ✅ PINDAH KE LOGIN
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
+    );
+  }
+    on AuthException catch (e) {
       if (!mounted) return;
 
       String message = e.message;
