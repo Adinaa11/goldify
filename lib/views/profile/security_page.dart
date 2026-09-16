@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'change_password_page.dart';
-import 'two_factor_page.dart';
-import 'login_activity_page.dart';
 
 class SecurityPage extends StatelessWidget {
   const SecurityPage({super.key});
@@ -9,54 +6,64 @@ class SecurityPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F6F8),
 
       appBar: AppBar(
+        title: const Text("Keamanan"),
         backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFF7931E)),
-        title: const Text(
-          "Keamanan",
-          style: TextStyle(
-            color: Color(0xFF333333),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        foregroundColor: Colors.black,
+        elevation: 1,
       ),
 
       body: SingleChildScrollView(
         child: Column(
           children: [
 
-            // ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
+            /// HEADER (CONSISTENT STYLE)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: const [
+                  Icon(Icons.security, size: 40, color: Color(0xFFF7931E)),
+                  SizedBox(height: 10),
                   Text(
-                    "Lindungi Akun Anda",
-                    textAlign: TextAlign.center,
+                    "Keamanan Akun",
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 4),
                   Text(
-                    "Kelola keamanan akun Anda untuk melindungi aset berharga Anda.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    "Kelola password & aktivitas login",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+
+            /// CARD MENU (SAMA SEPERTI PROFILE)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  _item(
+                    context,
+                    "Ubah Kata Sandi",
+                    "Perbarui password akun",
+                    Icons.lock_outline,
+                    const ChangePasswordPage(),
+                  ),
+                  _divider(),
+                  _item(
+                    context,
+                    "Aktivitas Login",
+                    "Kelola perangkat login",
+                    Icons.devices,
+                    const LoginActivityPage(),
                   ),
                 ],
               ),
@@ -64,71 +71,22 @@ class SecurityPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ================= MENU =================
-            _buildItem(
-              context,
-              icon: Icons.lock_outline,
-              title: "Kata Sandi",
-              subtitle: "Ubah password akun Anda",
-              page: const ChangePasswordPage(),
-            ),
-
-            _buildItem(
-              context,
-              icon: Icons.phonelink_lock,
-              title: "Autentikasi 2 Faktor",
-              subtitle: "Tambahkan keamanan ekstra",
-              page: const TwoFactorPage(),
-            ),
-
-            _buildItem(
-              context,
-              icon: Icons.history,
-              title: "Aktivitas Login",
-              subtitle: "Lihat riwayat login",
-              page: const LoginActivityPage(),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ================= INFO CARD (GANTI IMAGE) =================
+            /// INFO CARD (CONSISTENT)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF3E6),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF5D2A9)),
               ),
               child: Row(
-                children: [
-                  const Icon(
-                    Icons.security,
-                    color: Color(0xFFF7931E),
-                    size: 32,
-                  ),
-                  const SizedBox(width: 12),
-
+                children: const [
+                  Icon(Icons.info_outline, color: Color(0xFFF7931E)),
+                  SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "Tips Keamanan",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Gunakan password yang kuat dan aktifkan autentikasi 2 faktor untuk keamanan maksimal.",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      "Gunakan password kuat dan jangan bagikan akun Anda.",
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ),
                 ],
@@ -142,46 +100,244 @@ class SecurityPage extends StatelessWidget {
     );
   }
 
-  // ================= CARD ITEM =================
-  Widget _buildItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Widget page,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _item(BuildContext context, String title, String subtitle,
+      IconData icon, Widget page) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => page));
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFF7931E)),
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+            ),
+
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: Colors.grey),
+          ],
+        ),
       ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E6),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: const Color(0xFFF7931E)),
+    );
+  }
+
+  Widget _divider() => const Divider(height: 1);
+}
+
+class ChangePasswordPage extends StatefulWidget {
+  const ChangePasswordPage({super.key});
+
+  @override
+  State<ChangePasswordPage> createState() =>
+      _ChangePasswordPageState();
+}
+
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
+  final oldPass = TextEditingController();
+  final newPass = TextEditingController();
+  final confirmPass = TextEditingController();
+
+  bool hideOld = true;
+  bool hideNew = true;
+  bool hideConfirm = true;
+
+  void _save() {
+    if (oldPass.text.isEmpty ||
+        newPass.text.isEmpty ||
+        confirmPass.text.isEmpty) {
+      _msg("Semua field wajib diisi");
+      return;
+    }
+
+    if (newPass.text != confirmPass.text) {
+      _msg("Password tidak sama");
+      return;
+    }
+
+    _msg("Link konfirmasi dikirim ke email");
+    Navigator.pop(context);
+  }
+
+  void _msg(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
+
+      appBar: AppBar(
+        title: const Text("Ubah Password"),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+
+            _field("Password Lama", oldPass, hideOld,
+                () => setState(() => hideOld = !hideOld)),
+            const SizedBox(height: 12),
+
+            _field("Password Baru", newPass, hideNew,
+                () => setState(() => hideNew = !hideNew)),
+            const SizedBox(height: 12),
+
+            _field("Konfirmasi Password", confirmPass, hideConfirm,
+                () => setState(() => hideConfirm = !hideConfirm)),
+
+            const SizedBox(height: 24),
+
+            /// BUTTON (SAMA STYLE PROFILE)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF7931E),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text(
+                  "SIMPAN PERUBAHAN",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+            )
+          ],
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _field(
+      String hint, TextEditingController c, bool hide, VoidCallback toggle) {
+    return TextField(
+      controller: c,
+      obscureText: hide,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.white,
+        suffixIcon: IconButton(
+          icon: Icon(hide ? Icons.visibility_off : Icons.visibility),
+          onPressed: toggle,
         ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => page),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+class LoginActivityPage extends StatefulWidget {
+  const LoginActivityPage({super.key});
+
+  @override
+  State<LoginActivityPage> createState() =>
+      _LoginActivityPageState();
+}
+
+class _LoginActivityPageState extends State<LoginActivityPage> {
+  List<Map<String, String>> devices = [
+    {
+      "device": "Samsung A35",
+      "location": "Surabaya",
+      "time": "Aktif sekarang"
+    },
+    {
+      "device": "Chrome Windows",
+      "location": "Malang",
+      "time": "2 jam lalu"
+    },
+  ];
+
+  void _logoutDevice(int index) {
+    final deviceName = devices[index]["device"];
+
+    setState(() {
+      devices.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Logout dari $deviceName berhasil")),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
+
+      appBar: AppBar(
+        title: const Text("Aktivitas Login"),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+
+      body: ListView.builder(
+        itemCount: devices.length,
+        itemBuilder: (context, index) {
+          final d = devices[index];
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.devices,
+                    color: Color(0xFFF7931E)),
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(d["device"]!,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600)),
+                      Text("${d["location"]} • ${d["time"]}",
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+
+                IconButton(
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  onPressed: () => _logoutDevice(index),
+                )
+              ],
+            ),
           );
         },
       ),
