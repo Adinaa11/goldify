@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
 import '../../services/market_service.dart';
-import 'pivot_result_page.dart';
+import 'nest_result_page.dart';
+import 'nest_info_page.dart';
 
-class PivotPointPage extends StatefulWidget {
+class NestPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const PivotPointPage({
+  const NestPage({
     super.key,
     this.initialData,
   });
 
   @override
-  State<PivotPointPage> createState() => _PivotPointPageState();
+  State<NestPage> createState() => _NestPageState();
 }
 
-class _PivotPointPageState extends State<PivotPointPage> {
-  final TextEditingController _openController = TextEditingController();
-  final TextEditingController _highController = TextEditingController();
-  final TextEditingController _lowController = TextEditingController();
-  final TextEditingController _closeController = TextEditingController();
+class _NestPageState extends State<NestPage> {
+  final TextEditingController _openController =
+      TextEditingController();
 
-  static const Color orange = Color(0xFFF7931E);
-  static const Color darkText = Color(0xFF222222);
-  static const Color greyText = Color(0xFF555555);
-  static const Color fieldColor = Color(0xFFF7F5F3);
+  final TextEditingController _closeController =
+      TextEditingController();
+
+  static const Color orange =
+      Color(0xFFF7931E);
+
+  static const Color darkText =
+      Color(0xFF222222);
+
+  static const Color greyText =
+      Color(0xFF555555);
+
+  static const Color fieldColor =
+      Color(0xFFF7F5F3);
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -31,7 +40,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
   String? _selectedDate;
 
-  bool get _isRecalculate => widget.initialData != null;
+  bool get _isRecalculate =>
+      widget.initialData != null;
 
   @override
   void initState() {
@@ -47,10 +57,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
   void _loadInitialData() {
     final d = widget.initialData!;
 
-    _openController.text = _formatInitialNumber(d['open']);
-    _highController.text = _formatInitialNumber(d['high']);
-    _lowController.text = _formatInitialNumber(d['low']);
-    _closeController.text = _formatInitialNumber(d['close']);
+    _openController.text =
+        _formatInitialNumber(d['open']);
+
+    _closeController.text =
+        _formatInitialNumber(d['close']);
 
     _dataDate =
         d['dataDate']?.toString() ??
@@ -76,8 +87,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
     final number =
         double.tryParse(
-          value.toString(),
-        );
+      value.toString(),
+    );
 
     if (number == null) {
       return value.toString();
@@ -93,8 +104,6 @@ class _PivotPointPageState extends State<PivotPointPage> {
   @override
   void dispose() {
     _openController.dispose();
-    _highController.dispose();
-    _lowController.dispose();
     _closeController.dispose();
     super.dispose();
   }
@@ -111,7 +120,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
     try {
       debugPrint(
-        'Mengambil data gold${date != null ? ' untuk $date' : ' live'}...',
+        'Mengambil data NEST gold'
+        '${date != null ? ' untuk $date' : ' live'}...',
       );
 
       final Map<String, dynamic> data =
@@ -120,17 +130,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
       );
 
       debugPrint(
-        'Data gold berhasil diterima: $data',
+        'Data NEST gold berhasil diterima: $data',
       );
 
       final String? open =
           data['open']?.toString();
-
-      final String? high =
-          data['high']?.toString();
-
-      final String? low =
-          data['low']?.toString();
 
       final String? close =
           data['close']?.toString();
@@ -138,16 +142,9 @@ class _PivotPointPageState extends State<PivotPointPage> {
       final String? tanggal =
           date ?? data['tanggal']?.toString();
 
-      if (open == null ||
-          high == null ||
-          low == null ||
-          close == null ||
-          open.isEmpty ||
-          high.isEmpty ||
-          low.isEmpty ||
-          close.isEmpty) {
+      if (close == null || close.isEmpty) {
         throw Exception(
-          'Data Open, High, Low, atau Close tidak tersedia.',
+          'Data Close tidak tersedia.',
         );
       }
 
@@ -156,12 +153,6 @@ class _PivotPointPageState extends State<PivotPointPage> {
       setState(() {
         _openController.text =
             _formatInitialNumber(open);
-
-        _highController.text =
-            _formatInitialNumber(high);
-
-        _lowController.text =
-            _formatInitialNumber(low);
 
         _closeController.text =
             _formatInitialNumber(close);
@@ -175,7 +166,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
       if (!mounted) return;
 
       debugPrint(
-        'Gagal mengambil data gold: $error',
+        'Gagal mengambil data NEST gold: $error',
       );
 
       setState(() {
@@ -194,7 +185,6 @@ class _PivotPointPageState extends State<PivotPointPage> {
     }
   }
 
-  // DATE PICKER
   Future<void> _selectDate() async {
     if (_isLoading || _isRecalculate) return;
 
@@ -204,7 +194,9 @@ class _PivotPointPageState extends State<PivotPointPage> {
         _selectedDate!.isNotEmpty) {
       try {
         initialDate =
-            DateTime.parse(_selectedDate!);
+            DateTime.parse(
+          _selectedDate!,
+        );
       } catch (_) {
         initialDate = DateTime.now();
       }
@@ -213,8 +205,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
       try {
         initialDate =
             DateTime.parse(
-              _dataDate!.substring(0, 10),
-            );
+          _dataDate!.substring(0, 10),
+        );
       } catch (_) {
         initialDate = DateTime.now();
       }
@@ -309,26 +301,14 @@ class _PivotPointPageState extends State<PivotPointPage> {
     );
   }
 
-  bool get _hasGoldData {
-    return _highController.text.isNotEmpty &&
-        _lowController.text.isNotEmpty &&
-        _closeController.text.isNotEmpty;
+  bool get _hasNestData {
+    return _closeController.text.isNotEmpty;
   }
 
-  void _calculatePivot() {
+  void _calculateNest() {
     final double? open =
         _parseNumber(
       _openController.text,
-    );
-
-    final double? high =
-        _parseNumber(
-      _highController.text,
-    );
-
-    final double? low =
-        _parseNumber(
-      _lowController.text,
     );
 
     final double? close =
@@ -336,30 +316,15 @@ class _PivotPointPageState extends State<PivotPointPage> {
       _closeController.text,
     );
 
-    // High, Low, Close wajib tersedia.
-    if (!_hasGoldData ||
-        high == null ||
-        low == null ||
+    // Close wajib tersedia.
+    // Open boleh kosong.
+    if (!_hasNestData ||
         close == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(
         const SnackBar(
           content: Text(
-            'Silakan isi Harga Open dan pastikan data High, Low, serta Close tersedia.',
-          ),
-          backgroundColor: orange,
-        ),
-      );
-
-      return;
-    }
-
-    if (high <= low) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Harga High harus lebih besar dari Harga Low.',
+            'Pastikan Harga Close tersedia.',
           ),
           backgroundColor: orange,
         ),
@@ -371,10 +336,6 @@ class _PivotPointPageState extends State<PivotPointPage> {
     final bool hasDecimalInput =
         _openController.text.contains('.') ||
         _openController.text.contains(',') ||
-        _highController.text.contains('.') ||
-        _highController.text.contains(',') ||
-        _lowController.text.contains('.') ||
-        _lowController.text.contains(',') ||
         _closeController.text.contains('.') ||
         _closeController.text.contains(',');
 
@@ -382,10 +343,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            PivotResultPage(
+            NestResultPage(
           open: open,
-          high: high,
-          low: low,
           close: close,
           hasDecimalInput:
               hasDecimalInput,
@@ -545,6 +504,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
     return Scaffold(
       backgroundColor:
           Colors.white,
+
       appBar: AppBar(
         backgroundColor:
             Colors.white,
@@ -579,7 +539,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                 text: 'Kalkulator ',
               ),
               TextSpan(
-                text: 'Pivot',
+                text: 'NEST',
                 style: TextStyle(
                   color: orange,
                 ),
@@ -588,6 +548,22 @@ class _PivotPointPageState extends State<PivotPointPage> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Info NEST',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) =>
+                    const NestInfoDialog(),
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline,
+              color: orange,
+              size: 23,
+            ),
+          ),
+          
           if (!_isRecalculate)
             IconButton(
               tooltip:
@@ -608,6 +584,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
           ),
         ],
       ),
+
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -622,13 +599,14 @@ class _PivotPointPageState extends State<PivotPointPage> {
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
+
                 const Padding(
                   padding:
                       EdgeInsets.only(
                     right: 10,
                   ),
                   child: Text(
-                    'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan harga pada periode sebelumnya.',
+                    'Menentukan indikator arah berdasarkan perbandingan harga Open hari ini dengan harga Close pada periode sebelumnya.',
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.45,
@@ -636,9 +614,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 18,
                 ),
+
                 Align(
                   alignment:
                       Alignment.centerLeft,
@@ -674,15 +654,18 @@ class _PivotPointPageState extends State<PivotPointPage> {
                         mainAxisSize:
                             MainAxisSize.min,
                         children: [
+
                           const Icon(
                             Icons
                                 .cloud_download_outlined,
                             color: orange,
                             size: 25,
                           ),
+
                           const SizedBox(
                             width: 8,
                           ),
+
                           Column(
                             mainAxisSize:
                                 MainAxisSize.min,
@@ -690,6 +673,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                                 CrossAxisAlignment
                                     .start,
                             children: [
+
                               const Text(
                                 'Data LGD Daily',
                                 style:
@@ -700,13 +684,16 @@ class _PivotPointPageState extends State<PivotPointPage> {
                                   color: darkText,
                                 ),
                               ),
+
                               const SizedBox(
                                 height: 4,
                               ),
+
                               Row(
                                 mainAxisSize:
                                     MainAxisSize.min,
                                 children: [
+
                                   Text(
                                     _isRecalculate
                                         ? 'Data dari riwayat'
@@ -723,6 +710,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                                               : greyText,
                                     ),
                                   ),
+
                                   if (!_isRecalculate &&
                                       !_isLoading &&
                                       _errorMessage ==
@@ -751,9 +739,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 10,
                 ),
+
                 Container(
                   width:
                       double.infinity,
@@ -806,6 +796,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
+
                         const Row(
                           children: [
                             Icon(
@@ -828,9 +819,12 @@ class _PivotPointPageState extends State<PivotPointPage> {
                             ),
                           ],
                         ),
+
                         const SizedBox(
                           height: 18,
                         ),
+
+                        // OPEN
                         _buildInputField(
                           label:
                               'Harga Open',
@@ -839,22 +833,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
                           controller:
                               _openController,
                         ),
-                        _buildInputField(
-                          label:
-                              'Harga High',
-                          hint:
-                              'Menunggu data...',
-                          controller:
-                              _highController,
-                        ),
-                        _buildInputField(
-                          label:
-                              'Harga Low',
-                          hint:
-                              'Menunggu data...',
-                          controller:
-                              _lowController,
-                        ),
+
+                        // CLOSE
                         _buildInputField(
                           label:
                               'Harga Close',
@@ -867,9 +847,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 20,
                 ),
+
                 Padding(
                   padding:
                       const EdgeInsets
@@ -885,9 +867,9 @@ class _PivotPointPageState extends State<PivotPointPage> {
                         ElevatedButton(
                       onPressed:
                           _isLoading ||
-                                  !_hasGoldData
+                                  !_hasNestData
                               ? null
-                              : _calculatePivot,
+                              : _calculateNest,
                       style:
                           ElevatedButton
                               .styleFrom(
@@ -916,13 +898,16 @@ class _PivotPointPageState extends State<PivotPointPage> {
                         mainAxisAlignment:
                             MainAxisAlignment.center,
                         children: [
+
                           Icon(
                             Icons.calculate,
                             size: 19,
                           ),
+
                           SizedBox(
                             width: 8,
                           ),
+
                           Text(
                             'Hitung',
                             style:
@@ -939,6 +924,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 30,
                 ),

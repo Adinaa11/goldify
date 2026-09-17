@@ -103,6 +103,7 @@ class _HangsengPageState extends State<HangsengPage> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _dataDate;
+  String? _selectedDate;
 
   bool get _isRecalculate => widget.initialData != null;
 
@@ -196,6 +197,10 @@ class _HangsengPageState extends State<HangsengPage> {
     super.dispose();
   }
 
+  // ============================================================
+  // LOAD HANGSENG DATA
+  // ============================================================
+
   Future<void> _loadHangsengData({
     String? date,
   }) async {
@@ -220,21 +225,24 @@ class _HangsengPageState extends State<HangsengPage> {
         'Data Hangseng berhasil diterima: $data',
       );
 
-      // OPEN TIDAK DIAMBIL DARI API.
-      // Open harus dimasukkan manual oleh user.
+      final String open =
+          _formatInitialNumber(data['open']);
+
       final String high =
           _formatInitialNumber(data['high']);
+
       final String low =
           _formatInitialNumber(data['low']);
+
       final String close =
           _formatInitialNumber(data['close']);
 
       final String? tanggal =
-          data['tanggal']?.toString() ??
-          data['date']?.toString();
+        date ?? 
+        data['tanggal']?.toString() ??
+        data['date']?.toString();
 
-      // API hanya wajib menyediakan HLC.
-      if (high.isEmpty ||
+        if (high.isEmpty ||
           low.isEmpty ||
           close.isEmpty) {
         throw Exception(
@@ -245,8 +253,7 @@ class _HangsengPageState extends State<HangsengPage> {
       if (!mounted) return;
 
       setState(() {
-        // OPEN SENGAJA TIDAK DIUBAH.
-        // HLC otomatis dari API tetapi tetap editable.
+        _openController.text = open;
         _highController.text = high;
         _lowController.text = low;
         _closeController.text = close;
@@ -271,11 +278,15 @@ class _HangsengPageState extends State<HangsengPage> {
         } else {
           _errorMessage =
               'Tidak dapat mengambil data Hangseng.\n'
-              'Periksa koneksi internet atau API HSI.';
+              'Periksa koneksi internet atau API Newsmaker.';
         }
       });
     }
   }
+
+  // ============================================================
+  // DATE PICKER
+  // ============================================================
 
   Future<void> _selectDate() async {
     if (_isLoading || _isRecalculate) return;
@@ -285,7 +296,12 @@ class _HangsengPageState extends State<HangsengPage> {
     if (_dataDate != null &&
         _dataDate!.isNotEmpty) {
       try {
-        initialDate = DateTime.parse(_dataDate!);
+        final String cleanDate =
+            _dataDate!.length >= 10
+                ? _dataDate!.substring(0, 10)
+                : _dataDate!;
+
+        initialDate = DateTime.parse(cleanDate);
       } catch (_) {}
     }
 
@@ -323,6 +339,8 @@ class _HangsengPageState extends State<HangsengPage> {
         '${pickedDate.month.toString().padLeft(2, '0')}-'
         '${pickedDate.day.toString().padLeft(2, '0')}';
 
+    _selectedDate = selectedDate;
+
     await _loadHangsengData(
       date: selectedDate,
     );
@@ -342,12 +360,19 @@ class _HangsengPageState extends State<HangsengPage> {
     }
   }
 
+  // FORMAT DATE
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) {
       return '-';
     }
 
-    final List<String> parts = date.split('-');
+    final String cleanDate =
+        date.length >= 10
+            ? date.substring(0, 10)
+            : date;
+
+    final List<String> parts =
+        cleanDate.split('-');
 
     if (parts.length != 3) {
       return date;
@@ -356,6 +381,7 @@ class _HangsengPageState extends State<HangsengPage> {
     return '${parts[2]}/${parts[1]}/${parts[0]}';
   }
 
+  // PARSE NUMBER
   double? _parseNumber(String text) {
     final value = text.trim();
 
@@ -368,6 +394,7 @@ class _HangsengPageState extends State<HangsengPage> {
 
       final integerPart =
           parts[0].replaceAll('.', '');
+
       final decimalPart = parts[1];
 
       if (integerPart.isEmpty &&
@@ -385,28 +412,31 @@ class _HangsengPageState extends State<HangsengPage> {
     );
   }
 
+  // CHECK DATA
   bool get _hasHangsengData {
-    return _openController.text.trim().isNotEmpty &&
-        _highController.text.trim().isNotEmpty &&
+    return _highController.text.trim().isNotEmpty &&
         _lowController.text.trim().isNotEmpty &&
         _closeController.text.trim().isNotEmpty;
   }
-
+  // CALCULATE HANGSENG
   void _calculateHangseng() {
     final double? open =
         _parseNumber(_openController.text);
+
     final double? high =
         _parseNumber(_highController.text);
+
     final double? low =
         _parseNumber(_lowController.text);
+
     final double? close =
         _parseNumber(_closeController.text);
 
     if (!_hasHangsengData ||
-        open == null ||
         high == null ||
         low == null ||
         close == null) {
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -423,30 +453,6 @@ class _HangsengPageState extends State<HangsengPage> {
         const SnackBar(
           content: Text(
             'Harga High harus lebih besar dari Harga Low.',
-          ),
-          backgroundColor: orange,
-        ),
-      );
-      return;
-    }
-
-    if (open < low || open > high) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Harga Open harus berada di antara Low dan High.',
-          ),
-          backgroundColor: orange,
-        ),
-      );
-      return;
-    }
-
-    if (close < low || close > high) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Harga Close harus berada di antara Low dan High.',
           ),
           backgroundColor: orange,
         ),
@@ -483,10 +489,13 @@ class _HangsengPageState extends State<HangsengPage> {
     );
   }
 
+  // REFRESH
   Future<void> _refreshData() async {
     if (_isRecalculate) return;
 
-    await _loadHangsengData();
+    await _loadHangsengData(
+      date: _selectedDate,
+    );
 
     if (!mounted) return;
 
@@ -502,6 +511,10 @@ class _HangsengPageState extends State<HangsengPage> {
     }
   }
 
+  // ============================================================
+  // INPUT FIELD
+  // ============================================================
+
   Widget _buildInputField({
     required String label,
     required TextEditingController controller,
@@ -509,7 +522,9 @@ class _HangsengPageState extends State<HangsengPage> {
     bool readOnly = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(
+        bottom: 14,
+      ),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -610,6 +625,10 @@ class _HangsengPageState extends State<HangsengPage> {
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -637,7 +656,9 @@ class _HangsengPageState extends State<HangsengPage> {
               color: darkText,
             ),
             children: [
-              TextSpan(text: 'Kalkulator '),
+              TextSpan(
+                text: 'Kalkulator ',
+              ),
               TextSpan(
                 text: 'Hangseng',
                 style: TextStyle(
@@ -652,7 +673,9 @@ class _HangsengPageState extends State<HangsengPage> {
             IconButton(
               tooltip: 'Refresh Data',
               onPressed:
-                  _isLoading ? null : _refreshData,
+                  _isLoading
+                      ? null
+                      : _refreshData,
               icon: const Icon(
                 Icons.refresh,
                 color: orange,
@@ -674,7 +697,9 @@ class _HangsengPageState extends State<HangsengPage> {
               CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.only(right: 10),
+              padding: EdgeInsets.only(
+                right: 10,
+              ),
               child: Text(
                 'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan indeks Hangseng pada periode sebelumnya.',
                 style: TextStyle(
@@ -705,10 +730,12 @@ class _HangsengPageState extends State<HangsengPage> {
                     ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize:
+                        MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.cloud_download_outlined,
+                        Icons
+                            .cloud_download_outlined,
                         color: orange,
                         size: 25,
                       ),
@@ -717,7 +744,8 @@ class _HangsengPageState extends State<HangsengPage> {
                         mainAxisSize:
                             MainAxisSize.min,
                         crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                            CrossAxisAlignment
+                                .start,
                         children: [
                           const Text(
                             'Data Hangseng',
@@ -728,7 +756,9 @@ class _HangsengPageState extends State<HangsengPage> {
                               color: darkText,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(
+                            height: 4,
+                          ),
                           Row(
                             mainAxisSize:
                                 MainAxisSize.min,
@@ -761,7 +791,8 @@ class _HangsengPageState extends State<HangsengPage> {
                                       _selectDate,
                                   child:
                                       const Icon(
-                                    Icons.calendar_month,
+                                    Icons
+                                        .calendar_month,
                                     color: orange,
                                     size: 20,
                                   ),
@@ -834,29 +865,35 @@ class _HangsengPageState extends State<HangsengPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(
+                      height: 18,
+                    ),
                     _buildInputField(
                       label: 'Harga Open',
-                      hint: 'Masukkan open HSI...',
+                      hint:
+                          'Mengambil data Open...',
                       controller:
                           _openController,
                       readOnly: false,
                     ),
                     _buildInputField(
                       label: 'Harga High',
-                      hint: 'Menunggu data...',
+                      hint:
+                          'Menunggu data...',
                       controller:
                           _highController,
                     ),
                     _buildInputField(
                       label: 'Harga Low',
-                      hint: 'Menunggu data...',
+                      hint:
+                          'Menunggu data...',
                       controller:
                           _lowController,
                     ),
                     _buildInputField(
                       label: 'Harga Close',
-                      hint: 'Menunggu data...',
+                      hint:
+                          'Menunggu data...',
                       controller:
                           _closeController,
                     ),

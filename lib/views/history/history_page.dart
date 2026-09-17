@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'history_detail_pivot.dart';
 import 'history_detail_emas.dart';
 import 'history_detail_hangseng.dart';
+import 'history_detail_nest.dart';
 
 class HistoryPage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -32,7 +34,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList("history_data") ?? [];
+
+    final data =
+        prefs.getStringList("history_data") ?? [];
+
     final loaded = <Map<String, dynamic>>[];
 
     for (int i = 0; i < data.length; i++) {
@@ -41,7 +46,12 @@ class _HistoryPageState extends State<HistoryPage> {
           jsonDecode(data[i]),
         );
 
+        if (_isEmptyCalculation(decoded)) {
+          continue;
+        }
+
         decoded['_historyRawIndex'] = i;
+
         loaded.add(decoded);
       } catch (_) {}
     }
@@ -51,6 +61,89 @@ class _HistoryPageState extends State<HistoryPage> {
     setState(() {
       history = loaded;
     });
+  }
+
+  bool _isEmptyCalculation(
+    Map<String, dynamic> item,
+  ) {
+    final type =
+        item['type']?.toString().toLowerCase() ?? '';
+
+    final detail =
+        item['detail'] is Map
+            ? Map<String, dynamic>.from(
+                item['detail'],
+              )
+            : <String, dynamic>{};
+
+    final result =
+        item['result']?.toString().trim() ?? '';
+
+    if (type.contains('nest')) {
+      final open = _toDouble(
+        detail['open'] ??
+            item['open'],
+      );
+
+      final close = _toDouble(
+        detail['close'] ??
+            item['close'],
+      );
+
+      // Jika Open dan Close tidak ada
+      if (open == null && close == null) {
+        return true;
+      }
+
+      if ((open ?? 0) == 0 &&
+          (close ?? 0) == 0) {
+        return true;
+      }
+
+      if (result.isEmpty) {
+        return true;
+      }
+
+      return false;
+    }
+
+    if (type.contains('pivot') ||
+        type.contains('hangseng') ||
+        type.contains('hsi')) {
+      final pp = _toDouble(
+        detail['pp'],
+      );
+
+      if (pp == null) {
+        return true;
+      }
+
+      if (pp == 0) {
+        return true;
+      }
+
+      return false;
+    }
+
+    final amount =
+        _toDouble(
+      item['amount'] ??
+          detail['step5'],
+    );
+
+    if (amount == null || amount == 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+
+    return double.tryParse(
+      value.toString().replaceAll(',', '.'),
+    );
   }
 
   List<Map<String, dynamic>> get filteredHistory {
@@ -75,6 +168,10 @@ class _HistoryPageState extends State<HistoryPage> {
         return type.contains("emas");
       }
 
+      if (selectedFilter == "NEST") {
+        return type.contains("nest");
+      }
+
       return true;
     }).toList();
   }
@@ -82,7 +179,8 @@ class _HistoryPageState extends State<HistoryPage> {
   DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
 
-    final text = value.toString().trim();
+    final text =
+        value.toString().trim();
 
     if (text.isEmpty) return null;
 
@@ -102,7 +200,8 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   bool _isYesterday(DateTime date) {
-    final yesterday = DateTime.now().subtract(
+    final yesterday =
+        DateTime.now().subtract(
       const Duration(days: 1),
     );
 
@@ -143,11 +242,16 @@ class _HistoryPageState extends State<HistoryPage> {
       return 'KEMARIN';
     }
 
-    return '${date.day} ${_monthName(date.month)} ${date.year}';
+    return '${date.day} '
+        '${_monthName(date.month)} '
+        '${date.year}';
   }
 
-  String _dateKey(Map<String, dynamic> item) {
-    final date = _parseDate(item['date']);
+  String _dateKey(
+    Map<String, dynamic> item,
+  ) {
+    final date =
+        _parseDate(item['date']);
 
     if (date == null) {
       return 'LAINNYA';
@@ -158,24 +262,37 @@ class _HistoryPageState extends State<HistoryPage> {
         '${date.day.toString().padLeft(2, '0')}';
   }
 
-  List<MapEntry<String, List<Map<String, dynamic>>>>
+  List<
+      MapEntry<
+          String,
+          List<Map<String, dynamic>>>>
       get groupedHistory {
     final groups =
-        <String, List<Map<String, dynamic>>>{};
+        <String,
+            List<Map<String, dynamic>>>{};
 
     for (final item in filteredHistory) {
-      final key = _dateKey(item);
+      final key =
+          _dateKey(item);
 
-      groups.putIfAbsent(key, () => []);
+      groups.putIfAbsent(
+        key,
+        () => [],
+      );
+
       groups[key]!.add(item);
     }
 
     for (final group in groups.values) {
       group.sort((a, b) {
-        final dateA = _parseDate(a['date']);
-        final dateB = _parseDate(b['date']);
+        final dateA =
+            _parseDate(a['date']);
 
-        if (dateA == null && dateB == null) {
+        final dateB =
+            _parseDate(b['date']);
+
+        if (dateA == null &&
+            dateB == null) {
           return 0;
         }
 
@@ -191,16 +308,22 @@ class _HistoryPageState extends State<HistoryPage> {
       });
     }
 
-    final entries = groups.entries.toList();
+    final entries =
+        groups.entries.toList();
 
     entries.sort((a, b) {
       final dateA =
-          _parseDate(a.value.first['date']);
+          _parseDate(
+        a.value.first['date'],
+      );
 
       final dateB =
-          _parseDate(b.value.first['date']);
+          _parseDate(
+        b.value.first['date'],
+      );
 
-      if (dateA == null && dateB == null) {
+      if (dateA == null &&
+          dateB == null) {
         return 0;
       }
 
@@ -218,17 +341,25 @@ class _HistoryPageState extends State<HistoryPage> {
     return entries;
   }
 
-  void _openDetail(Map<String, dynamic> item) {
+  // OPEN DETAIL
+  void _openDetail(
+    Map<String, dynamic> item,
+  ) {
     final type =
-        item['type']?.toString().toLowerCase() ?? '';
+        item['type']
+                ?.toString()
+                .toLowerCase() ??
+            '';
 
     final rawIndex =
-        item['_historyRawIndex'] as int?;
+        item['_historyRawIndex']
+            as int?;
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) {
+          // PIVOT
           if (type.contains("pivot")) {
             return HistoryDetailPivotPage(
               item: item,
@@ -236,6 +367,7 @@ class _HistoryPageState extends State<HistoryPage> {
             );
           }
 
+          // HANGSENG
           if (type.contains("hangseng") ||
               type.contains("hsi")) {
             return HistoryDetailHangsengPage(
@@ -244,6 +376,15 @@ class _HistoryPageState extends State<HistoryPage> {
             );
           }
 
+          // NEST
+          if (type.contains("nest")) {
+            return HistoryDetailNestPage(
+              item: item,
+              index: rawIndex ?? -1,
+            );
+          }
+
+          // EMAS FISIK
           return HistoryDetailEmasPage(
             item: item,
             index: rawIndex ?? -1,
@@ -255,16 +396,23 @@ class _HistoryPageState extends State<HistoryPage> {
     });
   }
 
-  String _formatRupiah(dynamic value) {
+  String _formatRupiah(
+    dynamic value,
+  ) {
     final number =
-        double.tryParse(value?.toString() ?? '') ?? 0;
+        double.tryParse(
+              value?.toString() ?? '',
+            ) ??
+            0;
 
     final text =
         number.truncate().abs().toString();
 
     String result = "";
 
-    for (int i = 0; i < text.length; i++) {
+    for (int i = 0;
+        i < text.length;
+        i++) {
       if (i > 0 &&
           (text.length - i) % 3 == 0) {
         result += ".";
@@ -276,9 +424,13 @@ class _HistoryPageState extends State<HistoryPage> {
     return result;
   }
 
-  String _formatPivot(dynamic value) {
+  String _formatPivot(
+    dynamic value,
+  ) {
     final number =
-        double.tryParse(value?.toString() ?? '');
+        double.tryParse(
+      value?.toString() ?? '',
+    );
 
     if (number == null) {
       return '-';
@@ -289,20 +441,69 @@ class _HistoryPageState extends State<HistoryPage> {
         .replaceAll('.', ',');
   }
 
+  String _getNestSignal(
+    Map<String, dynamic> item,
+  ) {
+    final detail =
+        item['detail'] is Map
+            ? Map<String, dynamic>.from(
+                item['detail'],
+              )
+            : <String, dynamic>{};
+
+    final open =
+        _toDouble(
+      detail['open'] ??
+          item['open'],
+    );
+
+    final close =
+        _toDouble(
+      detail['close'] ??
+          item['close'],
+    );
+
+    if (open == null ||
+        close == null) {
+      return item['result']
+              ?.toString() ??
+          '-';
+    }
+
+    if (open < close) {
+      return 'BUY';
+    }
+
+    if (open > close) {
+      return 'SELL';
+    }
+
+    return 'BUY / SELL';
+  }
+
   @override
-  Widget build(BuildContext context) {
-    final groups = groupedHistory;
+  Widget build(
+    BuildContext context,
+  ) {
+    final groups =
+        groupedHistory;
 
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor:
+          background,
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor:
+            Colors.white,
+        surfaceTintColor:
+            Colors.white,
         elevation: 4,
-        shadowColor: Colors.black.withValues(
+        shadowColor:
+            Colors.black.withValues(
           alpha: 0.15,
         ),
-        leading: IconButton(
+        leading:
+            IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
             color: orange,
@@ -312,7 +513,9 @@ class _HistoryPageState extends State<HistoryPage> {
             if (widget.onBack != null) {
               widget.onBack!();
             } else {
-              Navigator.maybePop(context);
+              Navigator.maybePop(
+                context,
+              );
             }
           },
         ),
@@ -321,57 +524,83 @@ class _HistoryPageState extends State<HistoryPage> {
           "Daftar Perhitungan Anda",
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF222222),
+            fontWeight:
+                FontWeight.bold,
+            color:
+                Color(0xFF222222),
           ),
         ),
       ),
+
       body: Column(
         children: [
           _buildFilter(),
+
           Expanded(
             child: groups.isEmpty
                 ? _buildEmpty()
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(
+                    padding:
+                        const EdgeInsets
+                            .fromLTRB(
                       16,
                       0,
                       16,
                       16,
                     ),
-                    itemCount: groups.fold<int>(
+                    itemCount:
+                        groups.fold<int>(
                       0,
-                      (total, group) =>
+                      (
+                        total,
+                        group,
+                      ) =>
                           total +
                           1 +
                           group.value.length,
                     ),
-                    itemBuilder: (context, index) {
-                      int currentIndex = 0;
+                    itemBuilder:
+                        (
+                      context,
+                      index,
+                    ) {
+                      int currentIndex =
+                          0;
 
-                      for (final group in groups) {
-                        if (index == currentIndex) {
+                      for (final group
+                          in groups) {
+                        if (index ==
+                            currentIndex) {
                           final date =
                               _parseDate(
-                            group.value.first['date'],
+                            group.value
+                                .first['date'],
                           );
 
                           return Padding(
                             padding:
-                                const EdgeInsets.only(
+                                const EdgeInsets
+                                    .only(
                               top: 12,
                               bottom: 4,
                             ),
-                            child: Text(
+                            child:
+                                Text(
                               date == null
                                   ? 'LAINNYA'
-                                  : _dateHeader(date),
-                              style: const TextStyle(
+                                  : _dateHeader(
+                                      date,
+                                    ),
+                              style:
+                                  const TextStyle(
                                 fontSize: 11,
                                 color:
-                                    Color(0xFF555555),
+                                    Color(
+                                  0xFF555555,
+                                ),
                                 fontWeight:
-                                    FontWeight.w500,
+                                    FontWeight
+                                        .w500,
                               ),
                             ),
                           );
@@ -381,12 +610,15 @@ class _HistoryPageState extends State<HistoryPage> {
 
                         if (index <
                             currentIndex +
-                                group.value.length) {
+                                group.value
+                                    .length) {
                           final itemIndex =
-                              index - currentIndex;
+                              index -
+                                  currentIndex;
 
                           return _buildHistoryCard(
-                            group.value[itemIndex],
+                            group.value[
+                                itemIndex],
                           );
                         }
 
@@ -394,7 +626,8 @@ class _HistoryPageState extends State<HistoryPage> {
                             group.value.length;
                       }
 
-                      return const SizedBox.shrink();
+                      return const SizedBox
+                          .shrink();
                     },
                   ),
           ),
@@ -409,14 +642,16 @@ class _HistoryPageState extends State<HistoryPage> {
       "Pivot",
       "Hangseng",
       "Emas Fisik",
+      "NEST",
     ];
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(
-        16,
+      padding:
+          const EdgeInsets.fromLTRB(
         10,
-        16,
+        10,
+        10,
         10,
       ),
       child: Row(
@@ -425,35 +660,46 @@ class _HistoryPageState extends State<HistoryPage> {
               selectedFilter == e;
 
           return Expanded(
-            child: GestureDetector(
+            child:
+                GestureDetector(
               onTap: () {
                 setState(() {
-                  selectedFilter = e;
+                  selectedFilter =
+                      e;
                 });
               },
               child: Container(
                 margin:
-                    const EdgeInsets.symmetric(
-                  horizontal: 3,
+                    const EdgeInsets
+                        .symmetric(
+                  horizontal: 2,
                 ),
                 padding:
-                    const EdgeInsets.symmetric(
+                    const EdgeInsets
+                        .symmetric(
                   vertical: 10,
                 ),
-                decoration: BoxDecoration(
+                decoration:
+                    BoxDecoration(
                   color: active
                       ? orange
-                      : Colors.grey.shade200,
+                      : Colors.grey
+                          .shade200,
                   borderRadius:
-                      BorderRadius.circular(20),
+                      BorderRadius
+                          .circular(
+                    20,
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     e,
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontWeight:
-                          FontWeight.bold,
-                      fontSize: 11,
+                          FontWeight
+                              .bold,
+                      fontSize: 10,
                       color: active
                           ? Colors.white
                           : Colors.black,
@@ -479,12 +725,15 @@ class _HistoryPageState extends State<HistoryPage> {
             size: 60,
             color: orange,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(
+            height: 20,
+          ),
           const Text(
             "Belum Ada Riwayat",
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         ],
@@ -496,7 +745,10 @@ class _HistoryPageState extends State<HistoryPage> {
     Map<String, dynamic> item,
   ) {
     final type =
-        item['type']?.toString().toLowerCase() ?? '';
+        item['type']
+                ?.toString()
+                .toLowerCase() ??
+            '';
 
     final bool pivot =
         type.contains("pivot");
@@ -505,92 +757,173 @@ class _HistoryPageState extends State<HistoryPage> {
         type.contains("hangseng") ||
         type.contains("hsi");
 
+    final bool nest =
+        type.contains("nest");
+
     final detail =
-        Map<String, dynamic>.from(
-      item['detail'] ?? {},
-    );
+        item['detail'] is Map
+            ? Map<String, dynamic>.from(
+                item['detail'],
+              )
+            : <String, dynamic>{};
 
     final result =
-        item['result']?.toString() ?? '';
+        item['result']
+                ?.toString() ??
+            '';
 
     final amount =
         item['amount'] ??
-        detail['step5'] ??
-        0;
+            detail['step5'] ??
+            0;
 
     final bool profit =
-        result.toLowerCase().contains("profit");
+        result
+            .toLowerCase()
+            .contains("profit");
+
+    final nestResult =
+        nest
+            ? _getNestSignal(item)
+            : '';
+
+    Color resultColor;
+
+    if (nest) {
+      if (nestResult == 'BUY') {
+        resultColor =
+            const Color(0xFF2E7D32);
+      } else if (nestResult ==
+          'SELL') {
+        resultColor =
+            const Color(0xFFD32F2F);
+      } else {
+        resultColor =
+            Colors.grey;
+      }
+    } else if (pivot ||
+        hangseng) {
+      resultColor = orange;
+    } else if (profit) {
+      resultColor = orange;
+    } else {
+      resultColor =
+          Colors.red;
+    }
 
     return GestureDetector(
       onTap: () {
         _openDetail(item);
       },
       child: Container(
-        margin: const EdgeInsets.only(
+        margin:
+            const EdgeInsets.only(
           bottom: 12,
         ),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
+        padding:
+            const EdgeInsets.all(
+          14,
+        ),
+        decoration:
+            BoxDecoration(
           color: Colors.white,
           borderRadius:
-              BorderRadius.circular(10),
+              BorderRadius.circular(
+            10,
+          ),
           border: Border.all(
-            color: const Color(0xFFE4E4E4),
+            color:
+                const Color(
+              0xFFE4E4E4,
+            ),
           ),
         ),
         child: Column(
           crossAxisAlignment:
-              CrossAxisAlignment.start,
+              CrossAxisAlignment
+                  .start,
           children: [
+            
             Row(
               children: [
                 Container(
                   width: 38,
                   height: 38,
-                  decoration: BoxDecoration(
+                  decoration:
+                      BoxDecoration(
                     color:
-                        const Color(0xFFFFF3E0),
+                        const Color(
+                      0xFFFFF3E0,
+                    ),
                     borderRadius:
-                        BorderRadius.circular(8),
+                        BorderRadius
+                            .circular(
+                      8,
+                    ),
                   ),
                   child: Icon(
                     pivot
-                        ? Icons.analytics_outlined
+                        ? Icons
+                            .analytics_outlined
                         : hangseng
-                            ? Icons.trending_up
-                            : Icons.calculate_outlined,
+                            ? Icons
+                                .trending_up
+                            : nest
+                                ? Icons
+                                    .swap_vert
+                                : Icons
+                                    .calculate_outlined,
                     color: orange,
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+
+                const SizedBox(
+                  width: 12,
+                ),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        CrossAxisAlignment
+                            .start,
                     children: [
                       Text(
                         pivot
                             ? "Pivot Point"
                             : hangseng
                                 ? "Hangseng"
-                                : "Emas Fisik",
-                        style: const TextStyle(
+                                : nest
+                                    ? "NEST"
+                                    : "Emas Fisik",
+                        style:
+                            const TextStyle(
                           fontSize: 15,
                           fontWeight:
-                              FontWeight.bold,
+                              FontWeight
+                                  .bold,
                           color:
-                              Color(0xFF222222),
+                              Color(
+                            0xFF222222,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+
+                      const SizedBox(
+                        height: 4,
+                      ),
+
                       Text(
-                        item['date']?.toString() ??
+                        item['date']
+                                ?.toString() ??
                             "-",
-                        style: const TextStyle(
+                        style:
+                            const TextStyle(
                           fontSize: 12,
                           color:
-                              Color(0xFF777777),
+                              Color(
+                            0xFF777777,
+                          ),
                         ),
                       ),
                     ],
@@ -598,20 +931,38 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(
+              height: 12,
+            ),
+
             Container(
               height: 1,
-              color: const Color(0xFFE8E8E8),
+              color:
+                  const Color(
+                0xFFE8E8E8,
+              ),
             ),
-            const SizedBox(height: 10),
+
+            const SizedBox(
+              height: 10,
+            ),
+
             const Text(
               "Hasil Perhitungan",
               style: TextStyle(
                 fontSize: 11,
-                color: Color(0xFF777777),
+                color:
+                    Color(
+                  0xFF777777,
+                ),
               ),
             ),
-            const SizedBox(height: 5),
+
+            const SizedBox(
+              height: 5,
+            ),
+
             Row(
               children: [
                 Expanded(
@@ -620,23 +971,28 @@ class _HistoryPageState extends State<HistoryPage> {
                         ? "Pivot : ${_formatPivot(detail['pp'])}"
                         : hangseng
                             ? "$result : ${_formatPivot(detail['pp'])}"
-                            : "$result : Rp ${_formatRupiah(amount)}",
-                    style: TextStyle(
+                            : nest
+                                ? "Action : $nestResult"
+                                : "$result : Rp ${_formatRupiah(amount)}",
+                    style:
+                        TextStyle(
                       fontSize: 14,
                       fontWeight:
-                          FontWeight.w600,
-                      color: pivot || hangseng
-                          ? orange
-                          : profit
-                              ? orange
-                              : Colors.red,
+                          FontWeight
+                              .w600,
+                      color:
+                          resultColor,
                     ),
                   ),
                 ),
+
                 const Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: Color(0xFF777777),
+                  color:
+                      Color(
+                    0xFF777777,
+                  ),
                 ),
               ],
             ),

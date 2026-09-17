@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'physical_gold_page.dart';
 import 'pivot_point_page.dart';
 import 'hangseng_page.dart';
+import 'nest_page.dart';
+
 import 'physical_gold_info_page.dart';
 import 'pivot_point_info_page.dart';
 import 'hangseng_info_page.dart';
+import 'nest_info_page.dart';
 
 class CalculatorPage extends StatelessWidget {
   final VoidCallback onBack;
@@ -20,9 +23,6 @@ class CalculatorPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ==============================================================
-      // HEADER
-      // ==============================================================
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -50,9 +50,6 @@ class CalculatorPage extends StatelessWidget {
         titleSpacing: 0,
       ),
 
-      // ==============================================================
-      // BODY
-      // ==============================================================
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -62,9 +59,7 @@ class CalculatorPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ========================================================
-              // JUDUL
-              // ========================================================
+              
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -89,9 +84,6 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // ========================================================
-              // SUBJUDUL
-              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -193,6 +185,42 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 16),
 
+              // KALKULATOR NEST
+              _buildCalculatorCard(
+                context: context,
+                icon: Icons.swap_vert,
+                title: 'Kalkulator NEST',
+                description:
+                    'Indikator sederhana yang membandingkan harga Close kemarin dengan harga Open hari ini untuk memberikan sinyal BUY atau SELL.',
+                gradientColors: const [
+                  Color(0xFFFFFCF8),
+                  Color(0xFFFFF0DF),
+                  Color(0xFFFFF7ED),
+                ],
+
+                // INFO NEST
+                onInformation: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const NestInfoDialog();
+                    },
+                  );
+                },
+
+                // HITUNG NEST
+                onCalculate: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NestPage(),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 16),
+
               // KALKULATOR HANGSENG
               _buildCalculatorCard(
                 context: context,
@@ -249,7 +277,6 @@ class CalculatorPage extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-      
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -275,11 +302,10 @@ class CalculatorPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-       
+          
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-             
               Container(
                 width: 42,
                 height: 42,
@@ -332,9 +358,11 @@ class CalculatorPage extends StatelessWidget {
                             ? 'Emas Fisik'
                             : title == 'Kalkulator Pivot Point'
                                 ? 'Pivot Point'
-                                : title == 'Kalkulator Hangseng'
-                                    ? 'Hangseng'
-                                    : '',
+                                : title == 'Kalkulator NEST'
+                                    ? 'NEST'
+                                    : title == 'Kalkulator Hangseng'
+                                        ? 'Hangseng'
+                                        : '',
                         style: const TextStyle(
                           color: Color(0xFFF7931E),
                         ),
@@ -366,7 +394,7 @@ class CalculatorPage extends StatelessWidget {
 
           Row(
             children: [
-             
+              // INFORMASI
               Expanded(
                 child: SizedBox(
                   height: 42,
@@ -403,6 +431,7 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(width: 10),
 
+              // HITUNG
               Expanded(
                 child: SizedBox(
                   height: 42,

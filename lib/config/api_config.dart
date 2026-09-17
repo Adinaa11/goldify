@@ -4,6 +4,9 @@ class ApiConfig {
     defaultValue: 'https://www.newsmaker.id',
   );
 
+  static const String liveQuotes =
+      '$baseUrl/api/live-quotes';
+
   static const String historicalGold =
       '$baseUrl/api/historical-data';
 }

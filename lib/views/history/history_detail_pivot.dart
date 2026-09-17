@@ -1021,7 +1021,7 @@ class _HistoryDetailPivotPageState
             Opacity(
               opacity: 0.70,
               child: Image.asset(
-                'assets/images/ewf.png',
+                'assets/images/ewf.jpg',
                 width: 330,
                 fit: BoxFit.contain,
               ),
