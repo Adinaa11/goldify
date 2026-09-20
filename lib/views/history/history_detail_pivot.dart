@@ -1,8 +1,9 @@
 import 'dart:typed_data';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../calculator/pivot_point_page.dart';
@@ -24,6 +25,7 @@ class HistoryDetailPivotPage extends StatefulWidget {
 
 class _HistoryDetailPivotPageState
     extends State<HistoryDetailPivotPage> {
+  final supabase = Supabase.instance.client;
   static const Color orange = Color(0xFFF7931E);
   static const Color darkText = Color(0xFF222222);
   static const Color greyText = Color(0xFF666666);
@@ -46,17 +48,12 @@ class _HistoryDetailPivotPageState
       ScreenshotController();
 
   String _format(dynamic value) {
-    final number = double.tryParse(
-      value?.toString() ?? '',
-    );
+    if (value == null) return '-';
 
-    if (number == null) {
-      return '-';
-    }
+    final number = double.tryParse(value.toString());
+    if (number == null) return '-';
 
-    return number
-        .toStringAsFixed(2)
-        .replaceAll('.', ',');
+    return number.toStringAsFixed(2).replaceAll('.', ',');
   }
 
   String _formatDate(dynamic value) {
@@ -101,11 +98,36 @@ class _HistoryDetailPivotPageState
 
   @override
   Widget build(BuildContext context) {
-    final d = Map<String, dynamic>.from(
-      widget.item['detail'] ?? {},
-    );
+    final rawInput = widget.item['input'];
+    final rawResult = widget.item['result'];
 
-    final date = widget.item['date'];
+    final input = rawInput is String
+        ? jsonDecode(rawInput)
+        : (rawInput ?? {});
+
+    final result = rawResult is String
+        ? jsonDecode(rawResult)
+        : (rawResult ?? {});
+
+    final d = {
+      'pp': result['pivot'],
+      'open': input['open'],
+      'high': input['high'],
+      'low': input['low'],
+      'close': input['close'],
+
+      'r1': result['r1'],
+      'r2': result['r2'],
+      'r3': result['r3'],
+      'r4': result['r4'],
+
+      's1': result['s1'],
+      's2': result['s2'],
+      's3': result['s3'],
+      's4': result['s4'],
+    };
+
+    final date = result['date'] ?? widget.item['created_at'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -998,9 +1020,24 @@ class _HistoryDetailPivotPageState
   }
 
   Widget _buildDownloadWidget() {
-    final d = Map<String, dynamic>.from(
-      widget.item['detail'] ?? {},
-    );
+    final input = widget.item['input'] ?? {};
+    final result = widget.item['result'] ?? {};
+
+    final d = {
+      'pp': result['pivot'],
+      'open': input['open'],
+      'high': input['high'],
+      'low': input['low'],
+      'close': input['close'],
+      'r1': result['r1'],
+      'r2': result['r2'],
+      'r3': result['r3'],
+      'r4': result['r4'],
+      's1': result['s1'],
+      's2': result['s2'],
+      's3': result['s3'],
+      's4': result['s4'],
+    };
 
     return Material(
       color: Colors.white,
@@ -1625,30 +1662,34 @@ class _HistoryDetailPivotPageState
   }
 
   Future<void> _deleteHistory() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    try {
+      final id = widget.item['id'];
 
-    final data =
-        prefs.getStringList(
-              'history_data',
-            ) ??
-            [];
+      await supabase
+      .from('history') 
+      .delete()
+      .eq('id', id);
 
-    if (widget.index >= 0 &&
-        widget.index < data.length) {
-      data.removeAt(widget.index);
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getStringList('history_data') ?? [];
 
-      await prefs.setStringList(
-        'history_data',
-        data,
+      if (widget.index >= 0 && widget.index < data.length) {
+        data.removeAt(widget.index);
+        await prefs.setStringList('history_data', data);
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context, {'deleted': true});
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal hapus data: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
-
-    if (!mounted) return;
-
-    Navigator.pop(
-      context,
-      {'deleted': true},
-    );
   }
 }

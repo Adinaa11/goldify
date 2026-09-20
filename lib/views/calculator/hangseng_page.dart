@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/market_service.dart';
 import 'hangseng_result_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HangsengPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -194,6 +195,47 @@ class _HangsengPageState extends State<HangsengPage> {
     _lowController.dispose();
     _closeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveToDatabase({
+    required double open,
+    required double high,
+    required double low,
+    required double close,
+    required Map<String, dynamic> result,
+  }) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    debugPrint("USER ID: ${user?.id}");
+
+    if (user == null) {
+      debugPrint("❌ USER BELUM LOGIN");
+      return;
+    }
+
+    try {
+      final response = await supabase
+          .from('history')
+          .insert({
+            'user_id': user.id,
+            'type': 'hangseng',
+            'input': {
+              'open': open,
+              'high': high,
+              'low': low,
+              'close': close,
+            },
+            'result': result,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select();
+
+      debugPrint("✅ DATA HANGSENG MASUK: $response");
+
+    } catch (e) {
+      debugPrint("❌ ERROR SIMPAN HANGSENG: $e");
+    }
   }
 
   Future<void> _loadHangsengData({
@@ -391,7 +433,7 @@ class _HangsengPageState extends State<HangsengPage> {
         _closeController.text.trim().isNotEmpty;
   }
 
-  void _calculateHangseng() {
+  Future<void> _calculateHangseng() async {
     final double? open =
         _parseNumber(_openController.text);
     final double? high =
@@ -459,6 +501,55 @@ class _HangsengPageState extends State<HangsengPage> {
         _lowController.text.contains(',') ||
         _closeController.text.contains(',');
 
+    // =======================
+    // HITUNG PIVOT POINT
+    // =======================
+    final pp = (high + low + close) / 3;
+
+    final r1 = (2 * pp) - low;
+    final s1 = (2 * pp) - high;
+
+    final r2 = pp + (high - low);
+    final s2 = pp - (high - low);
+
+    final r3 = high + 2 * (pp - low);
+    final s3 = low - 2 * (high - pp);
+
+    final r4 = r3 + (r2 - r1);
+    final s4 = s3 - (r1 - s1);
+
+    // =======================
+    // SIMPAN KE DATABASE
+    // =======================
+    await _saveToDatabase(
+      open: open,
+      high: high,
+      low: low,
+      close: close,
+      result: {
+        'open': open,
+        'high': high,
+        'low': low,
+        'close': close,
+
+        'pp': pp,
+
+        'r1': r1,
+        'r2': r2,
+        'r3': r3,
+        'r4': r4,
+
+        's1': s1,
+        's2': s2,
+        's3': s3,
+        's4': s4,
+
+        'date': _dataDate,
+      },
+    );
+
+    if (!mounted) return;
+    
     Navigator.push(
       context,
       MaterialPageRoute(

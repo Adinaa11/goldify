@@ -61,10 +61,8 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
 
       final fileName = "${user.id}.jpg";
 
-      /// 🔥 HAPUS FILE LAMA DULU
       await supabase.storage.from('avatars').remove([fileName]);
 
-      /// 🔥 BARU UPLOAD
       await supabase.storage.from('avatars').upload(
         fileName,
         file,
@@ -106,7 +104,6 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
 
       debugPrint("FINAL AVATAR URL: $uploadedUrl");
 
-      /// 🔥 FIX UTAMA: selalu kirim avatar_url
       final response = await supabase
           .from('profiles')
           .update({

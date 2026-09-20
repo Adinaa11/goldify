@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'history_detail_pivot.dart';
 import 'history_detail_emas.dart';
 import 'history_detail_hangseng.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HistoryPage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -31,26 +30,27 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList("history_data") ?? [];
-    final loaded = <Map<String, dynamic>>[];
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
 
-    for (int i = 0; i < data.length; i++) {
-      try {
-        final decoded = Map<String, dynamic>.from(
-          jsonDecode(data[i]),
-        );
+      if (user == null) return;
 
-        decoded['_historyRawIndex'] = i;
-        loaded.add(decoded);
-      } catch (_) {}
+      final response = await supabase
+          .from('history')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false);
+
+      if (!mounted) return;
+
+      setState(() {
+        history = List<Map<String, dynamic>>.from(response);
+      });
+
+    } catch (e) {
+      debugPrint('Error load history: $e');
     }
-
-    if (!mounted) return;
-
-    setState(() {
-      history = loaded;
-    });
   }
 
   List<Map<String, dynamic>> get filteredHistory {
@@ -147,7 +147,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _dateKey(Map<String, dynamic> item) {
-    final date = _parseDate(item['date']);
+    final date = _parseDate(item['created_at']);
 
     if (date == null) {
       return 'LAINNYA';
@@ -172,8 +172,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
     for (final group in groups.values) {
       group.sort((a, b) {
-        final dateA = _parseDate(a['date']);
-        final dateB = _parseDate(b['date']);
+        final dateA = _parseDate(a['created_at']);
+        final dateB = _parseDate(b['created_at']);
 
         if (dateA == null && dateB == null) {
           return 0;
@@ -195,10 +195,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
     entries.sort((a, b) {
       final dateA =
-          _parseDate(a.value.first['date']);
+          _parseDate(a.value.first['created_at']);
 
       final dateB =
-          _parseDate(b.value.first['date']);
+          _parseDate(b.value.first['created_at']);
 
       if (dateA == null && dateB == null) {
         return 0;
@@ -353,7 +353,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         if (index == currentIndex) {
                           final date =
                               _parseDate(
-                            group.value.first['date'],
+                            group.value.first['created_at'],
                           );
 
                           return Padding(
@@ -492,48 +492,39 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildHistoryCard(
+ Widget _buildHistoryCard(
     Map<String, dynamic> item,
   ) {
+    final resultData =
+        Map<String, dynamic>.from(item['result'] ?? {});
+
+    final resultText =
+        resultData['status']?.toString() ?? '';
+
+    final amount = resultData['step5'] ?? 0;
+
+    final bool profit =
+        resultText.toLowerCase().contains("profit");
+
     final type =
         item['type']?.toString().toLowerCase() ?? '';
 
-    final bool pivot =
-        type.contains("pivot");
+    final bool pivot = type.contains("pivot");
 
     final bool hangseng =
         type.contains("hangseng") ||
         type.contains("hsi");
-
-    final detail =
-        Map<String, dynamic>.from(
-      item['detail'] ?? {},
-    );
-
-    final result =
-        item['result']?.toString() ?? '';
-
-    final amount =
-        item['amount'] ??
-        detail['step5'] ??
-        0;
-
-    final bool profit =
-        result.toLowerCase().contains("profit");
 
     return GestureDetector(
       onTap: () {
         _openDetail(item);
       },
       child: Container(
-        margin: const EdgeInsets.only(
-          bottom: 12,
-        ),
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius:
-              BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: const Color(0xFFE4E4E4),
           ),
@@ -548,8 +539,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color:
-                        const Color(0xFFFFF3E0),
+                    color: const Color(0xFFFFF3E0),
                     borderRadius:
                         BorderRadius.circular(8),
                   ),
@@ -564,6 +554,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
@@ -584,9 +575,10 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
+
                       Text(
-                        item['date']?.toString() ??
-                            "-",
+                        _formatDateTime(
+                            item['created_at']),
                         style: const TextStyle(
                           fontSize: 12,
                           color:
@@ -598,12 +590,14 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
             Container(
               height: 1,
               color: const Color(0xFFE8E8E8),
             ),
             const SizedBox(height: 10),
+
             const Text(
               "Hasil Perhitungan",
               style: TextStyle(
@@ -612,15 +606,16 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ),
             const SizedBox(height: 5),
+
             Row(
               children: [
                 Expanded(
                   child: Text(
                     pivot
-                        ? "Pivot : ${_formatPivot(detail['pp'])}"
+                        ? "Pivot : ${_formatPivot(resultData['pivot'] ?? resultData['pp'])}"
                         : hangseng
-                            ? "$result : ${_formatPivot(detail['pp'])}"
-                            : "$result : Rp ${_formatRupiah(amount)}",
+                            ? "PP : ${_formatPivot(resultData['pp'])}"
+                            : "$resultText : Rp ${_formatRupiah(amount)}",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight:
@@ -644,5 +639,20 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ),
     );
+  }
+  String _formatDateTime(dynamic value) {
+    if (value == null) return '-';
+
+    try {
+      final date = DateTime.parse(value.toString()).toLocal();
+
+      return "${date.day.toString().padLeft(2, '0')}/"
+            "${date.month.toString().padLeft(2, '0')}/"
+            "${date.year} "
+            "${date.hour.toString().padLeft(2, '0')}:"
+            "${date.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return value.toString();
+    }
   }
 }

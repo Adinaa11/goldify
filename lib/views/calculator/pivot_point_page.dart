@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/market_service.dart';
 import 'pivot_result_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PivotPointPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -89,6 +90,45 @@ class _PivotPointPageState extends State<PivotPointPage> {
     _lowController.dispose();
     _closeController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _saveToDatabase({
+    required double open,
+    required double high,
+    required double low,
+    required double close,
+    required Map<String, dynamic> result,
+  }) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    debugPrint("USER ID: ${user?.id}");
+
+    if (user == null) {
+      debugPrint("❌ USER BELUM LOGIN");
+      return false;
+    }
+
+    try {
+      await supabase.from('history').insert({
+        'user_id': user.id,
+        'type': 'pivot',
+        'input': {
+          'open': open,
+          'high': high,
+          'low': low,
+          'close': close,
+        },
+        'result': result,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      debugPrint("✅ DATA MASUK");
+      return true;
+    } catch (e) {
+      debugPrint("❌ ERROR SIMPAN: $e");
+      return false;
+    }
   }
 
   Future<void> _loadGoldData({String? date}) async {
@@ -245,7 +285,7 @@ class _PivotPointPageState extends State<PivotPointPage> {
         _closeController.text.isNotEmpty;
   }
 
-  void _calculatePivot() {
+  Future<void> _calculatePivot() async {
     final double? open = _parseNumber(_openController.text);
     final double? high = _parseNumber(_highController.text);
     final double? low = _parseNumber(_lowController.text);
@@ -289,20 +329,67 @@ class _PivotPointPageState extends State<PivotPointPage> {
         _closeController.text.contains('.') ||
         _closeController.text.contains(',');
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PivotResultPage(
-          open: open,
-          high: high,
-          low: low,
-          close: close,
-          hasDecimalInput: hasDecimalInput,
-          dataDate: _dataDate,
+      final pivot = (high + low + close) / 3;
+
+      // RESISTANCE
+      final r1 = (2 * pivot) - low;
+      final r2 = pivot + (high - low);
+      final r3 = high + 2 * (pivot - low);
+      final r4 = r3 + (r2 - r1);
+
+      // SUPPORT
+      final s1 = (2 * pivot) - high;
+      final s2 = pivot - (high - low);
+      final s3 = low - 2 * (high - pivot);
+      final s4 = s3 - (r1 - s1);
+
+      final isSaved = await _saveToDatabase(
+        open: open,
+        high: high,
+        low: low,
+        close: close,
+        result: {
+          'pivot': pivot, // 🔥 WAJIB pakai ini
+
+          'r1': r1,
+          'r2': r2,
+          'r3': r3,
+          'r4': r4,
+
+          's1': s1,
+          's2': s2,
+          's3': s3,
+          's4': s4,
+
+          'date': _dataDate,
+        },
+      );
+
+    if (!isSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menyimpan data ke database'),
+          backgroundColor: Colors.red,
         ),
-      ),
-    );
-  }
+      );
+      return;
+    }
+      if (!mounted) return;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PivotResultPage(
+              open: open,
+              high: high,
+              low: low,
+              close: close,
+              hasDecimalInput: hasDecimalInput,
+              dataDate: _dataDate,
+            ),
+          ),
+        );
+      }
 
   Future<void> _refreshData() async {
     if (_isRecalculate) return;

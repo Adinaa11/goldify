@@ -3,8 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:gal/gal.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../calculator/hangseng_page.dart';
 
 class HistoryDetailHangsengPage extends StatefulWidget {
@@ -132,17 +131,18 @@ class _HistoryDetailHangsengPageState
   }
 
   String _formatDate(dynamic value) {
-    if (value == null) {
-      return '-';
+    if (value == null) return '-';
+
+    try {
+      final dt = DateTime.parse(value.toString());
+      return '${dt.day.toString().padLeft(2, '0')}/'
+            '${dt.month.toString().padLeft(2, '0')}/'
+            '${dt.year} '
+            '${dt.hour.toString().padLeft(2, '0')}:'
+            '${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return value.toString();
     }
-
-    final text = value.toString();
-
-    if (text.length >= 16) {
-      return text.substring(0, 16);
-    }
-
-    return text;
   }
 
   double _number(dynamic value) {
@@ -173,11 +173,22 @@ class _HistoryDetailHangsengPageState
 
   @override
   Widget build(BuildContext context) {
-    final d = Map<String, dynamic>.from(
-      widget.item['detail'] ?? {},
+    final result = Map<String, dynamic>.from(
+      widget.item['result'] ?? {},
     );
 
-    final date = widget.item['date'];
+    final input = Map<String, dynamic>.from(
+      widget.item['input'] ?? {},
+    );
+
+    final d = {
+      ...result,
+      ...input,
+    };
+
+    print(d);
+
+    final date = widget.item['created_at'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -577,26 +588,10 @@ class _HistoryDetailHangsengPageState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _dataItem(
-                'Open',
-                d['openInput'],
-                d['open'],
-              ),
-              _dataItem(
-                'High',
-                d['highInput'],
-                d['high'],
-              ),
-              _dataItem(
-                'Low',
-                d['lowInput'],
-                d['low'],
-              ),
-              _dataItem(
-                'Close',
-                d['closeInput'],
-                d['close'],
-              ),
+              _dataItem('Open', d['open'], d['open']),
+              _dataItem('High', d['high'], d['high']),
+              _dataItem('Low', d['low'], d['low']),
+              _dataItem('Close', d['close'], d['close']),
             ],
           ),
         ],
@@ -1080,9 +1075,18 @@ class _HistoryDetailHangsengPageState
   }
 
   Widget _buildDownloadWidget() {
-    final d = Map<String, dynamic>.from(
-      widget.item['detail'] ?? {},
+    final result = Map<String, dynamic>.from(
+      widget.item['result'] ?? {},
     );
+
+    final input = Map<String, dynamic>.from(
+      widget.item['input'] ?? {},
+    );
+
+    final d = {
+      ...result,
+      ...input,
+    };
 
     return Material(
       color: Colors.white,
@@ -1429,26 +1433,10 @@ class _HistoryDetailHangsengPageState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _downloadInput(
-                'Open',
-                d['openInput'],
-                d['open'],
-              ),
-              _downloadInput(
-                'High',
-                d['highInput'],
-                d['high'],
-              ),
-              _downloadInput(
-                'Low',
-                d['lowInput'],
-                d['low'],
-              ),
-              _downloadInput(
-                'Close',
-                d['closeInput'],
-                d['close'],
-              ),
+              _downloadInput('Open', d['open'], d['open']),
+              _downloadInput('High', d['high'], d['high']),
+              _downloadInput('Low', d['low'], d['low']),
+              _downloadInput('Close', d['close'], d['close']),
             ],
           ),
         ],
@@ -1696,28 +1684,24 @@ class _HistoryDetailHangsengPageState
   }
 
   Future<void> _deleteHistory() async {
-    final prefs = await SharedPreferences.getInstance();
+    final supabase = Supabase.instance.client;
 
-    final data = prefs.getStringList(
-          'history_data',
-        ) ??
-        [];
+    try {
+      await supabase
+          .from('history')
+          .delete()
+          .eq('id', widget.item['id']);
 
-    if (widget.index >= 0 &&
-        widget.index < data.length) {
-      data.removeAt(widget.index);
+      if (!mounted) return;
 
-      await prefs.setStringList(
-        'history_data',
-        data,
+      Navigator.pop(context, {'deleted': true});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal hapus data: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
-
-    if (!mounted) return;
-
-    Navigator.pop(
-      context,
-      {'deleted': true},
-    );
   }
 }

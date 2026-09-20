@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:image/image.dart' as img;
 import 'package:gal/gal.dart';
@@ -17,12 +17,34 @@ class HistoryDetailEmasPage extends StatelessWidget {
 
   final ScreenshotController screenshotController = ScreenshotController();
 
-  Map<String, dynamic> get detail =>
-      Map<String, dynamic>.from(item['detail'] ?? {});
+  Map<String, dynamic> get input =>
+    Map<String, dynamic>.from(item['input'] ?? {});
+
+Map<String, dynamic> get result =>
+    Map<String, dynamic>.from(item['result'] ?? {});
 
   double _number(dynamic value) {
     if (value == null) return 0;
     return double.tryParse(value.toString()) ?? 0;
+  }
+  
+  String _formatDateTime(dynamic value) {
+    if (value == null) return "-";
+
+    try {
+      final date = DateTime.parse(value.toString()).toLocal(); // 🔥 WAJIB
+
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final year = date.year;
+
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+
+      return "$day-$month-$year $hour:$minute";
+    } catch (e) {
+      return value.toString(); 
+    }
   }
 
   String _formatRupiah(dynamic value) {
@@ -58,27 +80,26 @@ class HistoryDetailEmasPage extends StatelessWidget {
   }
 
   bool get isProfit {
-    final step5 = _number(detail['step5']);
-    return step5 >= 0;
+    return result['status'] == 'profit';
   }
 
   String get resultText => isProfit ? 'PROFIT' : 'LOSS';
 
   Future<void> _deleteHistory(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList("history_data") ?? [];
+    try {
+      final supabase = Supabase.instance.client;
 
-    if (index >= 0 && index < data.length) {
-      data.removeAt(index);
-      await prefs.setStringList("history_data", data);
+      await supabase
+          .from('history')
+          .delete()
+          .eq('id', item['id']); // pastikan ada kolom id di database
+
+      if (!context.mounted) return;
+
+      Navigator.pop(context, {'deleted': true});
+    } catch (e) {
+      print('Error delete: $e');
     }
-
-    if (!context.mounted) return;
-
-    Navigator.pop(
-      context,
-      {'deleted': true},
-    );
   }
 
   Future<void> _downloadJpg(BuildContext context) async {
@@ -184,7 +205,7 @@ class HistoryDetailEmasPage extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) {
           return PhysicalGoldPage(
-            initialData: detail,
+            initialData: input
           );
         },
       ),
@@ -192,8 +213,8 @@ class HistoryDetailEmasPage extends StatelessWidget {
   }
 
   Widget _buildResultCard() {
-    final step5 = _number(detail['step5']);
-    final date = item['date']?.toString() ?? '-';
+    final step5 = _number(result['step5']);
+    final date = _formatDateTime(item['created_at']);
 
     return Container(
       width: double.infinity,
@@ -289,22 +310,26 @@ class HistoryDetailEmasPage extends StatelessWidget {
         children: [
           _row(
             'Modal Awal',
-            _formatRupiah(detail['modal']),
+            _formatRupiah(input['modal']),
           ),
           _divider(),
           _row(
             'Kurs',
-            'Rp ${_formatNumber(detail['kurs'])}',
+            'Rp ${_formatNumber(input['kurs'])}',
           ),
           _divider(),
           _row(
             'Harga Beli',
-            _formatRupiah(detail['hargaBeli']),
+            _formatRupiah(
+              input['hargaBeli'] ?? input['harga_beli']
+            ),
           ),
           _divider(),
           _row(
             'Harga Jual',
-            _formatRupiah(detail['hargaJual']),
+            _formatRupiah(
+              input['hargaJual'] ?? input['harga_jual']
+            ),
           ),
           _divider(),
           _row(
@@ -325,31 +350,31 @@ class HistoryDetailEmasPage extends StatelessWidget {
             '1',
             'Harga Beli per TOz',
             'Harga Beli × Kurs ÷ 31,1',
-            _formatRupiah(detail['step1']),
+            _formatRupiah(result['step1']),
           ),
           _stepRow(
             '2',
             'Harga Jual per TOz',
             'Harga Jual × Kurs ÷ 31,1',
-            _formatRupiah(detail['step2']),
+            _formatRupiah(result['step2']),
           ),
           _stepRow(
             '3',
             'Selisih Harga',
             'Step 2 − Step 1',
-            _formatRupiah(detail['step3']),
+            _formatRupiah(result['step3']),
           ),
           _stepRow(
             '4',
             'Jumlah Emas',
             'Modal ÷ Step 1',
-            '${_formatToz(detail['step4'])} TOz',
+            '${_formatToz(result['step4'])} TOz',
           ),
           _stepRow(
             '5',
             'Profit / Loss',
             'Step 3 × Step 4',
-            _formatRupiah(detail['step5']),
+            _formatRupiah(result['step5']),
             isFinal: true,
           ),
         ],
@@ -414,23 +439,28 @@ class HistoryDetailEmasPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(7),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            size: 17,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'HAPUS',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                      child: GestureDetector(
+                        onTap: () {
+                          _deleteHistory(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.delete_outline,
+                              size: 17,
                             ),
-                          ),
-                        ],
-                      ),
+                            SizedBox(width: 6),
+                            Text(
+                              'HAPUS',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     ),
                   ),
                 ),

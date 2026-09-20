@@ -1,8 +1,7 @@
 import 'package:flutter/services.dart';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'physical_gold_result_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ThousandsSeparatorInputFormatter
     extends TextInputFormatter {
@@ -188,7 +187,7 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
   }
 
   // SIMPAN HISTORY
-  Future<void> _saveHistory({
+  Future<void> _saveToDatabase({
     required double modal,
     required double kurs,
     required double hargaBeli,
@@ -199,34 +198,46 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
     required double step4,
     required double step5,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList("history_data") ?? [];
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-    final item = {
-      "type": "emas fisik",
-      "date": DateTime.now().toString().substring(0, 16),
-      "detail": {
-        "modal": modal,
-        "kurs": kurs,
-        "hargaBeli": hargaBeli,
-        "hargaJual": hargaJual,
-        "step1": step1,
-        "step2": step2,
-        "step3": step3,
-        "step4": step4,
-        "step5": step5,
-      },
-      "result": step5 >= 0 ? "Profit" : "Loss",
-    };
+    print("USER LOGIN: ${user?.id}");
 
-    data.add(jsonEncode(item));
+    if (user == null) {
+      print("❌ USER BELUM LOGIN");
+      return;
+    }
 
-    await prefs.setStringList(
-      "history_data",
-      data,
-    );
+    try {
+      final response = await supabase
+  .from('history')
+  .insert({
+    'user_id': user.id,
+    'type': 'emas_fisik',
+    'input': {
+      'modal': modal,
+      'kurs': kurs,
+      'harga_beli': hargaBeli,
+      'harga_jual': hargaJual,
+    },
+    'result': {
+      'step1': step1,
+      'step2': step2,
+      'step3': step3,
+      'step4': step4,
+      'step5': step5,
+      'status': step5 >= 0 ? 'profit' : 'loss',
+    },
+    'created_at': DateTime.now().toIso8601String(),
+    })
+    .select();
+
+      print("✅ RESPONSE: $response");
+    } catch (e) {
+      print("❌ ERROR: $e");
+    }
   }
-
+  
   // FORMAT ANGKA
   static double _truncateInteger(double value) {
     return value.truncateToDouble();
@@ -372,7 +383,7 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
         _truncateInteger(rawStep5);
 
     // SIMPAN HISTORY OTOMATIS
-    await _saveHistory(
+    await _saveToDatabase(
       modal: modal,
       kurs: kurs,
       hargaBeli: hargaBeli,
