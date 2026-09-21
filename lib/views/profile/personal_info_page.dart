@@ -1,337 +1,535 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/user_profile_model.dart';
+import '../../repositories/profile_repository.dart';
+import '../../viewmodels/personal_info_viewmodel.dart';
+
 class PersonalInfoPage extends StatefulWidget {
-  const PersonalInfoPage({super.key});
+
+  const PersonalInfoPage({
+    super.key,
+  });
 
   @override
-  State<PersonalInfoPage> createState() => _PersonalInfoPageState();
+  State<PersonalInfoPage> createState()
+      => _PersonalInfoPageState();
 }
 
-class _PersonalInfoPageState extends State<PersonalInfoPage> {
+class _PersonalInfoPageState
+    extends State<PersonalInfoPage> {
 
-  String name = "John Doe";
-  String email = "johndoe@email.com";
-  String phone = "+62 812 xxxx xxxx";
+  late PersonalInfoViewModel viewModel;
 
-  File? imageFile;
+  final ImagePicker picker =
+      ImagePicker();
 
-  final ImagePicker _picker = ImagePicker();
+  @override
+  void initState(){
+    super.initState();
 
-  // ================= PICK IMAGE =================
-  Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    viewModel =
+        PersonalInfoViewModel(
+          ProfileRepository(),
+        );
 
-    if (picked != null) {
-      setState(() {
-        imageFile = File(picked.path);
-      });
-    }
+    viewModel.loadProfile();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
+  Widget build(BuildContext context){
+    return AnimatedBuilder(
+      animation: viewModel,
 
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFF7931E)),
-        title: const Text(
-          'Informasi Pribadi',
-          style: TextStyle(
-            color: Color(0xFF333333),
-            fontWeight: FontWeight.bold,
+      builder:(context, child){
+
+        return Scaffold(
+          backgroundColor:
+          const Color(0xFFF5F6F8),
+
+          appBar: AppBar(
+            title:
+            const Text(
+              "Informasi Pribadi",
+            ),
+
+            backgroundColor:
+            Colors.white,
+
+            foregroundColor:
+            Colors.black,
           ),
-        ),
-      ),
 
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+          body:
+          viewModel.isLoading?
+          const Center(
+            child:
+            CircularProgressIndicator(),
+          ):
+          _buildBody(),
+        );
+      },
+    );
+  }
 
-            // ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+  Widget _buildBody(){
+
+    final profile =
+        viewModel.profile!;
+
+    return Column(
+      children: [
+        const SizedBox(height:20),
+
+        GestureDetector(
+
+          onTap: () async {
+
+            final picked =
+            await picker.pickImage(
+              source:
+              ImageSource.gallery,
+              imageQuality:
+              70,
+            );
+
+            if(picked != null){
+              viewModel.setImage(
+                File(
+                  picked.path,
+                ),
+              );
+            }
+          },
+
+          child: Stack(
+            alignment:
+            Alignment.bottomRight,
+            children: [
+
+              CircleAvatar(
+
+                radius:45,
+                backgroundImage:
+
+                viewModel.imageFile != null ?
+                FileImage(
+                  viewModel.imageFile!,
+                ):
+                (
+                profile.avatarUrl != null &&
+                profile.avatarUrl!.isNotEmpty
+                )?
+                NetworkImage(
+                  profile.avatarUrl!,
+                ):
+
+                const AssetImage(
+                  'assets/images/profile.png',
+                )
+                as ImageProvider,
+              ),
+
+              Container(
+                padding:
+                const EdgeInsets.all(7),
+
+                decoration:
+                BoxDecoration(
+
+                  color:
+                  const Color(0xFFF7931E),
+
+                  shape:
+                  BoxShape.circle,
+
+                  border:
+                  Border.all(
+
+                    color:
+                    Colors.white,
+
+                    width:
+                    2,
+                  ),
+                ),
+                child:
+                const Icon(
+
+                  Icons.camera_alt,
+
+                  color:
+                  Colors.white,
+
+                  size:
+                  17,
                 ),
               ),
-              child: Column(
-                children: [
+            ],
+          ),
+        ),
 
-                  // ✅ FOTO PROFIL (BISA DIKLIK)
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage: imageFile != null
-                          ? FileImage(imageFile!)
-                          : const AssetImage('assets/images/profile.png')
-                              as ImageProvider,
-                    ),
+        const SizedBox(height:10),
+
+        Text(
+          profile.name,
+
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.bold,
+            fontSize:
+            16,
+          ),
+        ),
+
+        const SizedBox(height:20),
+
+        Container(
+          margin:
+          const EdgeInsets.all(16),
+          padding:
+          const EdgeInsets.all(16),
+          decoration:
+          BoxDecoration(
+            color:
+            Colors.white,
+
+            borderRadius:
+            BorderRadius.circular(16),
+          ),
+
+          child:
+          Column(
+            children: [
+              _item(
+                "Nama",
+                profile.name,
+                (){
+                  _editField(
+                    "Nama",
+                    profile.name,
+                    (v){
+
+                      setState((){
+
+                        viewModel.profile =
+                        UserProfileModel(
+
+                          name:v,
+
+                          email:
+                          profile.email,
+
+                          phone:
+                          profile.phone,
+
+                          avatarUrl:
+                          profile.avatarUrl,
+                        );
+                      });
+                    },
+                  );
+                },
+              ),
+              _divider(),
+              _item(
+                "Email",
+                profile.email,
+                null,
+              ),
+              _divider(),
+              _item(
+                "Telepon",
+                profile.phone,
+                (){
+                  _editField(
+                    "Telepon",
+                    profile.phone,
+                    (v){
+
+                      setState((){
+                        viewModel.profile =
+                        UserProfileModel(
+                          name:
+                          profile.name,
+                          email:
+                          profile.email,
+                          phone:v,
+                          avatarUrl:
+                          profile.avatarUrl,
+                        );
+                      });
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+
+        Padding(
+
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal:16,
+          ),
+
+          child:
+          SizedBox(
+            width:
+            double.infinity,
+            height:
+            50,
+
+            child:
+            ElevatedButton(
+              onPressed:
+              viewModel.isSaving
+              ?
+              null
+              :
+              () async {
+
+                final success =
+                await viewModel.updateProfile(
+                  name:
+                  viewModel.profile!.name,
+                  phone:
+                  viewModel.profile!.phone,
+
+                );
+
+                if(!mounted)return;
+
+                _msg(
+                  success
+                  ?
+                  "Berhasil diperbarui"
+                  :
+                  "Gagal update data",
+                );
+
+                if(success){
+
+                  Navigator.pop(
+                    context,
+                    true,
+                  );
+                }
+              },
+
+              style:
+              ElevatedButton.styleFrom(
+                backgroundColor:
+                const Color(0xFFF7931E),
+                shape:
+                RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(12),
+                ),
+              ),
+
+              child:
+              viewModel.isSaving
+              ?
+              const CircularProgressIndicator(
+                color:Colors.white,
+              )
+              :
+              const Text(
+                "Simpan Perubahan",
+
+                style:
+                TextStyle(
+                  color:
+                  Colors.white,
+                  fontSize:
+                  16,
+                  fontWeight:
+                  FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _editField(
+      String title,
+      String value,
+      Function(String) onSave,
+      ){
+
+    final controller =
+    TextEditingController(
+      text:value,
+    );
+
+    showModalBottomSheet(
+      context:context,
+      isScrollControlled:true,
+      backgroundColor:
+      Colors.transparent,
+
+      builder:(_){
+        return Padding(
+          padding:
+          EdgeInsets.only(
+            bottom:
+            MediaQuery.of(context)
+            .viewInsets
+            .bottom,
+          ),
+
+          child:
+          Container(
+            padding:
+            const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              24,
+            ),
+
+            decoration:
+            const BoxDecoration(
+              color:
+              Colors.white,
+              borderRadius:
+              BorderRadius.vertical(
+                top:
+                Radius.circular(24),
+              ),
+            ),
+
+            child:
+            Column(
+              mainAxisSize:
+              MainAxisSize.min,
+              children: [
+                Text(
+                  "Edit $title",
+                  style:
+                  const TextStyle(
+                    fontSize: 17,
+                    fontWeight:
+                    FontWeight.bold,
                   ),
+                ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height:16),
 
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                TextField(
+                  controller:
+                  controller,
+                ),
 
-                  const SizedBox(height: 4),
+                const SizedBox(height:20),
 
+                ElevatedButton(
+                  onPressed:(){
+                    if(controller.text.trim().isEmpty){
+                      _msg(
+                        "Tidak boleh kosong",
+                      );
+                      return;
+                    }
+                    onSave(
+                      controller.text.trim(),
+                    );
+                    Navigator.pop(context);
+                  },
+
+                  child:
                   const Text(
-                    "Member sejak 2025",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    "Simpan",
                   ),
-                ],
-              ),
+                )
+              ],
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            const SizedBox(height: 20),
+  Widget _item(
+      String title,
+      String value,
+      VoidCallback? onTap,
+      ){
 
-            // ================= DATA =================
-            _buildItem(
-              icon: Icons.person,
-              title: 'Nama Lengkap',
-              value: name,
-              onTap: () => _showEditDialog("Nama Lengkap", name, (val) {
-                setState(() => name = val);
-              }),
-            ),
+    return InkWell(
+      onTap:onTap,
 
-            _buildItem(
-              icon: Icons.email,
-              title: 'Email',
-              value: email,
-              onTap: () => _showEditDialog("Email", email, (val) {
-                setState(() => email = val);
-              }, isEmail: true),
-            ),
+      child:
+      Padding(
 
-            _buildItem(
-              icon: Icons.phone,
-              title: 'No. HP',
-              value: phone,
-              onTap: () => _showEditDialog("No. HP", phone, (val) {
-                setState(() => phone = val);
-              }, isPhone: true),
-            ),
+        padding:
+        const EdgeInsets.symmetric(
+          vertical:12,
+        ),
 
-            const SizedBox(height: 20),
+        child:
+        Row(
+          mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
 
-            // ================= BUTTON =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _validateAndSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF7931E),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Simpan Perubahan",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+              children: [
+
+                Text(
+                  title,
+                  style:
+                  const TextStyle(
+                    fontSize: 12,
+                    color:
+                    Colors.grey,
                   ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ================= VALIDASI =================
-  void _validateAndSave() {
-    final emailRegex =
-        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
-
-    final phoneRegex =
-        RegExp(r'^[0-9+]{10,15}$');
-
-    if (name.isEmpty || email.isEmpty || phone.isEmpty) {
-      _showMessage("Semua data harus diisi", false);
-      return;
-    }
-
-    if (!emailRegex.hasMatch(email)) {
-      _showMessage("Format email tidak valid", false);
-      return;
-    }
-
-    if (!phoneRegex.hasMatch(phone)) {
-      _showMessage("Nomor HP tidak valid", false);
-      return;
-    }
-
-    _showMessage("Informasi berhasil diperbarui", true);
-  }
-
-  // ================= EDIT DIALOG =================
-  void _showEditDialog(
-    String title,
-    String value,
-    Function(String) onSave, {
-    bool isEmail = false,
-    bool isPhone = false,
-  }) {
-    TextEditingController controller =
-        TextEditingController(text: value);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Edit $title"),
-        content: TextField(
-          controller: controller,
-          keyboardType:
-              isPhone ? TextInputType.phone : TextInputType.text,
-          decoration: InputDecoration(
-            hintText: "Masukkan $title",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              String input = controller.text;
-
-              if (isEmail) {
-                final emailRegex =
-                    RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
-                if (!emailRegex.hasMatch(input)) {
-                  _showMessage("Email tidak valid", false);
-                  return;
-                }
-              }
-
-              if (isPhone) {
-                final phoneRegex =
-                    RegExp(r'^[0-9+]{10,15}$');
-                if (!phoneRegex.hasMatch(input)) {
-                  _showMessage("No HP tidak valid", false);
-                  return;
-                }
-              }
-
-              onSave(input);
-              Navigator.pop(context);
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================= POPUP =================
-  void _showMessage(String message, bool isSuccess) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isSuccess ? "Berhasil" : "Gagal"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================= ITEM =================
-  Widget _buildItem({
-    required IconData icon,
-    required String title,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: const Color(0xFFF7931E),
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                Text(
+                  value,
+                  style:
+                  const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+
+            if(onTap != null)
+              const Icon(
+                Icons.edit,
+                size:16,
+              )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _divider(){
+    return const Divider(
+      height:1,
+    );
+  }
+
+  void _msg(String msg){
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content:
+        Text(msg),
       ),
     );
   }

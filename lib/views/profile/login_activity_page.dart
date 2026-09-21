@@ -9,7 +9,7 @@ class LoginActivityPage extends StatefulWidget {
 
 class _LoginActivityPageState extends State<LoginActivityPage> {
 
-  // ✅ DATA DEVICE
+  // ================= DATA DEVICE =================
   List<Map<String, dynamic>> devices = [
     {
       "icon": Icons.laptop,
@@ -43,60 +43,55 @@ class _LoginActivityPageState extends State<LoginActivityPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: Column(
+        children: [
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-            // ================= PERANGKAT SAAT INI =================
-            _sectionTitle("PERANGKAT SAAT INI"),
-            _currentDevice(),
+          _sectionTitle("PERANGKAT SAAT INI"),
+          _currentDevice(),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-            // ================= PERANGKAT LAIN =================
-            _sectionTitle("PERANGKAT LAIN"),
+          _sectionTitle("PERANGKAT LAIN"),
 
-            // ✅ LOOP DEVICE
-            if (devices.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  "Tidak ada perangkat lain",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              )
-            else
-              ...devices.map((device) => _deviceItem(context, device)).toList(),
-
-            const SizedBox(height: 20),
-
-            // ================= BUTTON =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => _showLogoutDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+          Expanded(
+            child: devices.isEmpty
+                ? const Center(
+                    child: Text(
+                      "Tidak ada perangkat lain",
+                      style: TextStyle(color: Colors.grey),
                     ),
+                  )
+                : ListView(
+                    children: devices
+                        .map((device) => _deviceItem(context, device))
+                        .toList(),
                   ),
-                  child: const Text(
-                    "Keluar dari Semua Perangkat Lain",
-                    style: TextStyle(color: Colors.red),
+          ),
+
+          // BUTTON
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => _showLogoutDialog(context),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                ),
+                child: const Text(
+                  "Keluar dari Semua Perangkat Lain",
+                  style: TextStyle(color: Colors.red),
                 ),
               ),
             ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -167,7 +162,7 @@ class _LoginActivityPageState extends State<LoginActivityPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
           ),
         ],
@@ -185,10 +180,13 @@ class _LoginActivityPageState extends State<LoginActivityPage> {
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == "logout") {
+
+              // ✅ REMOVE DEVICE
               setState(() {
-                devices.remove(device); // ✅ hapus device
+                devices.remove(device);
               });
 
+              // ✅ FEEDBACK
               _showSnack("Berhasil keluar dari perangkat");
             }
           },
@@ -205,79 +203,38 @@ class _LoginActivityPageState extends State<LoginActivityPage> {
 
   // ================= POPUP LOGOUT ALL =================
   void _showLogoutDialog(BuildContext context) {
-    showGeneralDialog(
+    showDialog(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: "Logout",
-      barrierColor: Colors.black.withOpacity(0.4),
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (_, __, ___) {
-        return Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 30),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-
-                const Icon(Icons.logout, color: Colors.red, size: 40),
-
-                const SizedBox(height: 12),
-
-                const Text(
-                  "Keluar dari Semua Perangkat?",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  "Anda akan keluar dari semua perangkat lain kecuali perangkat ini.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-
-                const SizedBox(height: 20),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Batal"),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-
-                          setState(() {
-                            devices.clear(); // ✅ hapus semua device
-                          });
-
-                          _showSnack("Berhasil keluar dari semua perangkat");
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        child: const Text("Keluar"),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
+          title: const Text("Keluar dari Semua Perangkat?"),
+          content: const Text(
+            "Anda akan keluar dari semua perangkat lain kecuali perangkat ini.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+
+                setState(() {
+                  devices.clear();
+                });
+
+                _showSnack("Berhasil keluar dari semua perangkat");
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: const Text("Keluar"),
+            ),
+          ],
         );
       },
     );
@@ -286,7 +243,10 @@ class _LoginActivityPageState extends State<LoginActivityPage> {
   // ================= SNACKBAR =================
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 }

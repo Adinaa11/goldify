@@ -12,93 +12,130 @@ class _NotificationPageState extends State<NotificationPage> {
   bool systemNotif = true;
   bool emailNotif = true;
   bool promoNotif = false;
-
   bool sound = true;
   bool vibration = true;
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: const Color(0xFFF7931E),
+      ),
     );
-  }
-
-  void _updateSetting(String text) {
-    _showSnack("Pengaturan $text diperbarui");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F6F8),
 
       appBar: AppBar(
+        title: const Text("Notifikasi"),
         backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFFF7931E)),
-        title: const Text(
-          "Notifikasi",
-          style: TextStyle(
-            color: Color(0xFF333333),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        foregroundColor: Colors.black,
+        elevation: 1,
       ),
 
       body: SingleChildScrollView(
         child: Column(
           children: [
 
-            const SizedBox(height: 16),
-
-            _sectionTitle("NOTIFIKASI UTAMA"),
-
-            _switchItem(
-              title: "Notifikasi Sistem",
-              value: systemNotif,
-              onChanged: (val) {
-                setState(() => systemNotif = val);
-                _updateSetting("Sistem");
-              },
+            /// HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: const [
+                  Icon(Icons.notifications_active,
+                      size: 40, color: Color(0xFFF7931E)),
+                  SizedBox(height: 10),
+                  Text(
+                    "Pengaturan Notifikasi",
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Atur notifikasi sesuai kebutuhan Anda",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
 
-            _switchItem(
-              title: "Notifikasi Email",
-              value: emailNotif,
-              onChanged: (val) {
-                setState(() => emailNotif = val);
-                _updateSetting("Email");
-              },
+            /// CARD NOTIFIKASI
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  _switchItem(
+                    "Notifikasi Sistem",
+                    systemNotif,
+                    (val) {
+                      setState(() => systemNotif = val);
+                      _showSnack("Notifikasi Sistem ${val ? 'aktif' : 'mati'}");
+                    },
+                  ),
+                  _divider(),
+
+                  _switchItem(
+                    "Notifikasi Email",
+                    emailNotif,
+                    (val) {
+                      setState(() => emailNotif = val);
+                      _showSnack("Notifikasi Email ${val ? 'aktif' : 'mati'}");
+                    },
+                  ),
+                  _divider(),
+
+                  _switchItem(
+                    "Notifikasi Promo",
+                    promoNotif,
+                    (val) {
+                      setState(() => promoNotif = val);
+                      _showSnack("Notifikasi Promo ${val ? 'aktif' : 'mati'}");
+                    },
+                  ),
+                ],
+              ),
             ),
 
-            _switchItem(
-              title: "Notifikasi Promo",
-              value: promoNotif,
-              onChanged: (val) {
-                setState(() => promoNotif = val);
-                _updateSetting("Promo");
-              },
-            ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 10),
+            /// CARD EFEK
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  _switchItem(
+                    "Suara",
+                    sound,
+                    (val) {
+                      setState(() => sound = val);
+                      _showSnack("Suara ${val ? 'aktif' : 'mati'}");
+                    },
+                  ),
+                  _divider(),
 
-            _sectionTitle("EFEK NOTIFIKASI"),
-
-            _switchItem(
-              title: "Suara",
-              value: sound,
-              onChanged: (val) {
-                setState(() => sound = val);
-                _updateSetting("Suara");
-              },
-            ),
-
-            _switchItem(
-              title: "Getaran",
-              value: vibration,
-              onChanged: (val) {
-                setState(() => vibration = val);
-                _updateSetting("Getaran");
-              },
+                  _switchItem(
+                    "Getaran",
+                    vibration,
+                    (val) {
+                      setState(() => vibration = val);
+                      _showSnack("Getaran ${val ? 'aktif' : 'mati'}");
+                    },
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -108,59 +145,32 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  // ================= SECTION TITLE =================
-  Widget _sectionTitle(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
+  /// SWITCH ITEM (CLEAN & CONSISTENT)
+  Widget _switchItem(
+    String title,
+    bool value,
+    Function(bool) onChanged,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
-      ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeTrackColor: const Color(0xFFF7931E).withOpacity(0.5),
+          activeColor: const Color(0xFFF7931E),
+        )
+      ],
     );
   }
 
-  // ================= SWITCH ITEM =================
-  Widget _switchItem({
-    required String title,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
-          Switch(
-            activeColor: const Color(0xFFF7931E),
-            value: value,
-            onChanged: (val) {
-              onChanged(val);
-
-              // popup feedback
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("$title ${val ? 'aktif' : 'mati'}"),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _divider() => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: Divider(height: 1),
+      );
 }
