@@ -9,7 +9,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         content: Text("Anda telah membaca Kebijakan Privasi"),
         backgroundColor: Colors.green,
         duration: Duration(milliseconds: 800),
-      ),
+      ), 
     );
 
     Future.delayed(const Duration(milliseconds: 800), () {
@@ -66,37 +66,145 @@ class PrivacyPolicyPage extends StatelessWidget {
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     Text(
-                      "Pengumpulan Data",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      "1. Pendahuluan",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
+
                     SizedBox(height: 6),
+
                     Text(
-                      "Kami mengumpulkan data untuk meningkatkan layanan.",
-                      style: TextStyle(color: Colors.grey),
+                      "Goldify menghargai privasi pengguna dan berkomitmen "
+                      "untuk menjaga keamanan informasi yang digunakan "
+                      "dalam aplikasi. Kebijakan Privasi ini menjelaskan "
+                      "bagaimana data pengguna dikumpulkan, digunakan, "
+                      "dan dilindungi selama menggunakan aplikasi Goldify.",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
                     ),
+
                     SizedBox(height: 16),
+
                     Text(
-                      "Penggunaan Data",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      "2. Data yang Dikumpulkan",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
+
                     SizedBox(height: 6),
+
                     Text(
-                      "Data digunakan untuk autentikasi dan notifikasi.",
-                      style: TextStyle(color: Colors.grey),
+                      "Goldify dapat mengumpulkan beberapa informasi "
+                      "untuk mendukung fungsi aplikasi, seperti:\n\n"
+                      "• Informasi akun pengguna (nama dan email)\n"
+                      "• Informasi profil pengguna\n"
+                      "• Foto profil yang diunggah pengguna\n"
+                      "• Riwayat hasil perhitungan yang tersimpan\n"
+                      "• Data penggunaan fitur aplikasi",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
                     ),
+
                     SizedBox(height: 16),
+
                     Text(
-                      "Keamanan Data",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      "3. Penggunaan Data",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
+
                     SizedBox(height: 6),
+
                     Text(
-                      "Data Anda aman dan tidak dibagikan.",
-                      style: TextStyle(color: Colors.grey),
+                      "Data pengguna digunakan untuk mendukung layanan "
+                      "aplikasi, seperti menampilkan informasi profil, "
+                      "menyimpan riwayat perhitungan, serta mendukung "
+                      "penggunaan fitur Kalkulator Emas Fisik, Pivot Point, "
+                      "Hangseng, dan Indikator NEST.",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+
+                    Text(
+                      "4. Penyimpanan dan Keamanan Data",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    SizedBox(height: 6),
+
+                    Text(
+                      "Goldify berupaya menjaga keamanan data pengguna "
+                      "dengan menerapkan langkah perlindungan yang sesuai. "
+                      "Data pengguna tidak digunakan untuk tujuan di luar "
+                      "fungsi layanan aplikasi tanpa persetujuan pengguna.",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+
+                    Text(
+                      "5. Hak Pengguna",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    SizedBox(height: 6),
+
+                    Text(
+                      "Pengguna memiliki hak untuk memperbarui informasi "
+                      "profil yang tersedia pada aplikasi serta mengelola "
+                      "penggunaan layanan sesuai dengan fitur yang tersedia.",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+
+                    Text(
+                      "6. Perubahan Kebijakan Privasi",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+
+                    SizedBox(height: 6),
+
+                    Text(
+                      "Goldify dapat melakukan perubahan terhadap "
+                      "Kebijakan Privasi apabila diperlukan untuk "
+                      "menyesuaikan perkembangan fitur dan peningkatan "
+                      "layanan aplikasi.",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),

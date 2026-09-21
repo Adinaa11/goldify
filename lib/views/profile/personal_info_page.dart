@@ -1,247 +1,455 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../models/user_profile_model.dart';
+import '../../repositories/profile_repository.dart';
+import '../../viewmodels/personal_info_viewmodel.dart';
 
 class PersonalInfoPage extends StatefulWidget {
-  const PersonalInfoPage({super.key});
+
+  const PersonalInfoPage({
+    super.key,
+  });
 
   @override
-  State<PersonalInfoPage> createState() => _PersonalInfoPageState();
+  State<PersonalInfoPage> createState()
+      => _PersonalInfoPageState();
 }
 
-class _PersonalInfoPageState extends State<PersonalInfoPage> {
-  final supabase = Supabase.instance.client;
+class _PersonalInfoPageState
+    extends State<PersonalInfoPage> {
 
-  String name = "";
-  String email = "";
-  String phone = "";
-  String? avatarUrl;
+  late PersonalInfoViewModel viewModel;
 
-  File? imageFile;
-  final ImagePicker _picker = ImagePicker();
+  final ImagePicker picker =
+      ImagePicker();
 
-  bool isLoading = true;
-  bool isSaving = false;
+  @override
+  void initState(){
+    super.initState();
 
-  /// ================= LOAD PROFILE =================
-  Future<void> _loadProfile() async {
-    final user = supabase.auth.currentUser;
+    viewModel =
+        PersonalInfoViewModel(
+          ProfileRepository(),
+        );
 
-    if (user == null) {
-      setState(() => isLoading = false);
-      return;
-    }
-
-    try {
-      final data = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .single();
-
-      setState(() {
-        name = data['name'] ?? '';
-        email = data['email'] ?? '';
-        phone = data['phone'] ?? '';
-        avatarUrl = data['avatar_url'];
-        isLoading = false;
-      });
-    } catch (e) {
-      debugPrint("LOAD ERROR: $e");
-      setState(() => isLoading = false);
-    }
+    viewModel.loadProfile();
   }
 
-  /// ================= UPLOAD IMAGE =================
-  Future<String?> _uploadImage(File file) async {
-    try {
-      final user = supabase.auth.currentUser;
-      if (user == null) return null;
+  @override
+  Widget build(BuildContext context){
+    return AnimatedBuilder(
+      animation: viewModel,
 
-      final fileName = "${user.id}.jpg";
+      builder:(context, child){
 
-      /// 🔥 HAPUS FILE LAMA DULU
-      await supabase.storage.from('avatars').remove([fileName]);
+        return Scaffold(
+          backgroundColor:
+          const Color(0xFFF5F6F8),
 
-      /// 🔥 BARU UPLOAD
-      await supabase.storage.from('avatars').upload(
-        fileName,
-        file,
-      );
+          appBar: AppBar(
+            title:
+            const Text(
+              "Informasi Pribadi",
+            ),
 
-      final publicUrl =
-          supabase.storage.from('avatars').getPublicUrl(fileName);
+            backgroundColor:
+            Colors.white,
 
-      return publicUrl;
-    } catch (e) {
-      debugPrint("UPLOAD ERROR: $e");
-      return null;
-    }
+            foregroundColor:
+            Colors.black,
+          ),
+
+          body:
+          viewModel.isLoading?
+          const Center(
+            child:
+            CircularProgressIndicator(),
+          ):
+          _buildBody(),
+        );
+      },
+    );
   }
 
-  /// ================= UPDATE PROFILE =================
-  Future<void> _updateProfile() async {
-    final user = supabase.auth.currentUser;
+  Widget _buildBody(){
 
-    if (user == null) return;
+    final profile =
+        viewModel.profile!;
 
-    setState(() => isSaving = true);
+    return Column(
+      children: [
+        const SizedBox(height:20),
 
-    try {
-      String? uploadedUrl = avatarUrl;
+        GestureDetector(
 
-      /// upload foto jika ada
-      if (imageFile != null) {
-        final result = await _uploadImage(imageFile!);
+          onTap: () async {
 
-        if (result == null) {
-          _msg("Upload foto gagal");
-          setState(() => isSaving = false);
-          return;
-        }
+            final picked =
+            await picker.pickImage(
+              source:
+              ImageSource.gallery,
+              imageQuality:
+              70,
+            );
 
-        uploadedUrl = result;
-      }
+            if(picked != null){
+              viewModel.setImage(
+                File(
+                  picked.path,
+                ),
+              );
+            }
+          },
 
-      debugPrint("FINAL AVATAR URL: $uploadedUrl");
+          child: Stack(
+            alignment:
+            Alignment.bottomRight,
+            children: [
 
-      /// 🔥 FIX UTAMA: selalu kirim avatar_url
-      final response = await supabase
-          .from('profiles')
-          .update({
-            'name': name,
-            'phone': phone,
-            'avatar_url': uploadedUrl,
-          })
-          .eq('id', user.id)
-          .select();
+              CircleAvatar(
 
-      debugPrint("UPDATE RESULT: $response");
+                radius:45,
+                backgroundImage:
 
-      if (!mounted) return;
+                viewModel.imageFile != null ?
+                FileImage(
+                  viewModel.imageFile!,
+                ):
+                (
+                profile.avatarUrl != null &&
+                profile.avatarUrl!.isNotEmpty
+                )?
+                NetworkImage(
+                  profile.avatarUrl!,
+                ):
 
-      _msg("Berhasil diperbarui");
+                const AssetImage(
+                  'assets/images/profile.png',
+                )
+                as ImageProvider,
+              ),
 
-      Navigator.pop(context, true);
+              Container(
+                padding:
+                const EdgeInsets.all(7),
 
-    } catch (e) {
-      debugPrint("ERROR UPDATE: $e");
-      _msg("Gagal update data");
-    } finally {
-      if (mounted) setState(() => isSaving = false);
-    }
+                decoration:
+                BoxDecoration(
+
+                  color:
+                  const Color(0xFFF7931E),
+
+                  shape:
+                  BoxShape.circle,
+
+                  border:
+                  Border.all(
+
+                    color:
+                    Colors.white,
+
+                    width:
+                    2,
+                  ),
+                ),
+                child:
+                const Icon(
+
+                  Icons.camera_alt,
+
+                  color:
+                  Colors.white,
+
+                  size:
+                  17,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height:10),
+
+        Text(
+          profile.name,
+
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.bold,
+            fontSize:
+            16,
+          ),
+        ),
+
+        const SizedBox(height:20),
+
+        Container(
+          margin:
+          const EdgeInsets.all(16),
+          padding:
+          const EdgeInsets.all(16),
+          decoration:
+          BoxDecoration(
+            color:
+            Colors.white,
+
+            borderRadius:
+            BorderRadius.circular(16),
+          ),
+
+          child:
+          Column(
+            children: [
+              _item(
+                "Nama",
+                profile.name,
+                (){
+                  _editField(
+                    "Nama",
+                    profile.name,
+                    (v){
+
+                      setState((){
+
+                        viewModel.profile =
+                        UserProfileModel(
+
+                          name:v,
+
+                          email:
+                          profile.email,
+
+                          phone:
+                          profile.phone,
+
+                          avatarUrl:
+                          profile.avatarUrl,
+                        );
+                      });
+                    },
+                  );
+                },
+              ),
+              _divider(),
+              _item(
+                "Email",
+                profile.email,
+                null,
+              ),
+              _divider(),
+              _item(
+                "Telepon",
+                profile.phone,
+                (){
+                  _editField(
+                    "Telepon",
+                    profile.phone,
+                    (v){
+
+                      setState((){
+                        viewModel.profile =
+                        UserProfileModel(
+                          name:
+                          profile.name,
+                          email:
+                          profile.email,
+                          phone:v,
+                          avatarUrl:
+                          profile.avatarUrl,
+                        );
+                      });
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+
+        Padding(
+
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal:16,
+          ),
+
+          child:
+          SizedBox(
+            width:
+            double.infinity,
+            height:
+            50,
+
+            child:
+            ElevatedButton(
+              onPressed:
+              viewModel.isSaving
+              ?
+              null
+              :
+              () async {
+
+                final success =
+                await viewModel.updateProfile(
+                  name:
+                  viewModel.profile!.name,
+                  phone:
+                  viewModel.profile!.phone,
+
+                );
+
+                if(!mounted)return;
+
+                _msg(
+                  success
+                  ?
+                  "Berhasil diperbarui"
+                  :
+                  "Gagal update data",
+                );
+
+                if(success){
+
+                  Navigator.pop(
+                    context,
+                    true,
+                  );
+                }
+              },
+
+              style:
+              ElevatedButton.styleFrom(
+                backgroundColor:
+                const Color(0xFFF7931E),
+                shape:
+                RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(12),
+                ),
+              ),
+
+              child:
+              viewModel.isSaving
+              ?
+              const CircularProgressIndicator(
+                color:Colors.white,
+              )
+              :
+              const Text(
+                "Simpan Perubahan",
+
+                style:
+                TextStyle(
+                  color:
+                  Colors.white,
+                  fontSize:
+                  16,
+                  fontWeight:
+                  FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  /// ================= PICK IMAGE =================
-  Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
+  void _editField(
+      String title,
+      String value,
+      Function(String) onSave,
+      ){
+
+    final controller =
+    TextEditingController(
+      text:value,
     );
 
-    if (picked != null) {
-      setState(() {
-        imageFile = File(picked.path);
-      });
-    }
-  }
-
-  /// ================= EDIT FIELD =================
-  void _editField(
-    String title,
-    String value,
-    Function(String) onSave,
-  ) {
-    final controller = TextEditingController(text: value);
-
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
+      context:context,
+      isScrollControlled:true,
+      backgroundColor:
+      Colors.transparent,
+
+      builder:(_){
         return Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(24)),
+          padding:
+          EdgeInsets.only(
+            bottom:
+            MediaQuery.of(context)
+            .viewInsets
+            .bottom,
+          ),
+
+          child:
+          Container(
+            padding:
+            const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              24,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+
+            decoration:
+            const BoxDecoration(
+              color:
+              Colors.white,
+              borderRadius:
+              BorderRadius.vertical(
+                top:
+                Radius.circular(24),
+              ),
+            ),
+
+            child:
+            Column(
+              mainAxisSize:
+              MainAxisSize.min,
               children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
                 Text(
                   "Edit $title",
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    hintText: "Masukkan $title",
-                    filled: true,
-                    fillColor: const Color(0xFFF5F6F8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                  style:
+                  const TextStyle(
+                    fontSize: 17,
+                    fontWeight:
+                    FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red),
-                        ),
-                        child: const Text("Batal",
-                            style: TextStyle(color: Colors.red)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          final input = controller.text.trim();
 
-                          if (input.isEmpty) {
-                            _msg("Tidak boleh kosong");
-                            return;
-                          }
+                const SizedBox(height:16),
 
-                          onSave(input);
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFFF7931E),
-                        ),
-                        child: const Text(
-                          "Simpan",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                TextField(
+                  controller:
+                  controller,
                 ),
+
+                const SizedBox(height:20),
+
+                ElevatedButton(
+                  onPressed:(){
+                    if(controller.text.trim().isEmpty){
+                      _msg(
+                        "Tidak boleh kosong",
+                      );
+                      return;
+                    }
+                    onSave(
+                      controller.text.trim(),
+                    );
+                    Navigator.pop(context);
+                  },
+
+                  child:
+                  const Text(
+                    "Simpan",
+                  ),
+                )
               ],
             ),
           ),
@@ -250,150 +458,79 @@ class _PersonalInfoPageState extends State<PersonalInfoPage> {
     );
   }
 
-  void _msg(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
-  }
+  Widget _item(
+      String title,
+      String value,
+      VoidCallback? onTap,
+      ){
 
-  @override
-  void initState() {
-    super.initState();
-    _loadProfile();
-  }
-
-  /// ================= UI =================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: AppBar(
-        title: const Text("Informasi Pribadi"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                const SizedBox(height: 20),
-
-                /// FOTO
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 45,
-                    backgroundImage: imageFile != null
-                        ? FileImage(imageFile!)
-                        : (avatarUrl != null &&
-                                avatarUrl!.isNotEmpty)
-                            ? NetworkImage(avatarUrl!)
-                            : const AssetImage(
-                                    'assets/images/profile.png')
-                                as ImageProvider,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                /// CARD
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      _item("Nama", name,
-                          () => _editField("Nama", name,
-                              (v) => setState(() => name = v))),
-                      _divider(),
-                      _item("Email", email, null),
-                      _divider(),
-                      _item("Telepon", phone,
-                          () => _editField("Telepon", phone,
-                              (v) => setState(() => phone = v))),
-                    ],
-                  ),
-                ),
-
-                /// BUTTON
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isSaving ? null : _updateProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFFF7931E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: isSaving
-                          ? const CircularProgressIndicator(
-                              color: Colors.white)
-                          : const Text(
-                              "Simpan Perubahan",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-    );
-  }
-
-  Widget _item(String title, String value, VoidCallback? onTap) {
     return InkWell(
-      onTap: onTap,
-      child: Padding(
+      onTap:onTap,
+
+      child:
+      Padding(
+
         padding:
-            const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
+        const EdgeInsets.symmetric(
+          vertical:12,
+        ),
+
+        child:
+        Row(
           mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
+          MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              CrossAxisAlignment.start,
+
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey)),
-                Text(value,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600)),
+
+                Text(
+                  title,
+                  style:
+                  const TextStyle(
+                    fontSize: 12,
+                    color:
+                    Colors.grey,
+                  ),
+                ),
+
+                Text(
+                  value,
+                  style:
+                  const TextStyle(
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
               ],
             ),
-            if (onTap != null)
-              const Icon(Icons.edit, size: 16),
+
+            if(onTap != null)
+              const Icon(
+                Icons.edit,
+                size:16,
+              )
           ],
         ),
       ),
     );
   }
 
-  Widget _divider() =>
-      const Divider(height: 1);
+  Widget _divider(){
+    return const Divider(
+      height:1,
+    );
+  }
+
+  void _msg(String msg){
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content:
+        Text(msg),
+      ),
+    );
+  }
 }

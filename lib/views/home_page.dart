@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  late final List<Widget> _pages;
+ late final List<Widget> _pages;
 
   @override
   void initState() {
@@ -279,45 +279,39 @@ class _HomeContentState extends State<HomeContent> {
       return;
     }
 
-    String? fullName;
+    try {
+      // Ambil nama TERBARU langsung dari tabel profiles
+      final profile = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .maybeSingle();
 
-    // Ambil nama dari metadata akun Supabase
-    final metadataName = user.userMetadata?['name'];
+      String fullName = '';
 
-    if (metadataName != null &&
-        metadataName.toString().trim().isNotEmpty) {
-      fullName = metadataName.toString().trim();
-    }
-
-    // Jika metadata tidak ada, ambil dari tabel profiles
-    if (fullName == null) {
-      try {
-        final profile = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (profile != null &&
-            profile['name'] != null &&
-            profile['name'].toString().trim().isNotEmpty) {
-          fullName = profile['name'].toString().trim();
-        }
-      } catch (e) {
-        debugPrint('Gagal mengambil nama dari profiles: $e');
+      if (profile != null &&
+          profile['name'] != null &&
+          profile['name'].toString().trim().isNotEmpty) {
+        fullName = profile['name'].toString().trim();
       }
-    }
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      if (fullName != null && fullName.isNotEmpty) {
+      setState(() {
         // Ambil nama pertama saja
-        _userName = fullName.split(RegExp(r'\s+')).first;
-      } else {
+        _userName = fullName.isNotEmpty
+            ? fullName.split(RegExp(r'\s+')).first
+            : '';
+      });
+    } catch (e) {
+      debugPrint('Gagal mengambil nama dari profiles: $e');
+
+      if (!mounted) return;
+
+      setState(() {
         _userName = '';
-      }
-    });
+      });
+    }
   }
 
   void _loadHistoricalData() {
