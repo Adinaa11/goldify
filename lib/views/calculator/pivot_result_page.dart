@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pivot_point_page.dart';
 
 class PivotResultPage extends StatefulWidget {
-  final double open;
+  final double? open;
   final double high;
   final double low;
   final double close;
@@ -47,12 +47,18 @@ class _PivotResultPageState extends State<PivotResultPage> {
   bool _showDetails = false;
   bool _historySaved = false;
 
+  // PIVOT CALCULATION
   double get pp =>
       (widget.high + widget.low + widget.close) / 3;
 
-  String get tradeSignal {
-    if (widget.open > pp) return 'SELL';
-    if (widget.open < pp) return 'BUY';
+  String? get tradeSignal {
+    if (widget.open == null) {
+      return null;
+    }
+
+    if (widget.open! > pp) return 'SELL';
+    if (widget.open! < pp) return 'BUY';
+
     return 'BUY / SELL';
   }
 
@@ -133,6 +139,14 @@ class _PivotResultPageState extends State<PivotResultPage> {
     return value
         .toStringAsFixed(2)
         .replaceAll('.', ',');
+  }
+
+  String _formatOptional(double? value) {
+    if (value == null) {
+      return '-';
+    }
+
+    return _format(value);
   }
 
   @override
@@ -258,40 +272,40 @@ class _PivotResultPageState extends State<PivotResultPage> {
   }
 
   Widget _buildDownloadWidget() {
-  return Material(
-    color: Colors.white,
-    child: Container(
-      width: 420,
-      padding: const EdgeInsets.fromLTRB(
-        28,
-        28,
-        28,
-        32,
-      ),
+    return Material(
       color: Colors.white,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          _buildDownloadContent(),
-          Transform.translate(
-            offset: const Offset(0, -35),
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.20,
-                child: Image.asset(
-                  'assets/images/ewf.jpg',
-                  width: 180,
-                  height: 200,
-                  fit: BoxFit.contain,
+      child: Container(
+        width: 420,
+        padding: const EdgeInsets.fromLTRB(
+          28,
+          28,
+          28,
+          32,
+        ),
+        color: Colors.white,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildDownloadContent(),
+            Transform.translate(
+              offset: const Offset(0, -35),
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: 0.20,
+                  child: Image.asset(
+                    'assets/images/ewf.jpg',
+                    width: 180,
+                    height: 200,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildDownloadContent() {
     return Column(
@@ -333,8 +347,13 @@ class _PivotResultPageState extends State<PivotResultPage> {
           ),
         ),
         const SizedBox(height: 10),
-        _buildTradeSignal(),
-        const SizedBox(height: 18),
+
+        // Hanya tampilkan indikator jika Open tersedia.
+        if (widget.open != null) ...[
+          _buildTradeSignal(),
+          const SizedBox(height: 18),
+        ],
+
         _buildDownloadInput(),
         const SizedBox(height: 14),
         _buildDownloadResistance(),
@@ -401,7 +420,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
 
   Widget _downloadInputItem(
     String title,
-    double value,
+    double? value,
   ) {
     return Column(
       children: [
@@ -414,7 +433,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
         ),
         const SizedBox(height: 3),
         Text(
-          _format(value),
+          _formatOptional(value),
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
@@ -461,6 +480,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
     );
   }
 
+  // DOWNLOAD SUPPORT
   Widget _buildDownloadSupport() {
     return _downloadSection(
       title: 'SUPPORT',
@@ -566,7 +586,12 @@ class _PivotResultPageState extends State<PivotResultPage> {
         borderRadius:
             BorderRadius.circular(7),
         border: Border.all(
-          color: const Color.fromARGB(255, 176, 175, 175),
+          color: const Color.fromARGB(
+            255,
+            176,
+            175,
+            175,
+          ),
         ),
       ),
       child: Row(
@@ -623,7 +648,12 @@ class _PivotResultPageState extends State<PivotResultPage> {
             title,
             style: const TextStyle(
               fontSize: 10,
-              color: Color.fromARGB(255, 58, 58, 58),
+              color: Color.fromARGB(
+                255,
+                58,
+                58,
+                58,
+              ),
             ),
           ),
           Text(
@@ -631,7 +661,12 @@ class _PivotResultPageState extends State<PivotResultPage> {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 79, 79, 79),
+              color: Color.fromARGB(
+                255,
+                79,
+                79,
+                79,
+              ),
             ),
           ),
         ],
@@ -745,7 +780,12 @@ class _PivotResultPageState extends State<PivotResultPage> {
         borderRadius:
             BorderRadius.circular(5),
         border: Border.all(
-          color: const Color.fromARGB(255, 145, 145, 145),
+          color: const Color.fromARGB(
+            255,
+            145,
+            145,
+            145,
+          ),
           width: 0.8,
         ),
       ),
@@ -841,7 +881,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
 
   Widget _buildInputItem(
     String label,
-    double value,
+    double? value,
   ) {
     return Column(
       crossAxisAlignment:
@@ -857,7 +897,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
         ),
         const SizedBox(height: 3),
         Text(
-          _format(value),
+          _formatOptional(value),
           style: const TextStyle(
             fontFamily: 'monospace',
             fontSize: 13,
@@ -1070,7 +1110,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
             ),
             const SizedBox(width: 6),
             Text(
-              tradeSignal,
+              'Action : ${tradeSignal ?? '-'}',
               style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 13,
@@ -1270,8 +1310,13 @@ class _PivotResultPageState extends State<PivotResultPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 7),
-                _buildTradeSignal(),
+
+                // Indikator hanya tampil jika Open tersedia.
+                if (widget.open != null) ...[
+                  const SizedBox(height: 7),
+                  _buildTradeSignal(),
+                ],
+
                 const SizedBox(height: 7),
                 Center(
                   child: Container(
@@ -1341,7 +1386,6 @@ class _PivotResultPageState extends State<PivotResultPage> {
               ],
             ),
           ),
-
           _buildWatermark(),
         ],
       ),

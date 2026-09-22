@@ -1,30 +1,85 @@
 import 'package:flutter/material.dart';
 import '../../services/market_service.dart';
-import 'pivot_result_page.dart';
+import 'nest_result_page.dart';
+import 'nest_info_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class PivotPointPage extends StatefulWidget {
+class NestPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const PivotPointPage({
+  const NestPage({
     super.key,
     this.initialData,
   });
 
   @override
-  State<PivotPointPage> createState() => _PivotPointPageState();
+  State<NestPage> createState() => _NestPageState();
 }
 
-class _PivotPointPageState extends State<PivotPointPage> {
-  final TextEditingController _openController = TextEditingController();
-  final TextEditingController _highController = TextEditingController();
-  final TextEditingController _lowController = TextEditingController();
-  final TextEditingController _closeController = TextEditingController();
+class _NestPageState extends State<NestPage> {
+  final TextEditingController _openController =
+      TextEditingController();
 
-  static const Color orange = Color(0xFFF7931E);
-  static const Color darkText = Color(0xFF222222);
-  static const Color greyText = Color(0xFF555555);
-  static const Color fieldColor = Color(0xFFF7F5F3);
+  final TextEditingController _closeController =
+      TextEditingController();
+
+  static const Color orange =
+      Color(0xFFF7931E);
+
+  static const Color darkText =
+      Color(0xFF222222);
+
+  static const Color greyText =
+      Color(0xFF555555);
+
+  static const Color fieldColor =
+      Color(0xFFF7F5F3);
+  Future<void> _saveToDatabase({
+    required double? open,
+    required double close,
+    required Map<String, dynamic> result,
+  }) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    debugPrint("USER ID: ${user?.id}");
+
+    if (user == null) {
+      debugPrint("❌ USER BELUM LOGIN");
+      return;
+    }
+
+    try {
+      final response = await supabase
+          .from('history')
+          .insert({
+            'user_id': user.id,
+            'type': 'nest',
+
+            // ✅ WAJIB SAMA DENGAN YANG LAIN
+            'input': {
+              'open': open ?? 0,
+              'close': close,
+              'date': _dataDate,
+            },
+
+            // ✅ bebas tapi konsisten
+            'result': {
+              'status': result['status'],
+              'open': open,
+              'close': close,
+            },
+
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select();
+
+      debugPrint("✅ DATA NEST MASUK: $response");
+
+    } catch (e) {
+      debugPrint("❌ ERROR INSERT NEST: $e");
+    }
+  }
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -32,7 +87,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
   String? _selectedDate;
 
-  bool get _isRecalculate => widget.initialData != null;
+  bool get _isRecalculate =>
+      widget.initialData != null;
 
   @override
   void initState() {
@@ -48,10 +104,11 @@ class _PivotPointPageState extends State<PivotPointPage> {
   void _loadInitialData() {
     final d = widget.initialData!;
 
-    _openController.text = _formatInitialNumber(d['open']);
-    _highController.text = _formatInitialNumber(d['high']);
-    _lowController.text = _formatInitialNumber(d['low']);
-    _closeController.text = _formatInitialNumber(d['close']);
+    _openController.text =
+        _formatInitialNumber(d['open']);
+
+    _closeController.text =
+        _formatInitialNumber(d['close']);
 
     _dataDate =
         d['dataDate']?.toString() ??
@@ -77,8 +134,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
 
     final number =
         double.tryParse(
-          value.toString(),
-        );
+      value.toString(),
+    );
 
     if (number == null) {
       return value.toString();
@@ -94,119 +151,87 @@ class _PivotPointPageState extends State<PivotPointPage> {
   @override
   void dispose() {
     _openController.dispose();
-    _highController.dispose();
-    _lowController.dispose();
     _closeController.dispose();
     super.dispose();
   }
 
-  Future<bool> _saveToDatabase({
-    required double open,
-    required double high,
-    required double low,
-    required double close,
-    required Map<String, dynamic> result,
+  Future<void> _loadGoldData({
+    String? date,
   }) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    debugPrint("USER ID: ${user?.id}");
-
-    if (user == null) {
-      debugPrint("❌ USER BELUM LOGIN");
-      return false;
-    }
-
-    try {
-      await supabase.from('history').insert({
-        'user_id': user.id,
-        'type': 'pivot',
-        'input': {
-          'open': open,
-          'high': high,
-          'low': low,
-          'close': close,
-        },
-        'result': result,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      debugPrint("✅ DATA MASUK");
-      return true;
-    } catch (e) {
-      debugPrint("❌ ERROR SIMPAN: $e");
-      return false;
-    }
-  }
-
-  Future<void> _loadGoldData({String? date}) async {
-  if (!mounted) return;
-
-  setState(() {
-    _isLoading = true;
-    _errorMessage = null;
-  });
-
-  try {
-    debugPrint(
-      'Mengambil data gold${date != null ? ' untuk $date' : ' live'}...',
-    );
-
-    final Map<String, dynamic> data =
-        await MarketService.getLatestGoldData(
-      date: date,
-    );
-
-    final String? open = data['open']?.toString();
-    final String? high = data['high']?.toString();
-    final String? low = data['low']?.toString();
-    final String? close = data['close']?.toString();
-
-    final String? tanggal =
-        date ?? data['tanggal']?.toString();
-
-    if (open == null ||
-        high == null ||
-        low == null ||
-        close == null ||
-        open.isEmpty ||
-        high.isEmpty ||
-        low.isEmpty ||
-        close.isEmpty) {
-      throw Exception(
-        'Data Open, High, Low, atau Close tidak tersedia.',
-      );
-    }
-
     if (!mounted) return;
 
     setState(() {
-      _openController.text = _formatInitialNumber(open);
-      _highController.text = _formatInitialNumber(high);
-      _lowController.text = _formatInitialNumber(low);
-      _closeController.text = _formatInitialNumber(close);
-      _dataDate = tanggal;
-      _isLoading = false;
+      _isLoading = true;
       _errorMessage = null;
     });
-  } catch (error) {
-    if (!mounted) return;
 
-    setState(() {
-      _isLoading = false;
+    try {
+      debugPrint(
+        'Mengambil data NEST gold'
+        '${date != null ? ' untuk $date' : ' live'}...',
+      );
 
-      if (date != null) {
-        _errorMessage =
-            'Data emas untuk tanggal ${_formatDate(date)} tidak tersedia.';
-      } else {
-        _errorMessage =
-            'Tidak dapat mengambil data emas.\nPeriksa koneksi internet atau API.';
+      final Map<String, dynamic> data =
+          await MarketService.getLatestGoldData(
+        date: date,
+      );
+
+      debugPrint(
+        'Data NEST gold berhasil diterima: $data',
+      );
+
+      final String? open =
+          data['open']?.toString();
+
+      final String? close =
+          data['close']?.toString();
+
+      final String? tanggal =
+          date ?? data['tanggal']?.toString();
+
+      if (close == null || close.isEmpty) {
+        throw Exception(
+          'Data Close tidak tersedia.',
+        );
       }
-    });
-  }
-}
 
-  // DATE PICKER
+      if (!mounted) return;
+
+      setState(() {
+        _openController.text =
+            _formatInitialNumber(open);
+
+        _closeController.text =
+            _formatInitialNumber(close);
+
+        _dataDate = tanggal;
+
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      debugPrint(
+        'Gagal mengambil data NEST gold: $error',
+      );
+
+      setState(() {
+        _isLoading = false;
+
+        if (date != null) {
+          _errorMessage =
+              'Data emas untuk tanggal '
+              '${_formatDate(date)} tidak tersedia.';
+        } else {
+          _errorMessage =
+              'Tidak dapat mengambil data emas.\n'
+              'Periksa koneksi internet atau API Newsmaker.';
+        }
+      });
+    }
+  }
+
   Future<void> _selectDate() async {
     if (_isLoading || _isRecalculate) return;
 
@@ -216,7 +241,9 @@ class _PivotPointPageState extends State<PivotPointPage> {
         _selectedDate!.isNotEmpty) {
       try {
         initialDate =
-            DateTime.parse(_selectedDate!);
+            DateTime.parse(
+          _selectedDate!,
+        );
       } catch (_) {
         initialDate = DateTime.now();
       }
@@ -225,8 +252,8 @@ class _PivotPointPageState extends State<PivotPointPage> {
       try {
         initialDate =
             DateTime.parse(
-              _dataDate!.substring(0, 10),
-            );
+          _dataDate!.substring(0, 10),
+        );
       } catch (_) {
         initialDate = DateTime.now();
       }
@@ -321,114 +348,84 @@ class _PivotPointPageState extends State<PivotPointPage> {
     );
   }
 
-  bool get _hasGoldData {
-    return _highController.text.isNotEmpty &&
-        _lowController.text.isNotEmpty &&
-        _closeController.text.isNotEmpty;
+  bool get _hasNestData {
+    return _closeController.text.isNotEmpty;
   }
-Future<void> _calculatePivot() async {
-  final double? open = _parseNumber(_openController.text);
-  final double? high = _parseNumber(_highController.text);
-  final double? low = _parseNumber(_lowController.text);
-  final double? close = _parseNumber(_closeController.text);
 
-  if (!_hasGoldData ||
-      high == null ||
-      low == null ||
-      close == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Silakan isi data dengan lengkap.',
+  Future<void> _calculateNest() async {
+    final double? open =
+        _parseNumber(
+      _openController.text,
+    );
+
+    final double? close =
+        _parseNumber(
+      _closeController.text,
+    );
+
+    // Close wajib tersedia.
+    // Open boleh kosong.
+    if (!_hasNestData ||
+        close == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pastikan Harga Close tersedia.',
+          ),
+          backgroundColor: orange,
         ),
-        backgroundColor: orange,
-      ),
-    );
-    return;
-  }
+      );
 
-  if (high <= low) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Harga High harus lebih besar dari Harga Low.',
+      return;
+    }
+
+    final bool hasDecimalInput =
+        _openController.text.contains('.') ||
+        _openController.text.contains(',') ||
+        _closeController.text.contains('.') ||
+        _closeController.text.contains(',');
+
+    // ================= SIMPAN KE DB =================
+    String action;
+
+    if (open == null) {
+      action = '-';
+    } else if (open < close) {
+      action = 'BUY';
+    } else if (open > close) {
+      action = 'SELL';
+    } else {
+      action = 'BUY / SELL';
+    }
+
+    // ================= SIMPAN KE DB =================
+    await _saveToDatabase(
+      open: open,
+      close: close,
+      result: {
+        'open': open,
+        'close': close,
+        'status': action,
+        'date': _dataDate,
+      },
+    );
+
+    if (!mounted) return;
+
+    // ================= NAVIGATE =================
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NestResultPage(
+          open: open,
+          close: close,
+          hasDecimalInput: hasDecimalInput,
+          dataDate: _dataDate,
         ),
-        backgroundColor: orange,
       ),
     );
-    return;
   }
-
-  final bool hasDecimalInput =
-      _openController.text.contains('.') ||
-      _openController.text.contains(',') ||
-      _highController.text.contains('.') ||
-      _highController.text.contains(',') ||
-      _lowController.text.contains('.') ||
-      _lowController.text.contains(',') ||
-      _closeController.text.contains('.') ||
-      _closeController.text.contains(',');
-
-  final pivot = (high + low + close) / 3;
-
-  final r1 = (2 * pivot) - low;
-  final r2 = pivot + (high - low);
-  final r3 = high + 2 * (pivot - low);
-  final r4 = r3 + (r2 - r1);
-
-  final s1 = (2 * pivot) - high;
-  final s2 = pivot - (high - low);
-  final s3 = low - 2 * (high - pivot);
-  final s4 = s3 - (r1 - s1);
-
- final isSaved = await _saveToDatabase(
-    open: open ?? 0,
-    high: high,
-    low: low,
-    close: close,
-    result: {
-      'pivot': pivot,
-      'r1': r1,
-      'r2': r2,
-      'r3': r3,
-      'r4': r4,
-      's1': s1,
-      's2': s2,
-      's3': s3,
-      's4': s4,
-      'date': _dataDate,
-    },
-  );
-
-  // ✅ TAMBAHKAN INI
-  if (!mounted) return;
-
-  if (!isSaved) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gagal menyimpan data ke database'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  if (!mounted) return;
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PivotResultPage(
-        open: open ?? 0,
-        high: high,
-        low: low,
-        close: close,
-        hasDecimalInput: hasDecimalInput,
-        dataDate: _dataDate,
-      ),
-    ),
-  );
-}
 
   Future<void> _refreshData() async {
     if (_isRecalculate) return;
@@ -565,21 +562,21 @@ Future<void> _calculatePivot() async {
                                         orange,
                                   ),
                                 ),
-                              )
-                            : null,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                              ) : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
           Colors.white,
+
       appBar: AppBar(
         backgroundColor:
             Colors.white,
@@ -614,7 +611,7 @@ Future<void> _calculatePivot() async {
                 text: 'Kalkulator ',
               ),
               TextSpan(
-                text: 'Pivot',
+                text: 'NEST',
                 style: TextStyle(
                   color: orange,
                 ),
@@ -623,6 +620,22 @@ Future<void> _calculatePivot() async {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Info NEST',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) =>
+                    const NestInfoDialog(),
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline,
+              color: orange,
+              size: 23,
+            ),
+          ),
+          
           if (!_isRecalculate)
             IconButton(
               tooltip:
@@ -643,6 +656,7 @@ Future<void> _calculatePivot() async {
           ),
         ],
       ),
+
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -657,13 +671,14 @@ Future<void> _calculatePivot() async {
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
+
                 const Padding(
                   padding:
                       EdgeInsets.only(
                     right: 10,
                   ),
                   child: Text(
-                    'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan harga pada periode sebelumnya.',
+                    'Menentukan indikator arah berdasarkan perbandingan harga Open hari ini dengan harga Close pada periode sebelumnya.',
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.45,
@@ -671,9 +686,11 @@ Future<void> _calculatePivot() async {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 18,
                 ),
+
                 Align(
                   alignment:
                       Alignment.centerLeft,
@@ -709,15 +726,18 @@ Future<void> _calculatePivot() async {
                         mainAxisSize:
                             MainAxisSize.min,
                         children: [
+
                           const Icon(
                             Icons
                                 .cloud_download_outlined,
                             color: orange,
                             size: 25,
                           ),
+
                           const SizedBox(
                             width: 8,
                           ),
+
                           Column(
                             mainAxisSize:
                                 MainAxisSize.min,
@@ -725,6 +745,7 @@ Future<void> _calculatePivot() async {
                                 CrossAxisAlignment
                                     .start,
                             children: [
+
                               const Text(
                                 'Data LGD Daily',
                                 style:
@@ -735,13 +756,16 @@ Future<void> _calculatePivot() async {
                                   color: darkText,
                                 ),
                               ),
+
                               const SizedBox(
                                 height: 4,
                               ),
+
                               Row(
                                 mainAxisSize:
                                     MainAxisSize.min,
                                 children: [
+
                                   Text(
                                     _isRecalculate
                                         ? 'Data dari riwayat'
@@ -758,6 +782,7 @@ Future<void> _calculatePivot() async {
                                               : greyText,
                                     ),
                                   ),
+
                                   if (!_isRecalculate &&
                                       !_isLoading &&
                                       _errorMessage ==
@@ -786,9 +811,11 @@ Future<void> _calculatePivot() async {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 10,
                 ),
+
                 Container(
                   width:
                       double.infinity,
@@ -841,6 +868,7 @@ Future<void> _calculatePivot() async {
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
+
                         const Row(
                           children: [
                             Icon(
@@ -863,9 +891,12 @@ Future<void> _calculatePivot() async {
                             ),
                           ],
                         ),
+
                         const SizedBox(
                           height: 18,
                         ),
+
+                        // OPEN
                         _buildInputField(
                           label:
                               'Harga Open',
@@ -874,22 +905,8 @@ Future<void> _calculatePivot() async {
                           controller:
                               _openController,
                         ),
-                        _buildInputField(
-                          label:
-                              'Harga High',
-                          hint:
-                              'Menunggu data...',
-                          controller:
-                              _highController,
-                        ),
-                        _buildInputField(
-                          label:
-                              'Harga Low',
-                          hint:
-                              'Menunggu data...',
-                          controller:
-                              _lowController,
-                        ),
+
+                        // CLOSE
                         _buildInputField(
                           label:
                               'Harga Close',
@@ -902,9 +919,11 @@ Future<void> _calculatePivot() async {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 20,
                 ),
+
                 Padding(
                   padding:
                       const EdgeInsets
@@ -920,9 +939,9 @@ Future<void> _calculatePivot() async {
                         ElevatedButton(
                       onPressed:
                           _isLoading ||
-                                  !_hasGoldData
+                                  !_hasNestData
                               ? null
-                              : _calculatePivot,
+                              : _calculateNest,
                       style:
                           ElevatedButton
                               .styleFrom(
@@ -951,13 +970,16 @@ Future<void> _calculatePivot() async {
                         mainAxisAlignment:
                             MainAxisAlignment.center,
                         children: [
+
                           Icon(
                             Icons.calculate,
                             size: 19,
                           ),
+
                           SizedBox(
                             width: 8,
                           ),
+
                           Text(
                             'Hitung',
                             style:
@@ -974,6 +996,7 @@ Future<void> _calculatePivot() async {
                     ),
                   ),
                 ),
+
                 const SizedBox(
                   height: 30,
                 ),

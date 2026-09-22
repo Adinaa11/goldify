@@ -9,10 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'hangseng_page.dart';
 
 class HangsengResultPage extends StatefulWidget {
-  final double open;
+  // OPEN SEKARANG BOLEH NULL
+  final double? open;
   final double high;
   final double low;
   final double close;
+
   final bool hasDecimalInput;
   final String? dataDate;
   final String? openInput;
@@ -35,10 +37,12 @@ class HangsengResultPage extends StatefulWidget {
   });
 
   @override
-  State<HangsengResultPage> createState() => _HangsengResultPageState();
+  State<HangsengResultPage> createState() =>
+      _HangsengResultPageState();
 }
 
-class _HangsengResultPageState extends State<HangsengResultPage> {
+class _HangsengResultPageState
+    extends State<HangsengResultPage> {
   static const Color orange = Color(0xFFF7931E);
   static const Color darkText = Color(0xFF222222);
   static const Color greyText = Color(0xFF666666);
@@ -58,9 +62,20 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
   double get pp =>
       (widget.high + widget.low + widget.close) / 3;
 
-  String get tradeSignal {
-    if (widget.open > pp) return 'BUY';
-    if (widget.open < pp) return 'SELL';
+  String? get tradeSignal {
+    // Kalau Open kosong, tidak ada signal
+    if (widget.open == null) {
+      return null;
+    }
+
+    if (widget.open! > pp) {
+      return 'BUY';
+    }
+
+    if (widget.open! < pp) {
+      return 'SELL';
+    }
+
     return 'BUY / SELL';
   }
 
@@ -68,8 +83,10 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
     switch (tradeSignal) {
       case 'BUY':
         return const Color(0xFF2E7D32);
+
       case 'SELL':
         return const Color(0xFFD32F2F);
+
       default:
         return Colors.grey;
     }
@@ -79,8 +96,10 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
     switch (tradeSignal) {
       case 'BUY':
         return Icons.trending_up;
+
       case 'SELL':
         return Icons.trending_down;
+
       default:
         return Icons.remove;
     }
@@ -138,7 +157,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
       (s3 + s4) / 2;
 
   String _format(double value) {
-    final rounded = double.parse(value.toStringAsFixed(2));
+    final rounded =
+        double.parse(value.toStringAsFixed(2));
 
     if (rounded == rounded.truncateToDouble()) {
       final number = rounded
@@ -148,10 +168,13 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
             RegExp(r'\B(?=(\d{3})+(?!\d))'),
             (match) => '.',
           );
+
       return number;
     }
 
-    final parts = rounded.toStringAsFixed(2).split('.');
+    final parts =
+        rounded.toStringAsFixed(2).split('.');
+
     final integerPart = parts[0].replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
       (match) => '.',
@@ -160,10 +183,18 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
     return '$integerPart,${parts[1]}';
   }
 
-  String _formatInput(String? input, double fallback) {
+  String _formatInput(
+    String? input,
+    double? fallback,
+  ) {
     final text = input?.trim();
 
+    // Kalau input kosong dan fallback juga null
     if (text == null || text.isEmpty) {
+      if (fallback == null) {
+        return '-';
+      }
+
       return _format(fallback);
     }
 
@@ -171,18 +202,23 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
       final parts = text.split(',');
 
       if (parts.length >= 2) {
-        final integerText = parts[0].replaceAll('.', '');
-        final integerValue = int.tryParse(integerText);
+        final integerText =
+            parts[0].replaceAll('.', '');
+
+        final integerValue =
+            int.tryParse(integerText);
 
         if (integerValue != null) {
-          final formattedInteger = integerValue
-              .toString()
-              .replaceAllMapped(
-                RegExp(r'\B(?=(\d{3})+(?!\d))'),
-                (match) => '.',
-              );
+          final formattedInteger =
+              integerValue.toString().replaceAllMapped(
+                    RegExp(
+                      r'\B(?=(\d{3})+(?!\d))',
+                    ),
+                    (match) => '.',
+                  );
 
-          final decimalPart = parts.sublist(1).join(',');
+          final decimalPart =
+              parts.sublist(1).join(',');
 
           return '$formattedInteger,$decimalPart';
         }
@@ -191,15 +227,19 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
       return text;
     }
 
-    final cleanText = text.replaceAll('.', '');
+    final cleanText =
+        text.replaceAll('.', '');
 
-    final integerValue = int.tryParse(cleanText);
+    final integerValue =
+        int.tryParse(cleanText);
 
     if (integerValue != null) {
       return integerValue
           .toString()
           .replaceAllMapped(
-            RegExp(r'\B(?=(\d{3})+(?!\d))'),
+            RegExp(
+              r'\B(?=(\d{3})+(?!\d))',
+            ),
             (match) => '.',
           );
     }
@@ -219,9 +259,11 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
     _historySaved = true;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs =
+          await SharedPreferences.getInstance();
 
-      final data = prefs.getStringList("history_data") ?? [];
+      final data =
+          prefs.getStringList("history_data") ?? [];
 
       final historyDate =
           DateTime.now().toString().substring(0, 16);
@@ -266,7 +308,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
   ) async {
     try {
       final Uint8List image =
-          await screenshotController.captureFromLongWidget(
+          await screenshotController
+              .captureFromLongWidget(
         _buildDownloadWidget(),
         context: context,
         pixelRatio: 3.0,
@@ -898,7 +941,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius:
+            BorderRadius.circular(6),
         border: Border.all(
           color: Colors.grey.shade200,
         ),
@@ -967,7 +1011,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
     String value,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 2,
       ),
       child: Column(
@@ -987,7 +1032,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
             width: double.infinity,
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
+              alignment:
+                  Alignment.centerLeft,
               child: Text(
                 value,
                 maxLines: 1,
@@ -1177,6 +1223,10 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
   }
 
   Widget _buildTradeSignal() {
+    if (widget.open == null) {
+      return const SizedBox.shrink();
+    }
+
     return Center(
       child: Container(
         padding:
@@ -1198,7 +1248,8 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize.min,
           children: [
             Icon(
               tradeSignalIcon,
@@ -1207,7 +1258,7 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
             ),
             const SizedBox(width: 6),
             Text(
-              tradeSignal,
+              tradeSignal!,
               style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 13,
@@ -1243,7 +1294,7 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
             MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'HANGSENG',
+            'PIVOT POINT (PP)',
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 15,
@@ -1408,7 +1459,10 @@ class _HangsengResultPageState extends State<HangsengResultPage> {
                   ),
                 ),
                 const SizedBox(height: 7),
+
+                // SIGNAL HANYA MUNCUL JIKA OPEN ADA
                 _buildTradeSignal(),
+
                 const SizedBox(height: 7),
                 Center(
                   child: Container(

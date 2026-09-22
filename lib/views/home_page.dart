@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/market_service.dart';
 
@@ -8,6 +9,7 @@ import 'calculator/physical_gold_page.dart';
 import 'profile/profile_page.dart';
 import 'calculator/pivot_point_page.dart';
 import 'calculator/hangseng_page.dart';
+import 'calculator/nest_page.dart';
 import 'history/history_page.dart';
 import 'historical_data_page.dart';
 import 'login_page.dart';
@@ -29,6 +31,7 @@ class _HomePageState extends State<HomePage> {
 
     _pages = [
       HomeContent(
+       
         onCalculatorTap: () {
           Navigator.push(
             context,
@@ -37,6 +40,7 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+    
         onPivotTap: () {
           Navigator.push(
             context,
@@ -45,6 +49,16 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+
+        onNestTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NestPage(),
+            ),
+          );
+        },
+
         onHangsengTap: () {
           Navigator.push(
             context,
@@ -53,11 +67,13 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+
         onHistoryTap: () {
           setState(() {
             _selectedIndex = 2;
           });
         },
+
         onHistoricalDataTap: () {
           Navigator.push(
             context,
@@ -67,6 +83,7 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+
       CalculatorPage(
         onBack: () {
           setState(() {
@@ -74,6 +91,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
+
       HistoryPage(
         onBack: () {
           setState(() {
@@ -81,6 +99,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
+
       const ProfilePage(),
     ];
   }
@@ -95,6 +114,7 @@ class _HomePageState extends State<HomePage> {
             Positioned.fill(
               child: _pages[_selectedIndex],
             ),
+
             Positioned(
               right: 7,
               bottom: 3,
@@ -124,7 +144,9 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade300),
+          top: BorderSide(
+            color: Colors.grey.shade300,
+          ),
         ),
       ),
       child: Row(
@@ -135,16 +157,19 @@ class _HomePageState extends State<HomePage> {
             label: 'Beranda',
             index: 0,
           ),
+
           _buildNavItem(
             icon: Icons.calculate_outlined,
             label: 'Kalkulator',
             index: 1,
           ),
+
           _buildNavItem(
             icon: Icons.history,
             label: 'Riwayat',
             index: 2,
           ),
+
           _buildNavItem(
             icon: Icons.person_outline,
             label: 'Profil',
@@ -183,7 +208,9 @@ class _HomePageState extends State<HomePage> {
                   ? const Color(0xFFF7931E)
                   : Colors.grey,
             ),
+
             const SizedBox(height: 4),
+
             Text(
               label,
               style: TextStyle(
@@ -203,10 +230,10 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// BERANDA
 class HomeContent extends StatefulWidget {
   final VoidCallback onCalculatorTap;
   final VoidCallback onPivotTap;
+  final VoidCallback onNestTap;
   final VoidCallback onHangsengTap;
   final VoidCallback onHistoryTap;
   final VoidCallback onHistoricalDataTap;
@@ -215,6 +242,7 @@ class HomeContent extends StatefulWidget {
     super.key,
     required this.onCalculatorTap,
     required this.onPivotTap,
+    required this.onNestTap,
     required this.onHangsengTap,
     required this.onHistoryTap,
     required this.onHistoricalDataTap,
@@ -234,39 +262,69 @@ class _HomeContentState extends State<HomeContent> {
     super.initState();
 
     _loadUserName();
-
     _loadHistoricalData();
   }
 
-  // LOAD USN
   Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-    final String? name =
-        prefs.getString('displayName') ??
-        prefs.getString('name') ??
-        prefs.getString('username') ??
-        prefs.getString('userName') ??
-        prefs.getString('fullName');
+    if (user == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _userName = '';
+      });
+
+      return;
+    }
+
+    String? fullName;
+
+    // Ambil nama dari metadata akun Supabase
+    final metadataName = user.userMetadata?['name'];
+
+    if (metadataName != null &&
+        metadataName.toString().trim().isNotEmpty) {
+      fullName = metadataName.toString().trim();
+    }
+
+    // Jika metadata tidak ada, ambil dari tabel profiles
+    if (fullName == null) {
+      try {
+        final profile = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profile != null &&
+            profile['name'] != null &&
+            profile['name'].toString().trim().isNotEmpty) {
+          fullName = profile['name'].toString().trim();
+        }
+      } catch (e) {
+        debugPrint('Gagal mengambil nama dari profiles: $e');
+      }
+    }
 
     if (!mounted) return;
 
     setState(() {
-      if (name != null && name.trim().isNotEmpty) {
-        _userName = name.trim();
+      if (fullName != null && fullName.isNotEmpty) {
+        // Ambil nama pertama saja
+        _userName = fullName.split(RegExp(r'\s+')).first;
       } else {
         _userName = '';
       }
     });
   }
 
-  // LOAD HISTORICAL DATA
   void _loadHistoricalData() {
     _historicalGoldFuture =
         MarketService.getHistoricalGoldData();
   }
 
-  // REFRESH
   void _refreshHistoricalData() {
     setState(() {
       _loadHistoricalData();
@@ -291,6 +349,7 @@ class _HomeContentState extends State<HomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                
                 Text(
                   _userName.isNotEmpty
                       ? 'Selamat Datang, $_userName 👋'
@@ -335,7 +394,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 32),
 
-                // FITUR UTAMA
+                // FITUR
                 const Text(
                   'Fitur Utama',
                   style: TextStyle(
@@ -347,7 +406,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR 1
+                // EMAS FISIK
                 _buildFeatureCard(
                   icon: Icons.calculate_outlined,
                   title: 'Kalkulator Emas Fisik',
@@ -359,10 +418,10 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR 2
+                // PIVOT
                 _buildFeatureCard(
                   icon: Icons.show_chart,
-                  title: 'Analisis Pivot Point',
+                  title: 'Kalkulator Pivot Point',
                   description:
                       'Strategi trading yang lebih baik dengan '
                       'kalkulasi level support dan resistance '
@@ -372,12 +431,25 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR 3 - HANGSENG
+                // NEST
+                _buildFeatureCard(
+                  icon: Icons.swap_vert,
+                  title: 'Kalkulator NEST',
+                  description:
+                      'Indikator sederhana yang membandingkan '
+                      'harga Close kemarin dengan Open hari ini '
+                      'untuk menampilkan indikator BUY atau SELL.',
+                  onTap: widget.onNestTap,
+                ),
+
+                const SizedBox(height: 12),
+
+                // HANGSENG
                 _buildFeatureCard(
                   icon: Icons.candlestick_chart_outlined,
-                  title: 'Analisis Hangseng',
+                  title: 'Kalkulator Hangseng',
                   description:
-                      'Analisis indeks Hangseng berdasarkan '
+                      'Menghitung indeks Hangseng berdasarkan '
                       'Open, High, Low, dan Close untuk '
                       'menentukan level support dan resistance.',
                   onTap: widget.onHangsengTap,
@@ -385,7 +457,7 @@ class _HomeContentState extends State<HomeContent> {
 
                 const SizedBox(height: 12),
 
-                // FITUR 4
+                // HISTORY
                 _buildFeatureCard(
                   icon: Icons.history,
                   title: 'Riwayat Perhitungan',
@@ -446,9 +518,9 @@ class _HomeContentState extends State<HomeContent> {
           const SizedBox(width: 2),
 
           Image.asset(
-            'assets/images/ewf.png',
-            width: 43,
-            height: 43,
+            'assets/images/ewf.jpg',
+            width: 35,
+            height: 35,
             fit: BoxFit.contain,
           ),
 
@@ -523,8 +595,7 @@ class _HomeContentState extends State<HomeContent> {
                     Container(
                       width: 31,
                       height: 31,
-                      decoration:
-                          const BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Color(0xFFD88D00),
                         shape: BoxShape.circle,
                       ),
@@ -576,8 +647,7 @@ class _HomeContentState extends State<HomeContent> {
                 Row(
                   children: [
                     _buildTag(
-                      icon:
-                          Icons.verified_user_outlined,
+                      icon: Icons.verified_user_outlined,
                       text: 'Aman',
                     ),
 
@@ -643,12 +713,10 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  // HISTORICAL SECTION
   Widget _buildHistoricalSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // JUDUL SAJA
         const Text(
           'Historical Data',
           style: TextStyle(
@@ -678,7 +746,6 @@ class _HomeContentState extends State<HomeContent> {
   Widget _buildHistoricalSummaryCard() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _historicalGoldFuture,
-
       builder: (context, snapshot) {
         if (snapshot.connectionState ==
             ConnectionState.waiting) {
@@ -736,14 +803,12 @@ class _HomeContentState extends State<HomeContent> {
                 const SizedBox(height: 12),
 
                 OutlinedButton.icon(
-                  onPressed:
-                      _refreshHistoricalData,
+                  onPressed: _refreshHistoricalData,
                   icon: const Icon(
                     Icons.refresh,
                     size: 17,
                   ),
-                  label:
-                      const Text('Coba Lagi'),
+                  label: const Text('Coba Lagi'),
                 ),
               ],
             ),
@@ -789,8 +854,7 @@ class _HomeContentState extends State<HomeContent> {
         }
 
         // DATA SUDAH DI-SORTING DARI SERVICE
-        final Map<String, dynamic> latest =
-            data.first;
+        final Map<String, dynamic> latest = data.first;
 
         final String tanggal =
             latest['tanggal']?.toString() ?? '-';
@@ -834,8 +898,7 @@ class _HomeContentState extends State<HomeContent> {
             ],
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // TOP
               Row(
@@ -865,8 +928,7 @@ class _HomeContentState extends State<HomeContent> {
                           'LGD Daily',
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight:
-                                FontWeight.w800,
+                            fontWeight: FontWeight.w800,
                             color: Color(0xFF252525),
                           ),
                         ),
@@ -877,8 +939,7 @@ class _HomeContentState extends State<HomeContent> {
                           'Data terbaru • ${_formatTanggal(tanggal)}',
                           style: const TextStyle(
                             fontSize: 12,
-                            fontWeight:
-                                FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                             color: Color(0xFF777777),
                           ),
                         ),
@@ -888,29 +949,24 @@ class _HomeContentState extends State<HomeContent> {
 
                   // STATUS
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 11,
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color:
-                            const Color(0xFFE7D39A),
+                        color: const Color(0xFFE7D39A),
                       ),
                     ),
                     child: Row(
-                      mainAxisSize:
-                          MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 8,
                           height: 8,
-                          decoration:
-                              const BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Color(0xFF43A047),
                             shape: BoxShape.circle,
                           ),
@@ -922,10 +978,8 @@ class _HomeContentState extends State<HomeContent> {
                           'Terbaru',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight:
-                                FontWeight.w700,
-                            color:
-                                Color(0xFF666666),
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF666666),
                           ),
                         ),
                       ],
@@ -938,16 +992,14 @@ class _HomeContentState extends State<HomeContent> {
 
               // CLOSE
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Expanded(
                     child: Text(
                       'CLOSE',
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight:
-                            FontWeight.w700,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 1.2,
                         color: Color(0xFF999999),
                       ),
@@ -958,8 +1010,7 @@ class _HomeContentState extends State<HomeContent> {
                     close,
                     style: const TextStyle(
                       fontSize: 31,
-                      fontWeight:
-                          FontWeight.w800,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF292929),
                     ),
                   ),
@@ -1004,18 +1055,13 @@ class _HomeContentState extends State<HomeContent> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed:
-                      widget.onHistoricalDataTap,
+                  onPressed: widget.onHistoricalDataTap,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFFF5AD17),
-                    foregroundColor:
-                        Colors.white,
+                    backgroundColor: const Color(0xFFF5AD17),
+                    foregroundColor: Colors.white,
                     elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
                     ),
                   ),
                   child: Row(
@@ -1026,8 +1072,7 @@ class _HomeContentState extends State<HomeContent> {
                         'Lihat Historical Data',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight:
-                              FontWeight.w800,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
 
@@ -1048,7 +1093,6 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  // PRICE BOX
   Widget _buildPriceBox({
     required String label,
     required String value,
@@ -1066,8 +1110,7 @@ class _HomeContentState extends State<HomeContent> {
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -1098,11 +1141,9 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  // FORMAT TANGGAL
   String _formatTanggal(String value) {
     try {
-      final DateTime date =
-          DateTime.parse(value);
+      final DateTime date = DateTime.parse(value);
 
       final String day =
           date.day.toString().padLeft(2, '0');
@@ -1157,16 +1198,14 @@ class _HomeContentState extends State<HomeContent> {
             ],
           ),
           child: Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F1F2),
-                  borderRadius:
-                      BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(9),
                 ),
                 child: Icon(
                   icon,
@@ -1181,8 +1220,7 @@ class _HomeContentState extends State<HomeContent> {
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,

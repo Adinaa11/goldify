@@ -3,64 +3,85 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
 class MarketService {
-  static String _normalizeCategory(dynamic value) {
-    return value
-            ?.toString()
-            .trim()
-            .toLowerCase()
-            .replaceAll('—', '-')
-            .replaceAll('–', '-')
-            .replaceAll('_', ' ')
-            .replaceAll(RegExp(r'\s+'), ' ') ??
-        '';
+  static const String liveQuotesUrl =
+      'https://www.newsmaker.id/api/live-quotes';
+
+  static String _normalizeCategory(String category) {
+    final String value =
+        category.trim().toLowerCase();
+
+    // GOLD
+    if (value == 'lgd daily') {
+      return 'lgd daily';
+    }
+
+    // HANG SENG
+    if (value == 'hsi daily' ||
+        value == 'hsi — hang seng hong kong' ||
+        value == 'hsi - hang seng hong kong' ||
+        value == 'hang seng hong kong') {
+      return 'hsi daily';
+    }
+
+    if (value == 'sni — nikkei jepang' ||
+        value == 'sni - nikkei jepang' ||
+        value == 'sni daily' ||
+        value == 'nikkei daily' ||
+        value == 'nikkei jepang' ||
+        value == 'nikkei') {
+      return 'sni';
+    }
+
+    return value;
   }
 
-  static bool _categoryMatches(
-    dynamic apiCategory,
-    String selectedCategory,
+  static bool _isSameCategory(
+    dynamic itemCategory,
+    String requestedCategory,
   ) {
-    final String category =
-        _normalizeCategory(apiCategory);
-
-    final String selected =
-        _normalizeCategory(selectedCategory);
-
-    if (selected == 'lgd daily') {
-      return category == 'lgd daily' ||
-          category == 'lgd';
+    if (itemCategory == null) {
+      return false;
     }
 
-    if (selected.contains('sni')) {
-      return category.contains('sni') ||
-          category.contains('nikkei');
+    final String apiCategory =
+        itemCategory.toString().trim().toLowerCase();
+
+    final String normalizedRequested =
+        _normalizeCategory(requestedCategory);
+
+    // GOLD
+    if (normalizedRequested == 'lgd daily') {
+      return apiCategory == 'lgd daily';
     }
 
-    if (selected.contains('hsi')) {
-      return category.contains('hsi') ||
-          category.contains('hang seng');
+    // HANG SENG
+    if (normalizedRequested == 'hsi daily') {
+      return apiCategory == 'hsi daily';
     }
 
-    return category == selected;
+    // NIKKEI / SNI
+    if (normalizedRequested == 'sni') {
+      return apiCategory == 'sni' ||
+          apiCategory == 'sni daily' ||
+          apiCategory == 'nikkei' ||
+          apiCategory == 'nikkei daily' ||
+          apiCategory == 'nikkei jepang' ||
+          apiCategory == 'nikkei japan';
+    }
+
+    return apiCategory == normalizedRequested;
   }
+
+  // ============================================================
+  // LIVE QUOTES
+  // ============================================================
 
   static Future<List<Map<String, dynamic>>>
-      _fetchMarketData({
-    required String category,
-  }) async {
+      _fetchLiveQuotes() async {
     try {
-      final Uri uri = Uri.parse(
-        ApiConfig.historicalGold,
-      );
-
-      print('========================================');
-      print('REQUEST DATA MARKET');
-      print('CATEGORY : $category');
-      print('URL : $uri');
-      print('========================================');
-
       final response = await http
           .get(
-            uri,
+            Uri.parse(liveQuotesUrl),
             headers: const {
               'Accept': 'application/json',
             },
@@ -69,280 +90,505 @@ class MarketService {
             const Duration(seconds: 15),
           );
 
-      print('STATUS : ${response.statusCode}');
-
       if (response.statusCode != 200) {
         throw Exception(
-          'Gagal mengambil data dari API '
-          '(status ${response.statusCode}).',
+          'Gagal mengambil live quotes.',
         );
       }
 
-      final dynamic decoded =
+      final Map<String, dynamic> decoded =
           jsonDecode(response.body);
 
-      if (decoded is! Map<String, dynamic>) {
+      final dynamic raw = decoded['data'];
+
+      if (raw is! List) {
         throw Exception(
-          'Response API bukan object JSON.',
+          'Format live quotes tidak valid.',
         );
       }
 
-      dynamic rawData = decoded['data'];
-
-      if (rawData is Map) {
-        rawData = rawData['data'];
-      }
-
-      if (rawData is! List) {
-        throw Exception(
-          'Format data API tidak valid. '
-          'Data bukan berupa List.',
-        );
-      }
-
-      final Set<String> availableCategories = {};
-
-      for (final item in rawData) {
-        if (item is Map) {
-          final value = item['category'];
-
-          if (value != null &&
-              value.toString().trim().isNotEmpty) {
-            availableCategories.add(
-              value.toString().trim(),
-            );
-          }
-        }
-      }
-
-      print(
-        'CATEGORY YANG TERSEDIA DI API: '
-        '$availableCategories',
-      );
-
-      final List<Map<String, dynamic>> result =
-          rawData
-              .where((item) {
-                if (item is! Map) {
-                  return false;
-                }
-
-                return _categoryMatches(
-                  item['category'],
-                  category,
-                );
-              })
-              .map(
-                (item) => Map<String, dynamic>.from(
-                  item as Map,
-                ),
-              )
-              .toList();
-
-      print(
-        'JUMLAH DATA $category : ${result.length}',
-      );
-
-      if (result.isEmpty) {
-        throw Exception(
-          'Data $category tidak ditemukan di API.',
-        );
-      }
-
-      result.sort((a, b) {
-        final String? dateA =
-            a['tanggal']?.toString();
-
-        final String? dateB =
-            b['tanggal']?.toString();
-
-        if (dateA == null || dateA.isEmpty) {
-          return 1;
-        }
-
-        if (dateB == null || dateB.isEmpty) {
-          return -1;
-        }
-
-        try {
-          return DateTime.parse(dateB)
-              .compareTo(
-            DateTime.parse(dateA),
-          );
-        } catch (_) {
-          return dateB.compareTo(dateA);
-        }
-      });
-
-      return result;
-    } catch (error) {
-      print('========================================');
-      print('ERROR MARKET SERVICE');
-      print(error);
-      print('========================================');
-
+      return raw
+          .map(
+            (item) => Map<String, dynamic>.from(item),
+          )
+          .toList();
+    } catch (e) {
+      print('ERROR LIVE QUOTES: $e');
       rethrow;
     }
   }
 
-  // DATA UNTUK LGD DAILY
+  // HISTORICAL DATA
   static Future<List<Map<String, dynamic>>>
-      _fetchGoldData() async {
-    return _fetchMarketData(
-      category: 'LGD Daily',
-    );
+      _fetchHistoricalData() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+              ApiConfig.historicalGold,
+            ),
+            headers: const {
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(
+            const Duration(seconds: 15),
+          );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Gagal mengambil historical data.',
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      dynamic raw = decoded['data'];
+
+      if (raw is Map) {
+        raw = raw['data'];
+      }
+
+      if (raw is! List) {
+        throw Exception(
+          'Format historical tidak valid.',
+        );
+      }
+
+      return raw
+          .map(
+            (item) => Map<String, dynamic>.from(item),
+          )
+          .toList();
+    } catch (e) {
+      print('ERROR HISTORICAL: $e');
+      rethrow;
+    }
   }
 
-  // DATA UNTUK PIVOT POINT
+  static Map<String, dynamic>?
+      _findHistoricalData({
+    required List<Map<String, dynamic>> data,
+    required String date,
+    required String category,
+  }) {
+    for (final item in data) {
+      final String itemDate =
+          item['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      final bool sameCategory =
+          _isSameCategory(
+        item['category'],
+        category,
+      );
+
+      if (itemDate == date &&
+          sameCategory) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  static Map<String, dynamic>?
+      _findPreviousHistoricalData({
+    required List<Map<String, dynamic>> data,
+    required String date,
+    required String category,
+  }) {
+    final List<Map<String, dynamic>> filtered =
+        data.where((item) {
+      return _isSameCategory(
+        item['category'],
+        category,
+      );
+    }).toList();
+
+    filtered.sort((a, b) {
+      final String dateA =
+          a['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      final String dateB =
+          b['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      return dateB.compareTo(dateA);
+    });
+
+    for (final item in filtered) {
+      final String itemDate =
+          item['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      if (itemDate.compareTo(date) < 0) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
+  static Map<String, dynamic>?
+      _findNextHistoricalData({
+    required List<Map<String, dynamic>> data,
+    required String date,
+    required String category,
+  }) {
+    final List<Map<String, dynamic>> filtered =
+        data.where((item) {
+      return _isSameCategory(
+        item['category'],
+        category,
+      );
+    }).toList();
+
+    filtered.sort((a, b) {
+      final String dateA =
+          a['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      final String dateB =
+          b['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      return dateA.compareTo(dateB);
+    });
+
+    for (final item in filtered) {
+      final String itemDate =
+          item['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      if (itemDate.compareTo(date) > 0) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
+  static String _getLiveDate(
+    Map<String, dynamic> liveData,
+  ) {
+    final String dateTime =
+        liveData['date_time']
+                ?.toString()
+                .trim() ??
+            '';
+
+    if (dateTime.length >= 10) {
+      return dateTime.substring(0, 10);
+    }
+
+    final String serverDateTime =
+        liveData['serverDateTime']
+                ?.toString()
+                .trim() ??
+            '';
+
+    if (serverDateTime.length >= 10) {
+      return serverDateTime.substring(0, 10);
+    }
+
+    return '';
+  }
+
+  // GOLD XUL10
   static Future<Map<String, dynamic>>
       getLatestGoldData({
     String? date,
   }) async {
-    final List<Map<String, dynamic>> goldData =
-        await _fetchGoldData();
+    final historical =
+        await _fetchHistoricalData();
 
     if (date != null &&
         date.trim().isNotEmpty) {
       final String selectedDate =
           date.trim();
 
-      final selectedData =
-          goldData.where((item) {
-        final String? itemDate =
-            item['tanggal']
-                ?.toString()
-                .trim();
+      final selected =
+          _findHistoricalData(
+        data: historical,
+        date: selectedDate,
+        category: 'LGD Daily',
+      );
 
-        return itemDate == selectedDate;
-      }).toList();
-
-      if (selectedData.isEmpty) {
+      if (selected == null) {
         throw Exception(
-          'Data LGD Daily untuk tanggal '
+          'Data Gold tanggal '
           '$selectedDate tidak ditemukan.',
         );
       }
 
-      return selectedData.first;
+      final dynamic high =
+          selected['high'];
+
+      final dynamic low =
+          selected['low'];
+
+      final dynamic close =
+          selected['close'];
+
+      final next =
+          _findNextHistoricalData(
+        data: historical,
+        date: selectedDate,
+        category: 'LGD Daily',
+      );
+
+      if (next == null) {
+        throw Exception(
+          'Data Gold setelah tanggal '
+          '$selectedDate tidak ditemukan.',
+        );
+      }
+
+      return {
+        'open': next['open'],
+        'high': high,
+        'low': low,
+        'close': close,
+        'tanggal': selected['tanggal'],
+        'ohlcDate': selected['tanggal'],
+      };
     }
 
-    return goldData.first;
-  }
+    final live =
+        await _fetchLiveQuotes();
 
-  // DATA HANGSENG / HSI
-  static Future<List<Map<String, dynamic>>>
-      _fetchHangsengData() async {
-    return _fetchMarketData(
-      category: 'HSI',
+    final gold = live.firstWhere(
+      (item) => item['symbol'] == 'XUL10',
+      orElse: () => {},
     );
+
+    if (gold.isEmpty) {
+      throw Exception(
+        'Data Gold XUL10 tidak ditemukan.',
+      );
+    }
+
+    final String liveDate =
+        _getLiveDate(gold);
+
+    if (liveDate.isEmpty) {
+      throw Exception(
+        'Tanggal live Gold tidak tersedia.',
+      );
+    }
+
+    final previous =
+        _findPreviousHistoricalData(
+      data: historical,
+      date: liveDate,
+      category: 'LGD Daily',
+    );
+
+    if (previous == null) {
+      throw Exception(
+        'Historical Gold sebelum tanggal '
+        '$liveDate tidak ditemukan.',
+      );
+    }
+
+    return {
+      'open': gold['open'],
+      'high': previous['high'],
+      'low': previous['low'],
+      'close': previous['close'],
+      'tanggal': gold['date_time'],
+      'ohlcDate': previous['tanggal'],
+    };
   }
 
   static Future<Map<String, dynamic>>
       getLatestHangsengData({
     String? date,
   }) async {
-    final List<Map<String, dynamic>> hangsengData =
-        await _fetchHangsengData();
+    final historical =
+        await _fetchHistoricalData();
 
     if (date != null &&
         date.trim().isNotEmpty) {
       final String selectedDate =
           date.trim();
 
-      final selectedData =
-          hangsengData.where((item) {
-        final String? itemDate =
-            item['tanggal']
-                ?.toString()
-                .trim();
+      final selected =
+          _findHistoricalData(
+        data: historical,
+        date: selectedDate,
+        category: 'HSI Daily',
+      );
 
-        return itemDate == selectedDate;
-      }).toList();
-
-      if (selectedData.isEmpty) {
+      if (selected == null) {
         throw Exception(
-          'Data Hangseng untuk tanggal '
+          'Data Hangseng tanggal '
           '$selectedDate tidak ditemukan.',
         );
       }
 
-      return selectedData.first;
+      final dynamic high =
+          selected['high'];
+
+      final dynamic low =
+          selected['low'];
+
+      final dynamic close =
+          selected['close'];
+
+      final next =
+          _findNextHistoricalData(
+        data: historical,
+        date: selectedDate,
+        category: 'HSI Daily',
+      );
+
+      if (next == null) {
+        throw Exception(
+          'Data Hangseng setelah tanggal '
+          '$selectedDate tidak ditemukan.',
+        );
+      }
+
+      return {
+        'open': next['open'],
+        'high': high,
+        'low': low,
+        'close': close,
+        'tanggal': selected['tanggal'],
+        'ohlcDate': selected['tanggal'],
+      };
     }
 
-    return hangsengData.first;
+    final live =
+        await _fetchLiveQuotes();
+
+    final hangseng = live.firstWhere(
+      (item) =>
+          item['symbol'] == 'HKK50_BBJ',
+      orElse: () => {},
+    );
+
+    if (hangseng.isEmpty) {
+      throw Exception(
+        'Data Hangseng HKK50_BBJ '
+        'tidak ditemukan.',
+      );
+    }
+
+    final String liveDate =
+        _getLiveDate(hangseng);
+
+    if (liveDate.isEmpty) {
+      throw Exception(
+        'Tanggal live Hangseng '
+        'tidak tersedia.',
+      );
+    }
+
+    final previous =
+        _findPreviousHistoricalData(
+      data: historical,
+      date: liveDate,
+      category: 'HSI Daily',
+    );
+
+    if (previous == null) {
+      throw Exception(
+        'Historical Hangseng sebelum tanggal '
+        '$liveDate tidak ditemukan.',
+      );
+    }
+
+    return {
+      'open': hangseng['open'],
+      'high': previous['high'],
+      'low': previous['low'],
+      'close': previous['close'],
+      'tanggal': hangseng['date_time'],
+      'ohlcDate': previous['tanggal'],
+    };
   }
 
-  // DATA HISTORIS
   static Future<List<Map<String, dynamic>>>
       getHistoricalMarketData({
     required String category,
     String? startDate,
     String? endDate,
   }) async {
-    final List<Map<String, dynamic>> marketData =
-        await _fetchMarketData(
-      category: category,
-    );
+    final historical =
+        await _fetchHistoricalData();
 
     List<Map<String, dynamic>> result =
-        marketData;
+        historical.where((item) {
+      return _isSameCategory(
+        item['category'],
+        category,
+      );
+    }).toList();
 
-    // FILTER TANGGAL AWAL
     if (startDate != null &&
         startDate.trim().isNotEmpty) {
-      final DateTime start =
-          DateTime.parse(startDate.trim());
-
       result = result.where((item) {
-        final String? tanggal =
-            item['tanggal']?.toString();
+        final String tanggal =
+            item['tanggal']
+                    ?.toString()
+                    .trim() ??
+                '';
 
-        if (tanggal == null ||
-            tanggal.isEmpty) {
-          return false;
-        }
-
-        try {
-          final DateTime itemDate =
-              DateTime.parse(tanggal);
-
-          return !itemDate.isBefore(start);
-        } catch (_) {
-          return false;
-        }
+        return tanggal.compareTo(
+              startDate.trim(),
+            ) >=
+            0;
       }).toList();
     }
 
-    // FILTER TANGGAL AKHIR
     if (endDate != null &&
         endDate.trim().isNotEmpty) {
-      final DateTime end =
-          DateTime.parse(endDate.trim());
-
       result = result.where((item) {
-        final String? tanggal =
-            item['tanggal']?.toString();
+        final String tanggal =
+            item['tanggal']
+                    ?.toString()
+                    .trim() ??
+                '';
 
-        if (tanggal == null ||
-            tanggal.isEmpty) {
-          return false;
-        }
-
-        try {
-          final DateTime itemDate =
-              DateTime.parse(tanggal);
-
-          return !itemDate.isAfter(end);
-        } catch (_) {
-          return false;
-        }
+        return tanggal.compareTo(
+              endDate.trim(),
+            ) <=
+            0;
       }).toList();
     }
 
-    print(
-      'DATA HISTORIS $category '
-      'DIKEMBALIKAN : ${result.length}',
-    );
+    result.sort((a, b) {
+      final String dateA =
+          a['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      final String dateB =
+          b['tanggal']
+                  ?.toString()
+                  .trim() ??
+              '';
+
+      return dateB.compareTo(dateA);
+    });
 
     return result;
   }
@@ -354,6 +600,30 @@ class MarketService {
   }) async {
     return getHistoricalMarketData(
       category: 'LGD Daily',
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>>
+      getHistoricalHangsengData({
+    String? startDate,
+    String? endDate,
+  }) async {
+    return getHistoricalMarketData(
+      category: 'HSI Daily',
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>>
+      getHistoricalSniData({
+    String? startDate,
+    String? endDate,
+  }) async {
+    return getHistoricalMarketData(
+      category: 'SNI — Nikkei Jepang',
       startDate: startDate,
       endDate: endDate,
     );
