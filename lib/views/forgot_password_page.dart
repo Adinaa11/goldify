@@ -49,7 +49,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'goldify://auth-callback',
+        redirectTo: 'goldify://reset-password',
       );
 
       if (!mounted) return;

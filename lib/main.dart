@@ -31,26 +31,30 @@ class _GoldifyAppState extends State<GoldifyApp> {
   bool _recoveryHandled = false;
 
   @override
-  void initState() {
-    super.initState();
+    void initState() {
+      super.initState();
 
-    _authSubscription =
+      _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen(
       (data) {
+
         debugPrint('==============================');
         debugPrint('AUTH EVENT: ${data.event}');
         debugPrint('AUTH SESSION: ${data.session != null}');
         debugPrint('==============================');
 
-        if (data.session != null && !_recoveryHandled){
-          debugPrint('SESSION DETECTED FROM DEEP LINK');
+        if (data.event == AuthChangeEvent.passwordRecovery &&
+            !_recoveryHandled) {
+
+          debugPrint('PASSWORD RECOVERY DETECTED');
           _recoveryHandled = true;
           _openNewPasswordPage();
         }
       },
+
       onError: (error, stackTrace) {
         debugPrint('AUTH ERROR: $error');
-      },
+    },
     );
   }
 
