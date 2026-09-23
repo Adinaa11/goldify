@@ -42,16 +42,9 @@ class _GoldifyAppState extends State<GoldifyApp> {
         debugPrint('AUTH SESSION: ${data.session != null}');
         debugPrint('==============================');
 
-        if (data.event == AuthChangeEvent.passwordRecovery) {
-          debugPrint('PASSWORD RECOVERY DETECTED');
-
-          if (_recoveryHandled) {
-            debugPrint('RECOVERY ALREADY HANDLED');
-            return;
-          }
-
+        if (data.session != null && !_recoveryHandled){
+          debugPrint('SESSION DETECTED FROM DEEP LINK');
           _recoveryHandled = true;
-
           _openNewPasswordPage();
         }
       },
