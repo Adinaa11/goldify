@@ -1,92 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../services/market_service.dart';
+
+import '../../viewmodels/hangseng_viewmodel.dart';
+import '../../repositories/hangseng_repository.dart';
+
 import 'hangseng_result_page.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HangsengPage extends StatefulWidget {
-  final Map<String, dynamic>? initialData;
-
+  final Map<String,dynamic>? initialData;
   const HangsengPage({
     super.key,
     this.initialData,
   });
 
   @override
-  State<HangsengPage> createState() => _HangsengPageState();
-}
+  State<HangsengPage> createState()
+      => _HangsengPageState();
 
+}
 class _ThousandsFormatter extends TextInputFormatter {
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
-  ) {
-    String text = newValue.text;
+  ){
 
-    if (text.isEmpty) {
+    String text =
+        newValue.text;
+
+    if(text.isEmpty){
+
       return newValue;
     }
 
-    text = text.replaceAll('.', '');
+    text =
+        text.replaceAll('.', '');
 
-    final commaCount = ','.allMatches(text).length;
+    final commaCount =
+        ','.allMatches(text).length;
 
-    if (commaCount > 1) {
+    if(commaCount > 1){
+
       return oldValue;
     }
 
-    final commaIndex = text.indexOf(',');
+    final commaIndex =
+        text.indexOf(',');
 
     String integerPart;
     String decimalPart = '';
 
-    if (commaIndex >= 0) {
-      integerPart = text.substring(0, commaIndex);
-      decimalPart = text.substring(commaIndex + 1);
-    } else {
-      integerPart = text;
+    if(commaIndex >=0){
+
+      integerPart =
+          text.substring(
+            0,
+            commaIndex,
+          );
+
+      decimalPart =
+          text.substring(
+            commaIndex + 1,
+          );
+
+    }else{
+      integerPart =
+          text;
     }
 
-    if (!RegExp(r'^\d*$').hasMatch(integerPart)) {
+    if(!RegExp(r'^\d*$')
+        .hasMatch(integerPart)){
+
       return oldValue;
     }
 
-    if (!RegExp(r'^\d*$').hasMatch(decimalPart)) {
+    if(!RegExp(r'^\d*$')
+        .hasMatch(decimalPart)){
+
       return oldValue;
     }
-
-    if (integerPart.isEmpty) {
-      integerPart = '0';
-    }
-
-    integerPart = integerPart.replaceFirst(
-      RegExp(r'^0+(?=\d)'),
-      '',
-    );
 
     final formattedInteger =
-        integerPart.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
+
+    integerPart.replaceAllMapped(
+      RegExp(
+        r'\B(?=(\d{3})+(?!\d))',
+      ),
+      (match)=>'.',
     );
 
-    String formatted = formattedInteger;
+    String formatted =
+        formattedInteger;
 
-    if (commaIndex >= 0) {
-      formatted += ',$decimalPart';
+    if(commaIndex >=0){
+
+      formatted +=
+          ',$decimalPart';
     }
 
     return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(
-        offset: formatted.length,
+      text:formatted,
+      selection:
+      TextSelection.collapsed(
+        offset:
+        formatted.length,
       ),
     );
   }
 }
 
-class _HangsengPageState extends State<HangsengPage> {
+class _HangsengPageState
+extends State<HangsengPage>{
+  late HangsengViewModel viewModel;
+
   final TextEditingController _openController =
       TextEditingController();
   final TextEditingController _highController =
@@ -95,598 +122,599 @@ class _HangsengPageState extends State<HangsengPage> {
       TextEditingController();
   final TextEditingController _closeController =
       TextEditingController();
+  static const Color orange =
+      Color(0xFFF7931E);
+  static const Color darkText =
+      Color(0xFF222222);
+  static const Color greyText =
+      Color(0xFF555555);
+  static const Color fieldColor =
+      Color(0xFFF7F5F3);
 
-  static const Color orange = Color(0xFFF7931E);
-  static const Color darkText = Color(0xFF222222);
-  static const Color greyText = Color(0xFF555555);
-  static const Color fieldColor = Color(0xFFF7F5F3);
-
-  bool _isLoading = false;
-  String? _errorMessage;
-  String? _dataDate;
   String? _selectedDate;
-
-  bool get _isRecalculate => widget.initialData != null;
+  bool get _isRecalculate =>
+      widget.initialData != null;
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
 
-    if (_isRecalculate) {
+    viewModel =
+        HangsengViewModel(
+          HangsengRepository(),
+        );
+
+    viewModel.addListener((){
+      if(!mounted) return;
+      setState((){});
+    });
+    if(_isRecalculate){
+
       _loadInitialData();
-    } else {
+    }
+    else{
       _loadHangsengData();
     }
   }
 
-  void _loadInitialData() {
-    final Map<String, dynamic> d = widget.initialData!;
-
-    _openController.text =
-        _formatInitialNumber(d['open']);
-    _highController.text =
-        _formatInitialNumber(d['high']);
-    _lowController.text =
-        _formatInitialNumber(d['low']);
-    _closeController.text =
-        _formatInitialNumber(d['close']);
-
-    _dataDate =
-        d['dataDate']?.toString() ??
-        d['tanggal']?.toString() ??
-        d['date']?.toString();
-  }
-
-  String _formatInitialNumber(dynamic value) {
-    if (value == null) return '';
-
-    double? number;
-
-    if (value is num) {
-      number = value.toDouble();
-    } else {
-      final String text = value.toString().trim();
-
-      if (text.isEmpty) return '';
-
-      if (text.contains(',')) {
-        final parts = text.split(',');
-
-        if (parts.length == 2) {
-          final integerPart =
-              parts[0].replaceAll('.', '');
-          final decimalPart = parts[1];
-
-          number = double.tryParse(
-            '$integerPart.$decimalPart',
-          );
-        }
-      } else {
-        number = double.tryParse(text);
-      }
-
-      if (number == null) {
-        return text;
-      }
-    }
-
-    final rounded =
-        double.parse(number.toStringAsFixed(2));
-
-    final fixed = rounded.toStringAsFixed(2);
-    final parts = fixed.split('.');
-
-    final integerPart =
-        parts[0].replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    );
-
-    if (rounded == rounded.truncateToDouble()) {
-      return integerPart;
-    }
-
-    return '$integerPart,${parts[1]}';
-  }
-
-  @override
-  void dispose() {
-    _openController.dispose();
-    _highController.dispose();
-    _lowController.dispose();
-    _closeController.dispose();
-    super.dispose();
-  }
-// ============================================================
-// SIMPAN KE DATABASE
-// ============================================================
-Future<void> _saveToDatabase({
-  required double open,
-  required double high,
-  required double low,
-  required double close,
-  required Map<String, dynamic> result,
-}) async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
-
-  debugPrint("USER ID: ${user?.id}");
-
-  if (user == null) {
-    debugPrint("❌ USER BELUM LOGIN");
-    return;
-  }
-
-  try {
-    final response = await supabase
-        .from('history')
-        .insert({
-          'user_id': user.id,
-          'type': 'hangseng',
-          'input': {
-            'open': open,
-            'high': high,
-            'low': low,
-            'close': close,
-          },
-          'result': result,
-          'created_at': DateTime.now().toIso8601String(),
-        })
-        .select();
-
-    debugPrint("✅ DATA HANGSENG MASUK: $response");
-  } catch (e) {
-    debugPrint("❌ ERROR SIMPAN HANGSENG: $e");
-  }
-}
-
   Future<void> _loadHangsengData({
     String? date,
-  }) async {
-    if (!mounted) return;
+  }) async{
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    await viewModel.loadData(
+      date:date,
+    );
 
-    try {
-      debugPrint(
-        'Mengambil data Hangseng${date != null ? ' untuk $date' : ''}...',
-      );
+    if(!mounted)return;
 
-      final Map<String, dynamic> data =
-          await MarketService.getLatestHangsengData(
-        date: date,
-      );
+    if(viewModel.errorMessage == null){
 
-      debugPrint(
-        'Data Hangseng berhasil diterima: $data',
-      );
+      setState((){
 
-      final String open =
-          _formatInitialNumber(data['open']);
+        _openController.text =
+            _formatInitialNumber(
+              viewModel.open,
+            );
 
-      final String high =
-          _formatInitialNumber(data['high']);
+        _highController.text =
+            _formatInitialNumber(
+              viewModel.high,
+            );
 
-      final String low =
-          _formatInitialNumber(data['low']);
+        _lowController.text =
+            _formatInitialNumber(
+              viewModel.low,
+            );
 
-      final String close =
-          _formatInitialNumber(data['close']);
-
-      final String? tanggal =
-        date ?? 
-        data['tanggal']?.toString() ??
-        data['date']?.toString();
-
-        if (high.isEmpty ||
-          low.isEmpty ||
-          close.isEmpty) {
-        throw Exception(
-          'Data High, Low, atau Close Hangseng tidak tersedia.',
-        );
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        _openController.text = open;
-        _highController.text = high;
-        _lowController.text = low;
-        _closeController.text = close;
-        _dataDate = tanggal;
-        _isLoading = false;
-        _errorMessage = null;
-      });
-    } catch (error) {
-      if (!mounted) return;
-
-      debugPrint(
-        'Gagal mengambil data Hangseng: $error',
-      );
-
-      setState(() {
-        _isLoading = false;
-
-        if (date != null) {
-          _errorMessage =
-              'Data Hangseng untuk tanggal '
-              '${_formatDate(date)} tidak tersedia.';
-        } else {
-          _errorMessage =
-              'Tidak dapat mengambil data Hangseng.\n'
-              'Periksa koneksi internet atau API Newsmaker.';
-        }
+        _closeController.text =
+            _formatInitialNumber(
+              viewModel.close,
+            );
       });
     }
   }
 
-  // ============================================================
-  // DATE PICKER
-  // ============================================================
+  void _loadInitialData(){
 
-  Future<void> _selectDate() async {
-    if (_isLoading || _isRecalculate) return;
+    final d =
+        widget.initialData!;
 
-    DateTime initialDate = DateTime.now();
+    _openController.text =
+        _formatInitialNumber(
+          d['open'],
+        );
 
-    if (_dataDate != null &&
-        _dataDate!.isNotEmpty) {
-      try {
-        final String cleanDate =
-            _dataDate!.length >= 10
-                ? _dataDate!.substring(0, 10)
-                : _dataDate!;
+    _highController.text =
+        _formatInitialNumber(
+          d['high'],
+        );
 
-        initialDate = DateTime.parse(cleanDate);
-      } catch (_) {}
+    _lowController.text =
+        _formatInitialNumber(
+          d['low'],
+        );
+
+    _closeController.text =
+        _formatInitialNumber(
+          d['close'],
+        );
+
+    viewModel.dataDate =
+        d['date']?.toString()
+        ??
+        d['dataDate']?.toString();
+  }
+
+  String _formatInitialNumber(dynamic value){
+  if(value == null){
+    return '';
+  }
+
+  double? number;
+
+  if(value is num){
+    number =
+        value.toDouble();
+  }
+  else{
+
+    String text =
+        value.toString()
+            .trim();
+
+    // format API: 25.765
+    if(text.contains('.') &&
+        !text.contains(',')){
+
+      text =
+          text.replaceAll('.', '');
     }
 
-    final DateTime? pickedDate =
+    text =
+        text.replaceAll(',', '.');
+
+    number =
+        double.tryParse(text);
+  }
+
+  if(number == null){
+
+    return value.toString();
+  }
+
+  final integer =
+      number
+      .toInt()
+      .toString()
+      .replaceAllMapped(
+
+        RegExp(
+          r'\B(?=(\d{3})+(?!\d))',
+        ),
+        (match)=>'.',
+      );
+
+  return integer;
+}
+
+  Future<void> _selectDate() async{
+
+    if(viewModel.isLoading ||
+        _isRecalculate){
+
+      return;
+    }
+
+    DateTime initialDate =
+        DateTime.now();
+
+    if(viewModel.dataDate != null){
+
+      try{
+
+        initialDate =
+            DateTime.parse(
+              viewModel.dataDate!
+                  .substring(0,10),
+            );
+      }catch(_){}
+    }
+
+    final picked =
         await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      helpText: 'Pilih tanggal data Hangseng',
-      cancelText: 'Batal',
-      confirmText: 'Pilih',
-      builder: (
-        BuildContext context,
-        Widget? child,
-      ) {
+
+      context:context,
+      initialDate:
+      initialDate,
+
+      firstDate:
+      DateTime(2020),
+
+      lastDate:
+      DateTime.now(),
+
+      builder:(context,child){
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: orange,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: darkText,
+
+          data:
+          Theme.of(context)
+              .copyWith(
+            colorScheme:
+            const ColorScheme.light(
+              primary:
+              orange,
+              onPrimary:
+              Colors.white,
+              surface:
+              Colors.white,
+              onSurface:
+              darkText,
             ),
           ),
-          child: child!,
+
+          child:
+          child!,
         );
       },
     );
 
-    if (pickedDate == null) return;
+    if(picked == null)
+      return;
+    final date =
+    '${picked.year}-'
+        '${picked.month.toString().padLeft(2,'0')}-'
+        '${picked.day.toString().padLeft(2,'0')}';
 
-    final String selectedDate =
-        '${pickedDate.year.toString().padLeft(4, '0')}-'
-        '${pickedDate.month.toString().padLeft(2, '0')}-'
-        '${pickedDate.day.toString().padLeft(2, '0')}';
-
-    _selectedDate = selectedDate;
+    _selectedDate =
+        date;
 
     await _loadHangsengData(
-      date: selectedDate,
+      date:date,
     );
-
-    if (!mounted) return;
-
-    if (_errorMessage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Data Hangseng '
-            '${_formatDate(selectedDate)} berhasil dimuat.',
-          ),
-          backgroundColor: orange,
-        ),
-      );
-    }
   }
 
-  // FORMAT DATE
-  String _formatDate(String? date) {
-    if (date == null || date.isEmpty) {
+  String _formatDate(String? date){
+    if(date == null ||
+        date.isEmpty){
+
       return '-';
     }
 
-    final String cleanDate =
-        date.length >= 10
-            ? date.substring(0, 10)
-            : date;
+    final clean =
+        date.substring(0,10);
 
-    final List<String> parts =
-        cleanDate.split('-');
+    final parts =
+        clean.split('-');
 
-    if (parts.length != 3) {
+    if(parts.length !=3){
+
       return date;
     }
 
-    return '${parts[2]}/${parts[1]}/${parts[0]}';
+    return
+        '${parts[2]}/${parts[1]}/${parts[0]}';
+
   }
 
-  // PARSE NUMBER
-  double? _parseNumber(String text) {
-    final value = text.trim();
+  double? _parseNumber(
+      String value
+      ){
 
-    if (value.isEmpty) return null;
-
-    if (value.contains(',')) {
-      final parts = value.split(',');
-
-      if (parts.length != 2) return null;
-
-      final integerPart =
-          parts[0].replaceAll('.', '');
-
-      final decimalPart = parts[1];
-
-      if (integerPart.isEmpty &&
-          decimalPart.isEmpty) {
-        return null;
-      }
-
-      return double.tryParse(
-        '$integerPart.$decimalPart',
-      );
+    if(value.trim().isEmpty){
+      return null;
     }
 
-    return double.tryParse(
-      value.replaceAll('.', ''),
-    );
+    String text =
+        value.trim();
+
+    if(text.contains(',')){
+
+      text =
+          text
+          .replaceAll('.', '')
+          .replaceAll(',', '.');
+    }
+    else{
+
+      text =
+          text.replaceAll('.', '');
+    }
+    return double.tryParse(text);
   }
 
   bool get _hasHangsengData {
-    return _openController.text.isNotEmpty &&
-          _highController.text.isNotEmpty &&
-          _lowController.text.isNotEmpty &&
-          _closeController.text.isNotEmpty;
+    return
+        _openController.text.isNotEmpty &&
+        _highController.text.isNotEmpty &&
+        _lowController.text.isNotEmpty &&
+        _closeController.text.isNotEmpty;
   }
 
-  // CHECK DATA
-  void _calculateHangseng() async {
-    final double? open =
-        _parseNumber(_openController.text);
+  Future<void> _calculateHangseng() async {
+    final open =
+        _parseNumber(
+          _openController.text,
+        );
 
-    final double? high =
-        _parseNumber(_highController.text);
+    final high =
+        _parseNumber(
+          _highController.text,
+        );
 
-    final double? low =
-        _parseNumber(_lowController.text);
+    final low =
+        _parseNumber(
+          _lowController.text,
+        );
 
-    final double? close =
-        _parseNumber(_closeController.text);
+    final close =
+        _parseNumber(
+          _closeController.text,
+        );
 
-    if (!_hasHangsengData ||
+    if(!_hasHangsengData ||
         high == null ||
         low == null ||
-        close == null) {
+        close == null){
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
         const SnackBar(
-          content: Text('Data Hangseng belum lengkap.'),
-          backgroundColor: orange,
+
+          content:
+          Text(
+            "Data Hangseng belum lengkap.",
+          ),
+
+          backgroundColor:
+          orange,
         ),
       );
+
       return;
     }
 
-    if (high <= low) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if(high <= low){
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
         const SnackBar(
-          content: Text('Harga High harus lebih besar dari Harga Low.'),
-          backgroundColor: orange,
+
+          content:
+          Text(
+            "Harga High harus lebih besar dari Harga Low.",
+          ),
+
+          backgroundColor:
+          orange,
         ),
       );
+
       return;
     }
 
-    final bool hasDecimalInput =
-        _openController.text.contains(',') ||
-        _highController.text.contains(',') ||
-        _lowController.text.contains(',') ||
-        _closeController.text.contains(',');
+    final result =
+        viewModel.calculate(
 
-    final pp = (high + low + close) / 3;
-
-    final r1 = (2 * pp) - low;
-    final s1 = (2 * pp) - high;
-
-    final r2 = pp + (high - low);
-    final s2 = pp - (high - low);
-
-    final r3 = high + 2 * (pp - low);
-    final s3 = low - 2 * (high - pp);
-
-    final r4 = r3 + (r2 - r1);
-    final s4 = s3 - (r1 - s1);
-
-    await _saveToDatabase(
-      open: open ?? 0,
-      high: high,
-      low: low,
-      close: close,
-      result: {
-        'open': open,
-        'high': high,
-        'low': low,
-        'close': close,
-        'pp': pp,
-        'r1': r1,
-        'r2': r2,
-        'r3': r3,
-        'r4': r4,
-        's1': s1,
-        's2': s2,
-        's3': s3,
-        's4': s4,
-        'date': _dataDate,
-      },
-    );
-
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HangsengResultPage(
           open: open ?? 0,
           high: high,
           low: low,
           close: close,
-          hasDecimalInput: hasDecimalInput,
-          openInput: _openController.text.trim(),
-          highInput: _highController.text.trim(),
-          lowInput: _lowController.text.trim(),
-          closeInput: _closeController.text.trim(),
-          dataDate: _dataDate,
+          date:
+          viewModel.dataDate,
+        );
+
+    await viewModel.saveHistory(
+      result,
+    );
+
+    if(!mounted)
+      return;
+
+    Navigator.push(
+      context,
+
+      MaterialPageRoute(
+        builder:(context)=>
+
+        HangsengResultPage(
+
+          open: open ?? 0,
+          high: high,
+          low: low,
+          close: close,
+
+          hasDecimalInput:
+
+          _openController.text.contains(',') ||
+          _highController.text.contains(',') ||
+          _lowController.text.contains(',') ||
+          _closeController.text.contains(','),
+
+          openInput:
+          _openController.text,
+
+          highInput:
+          _highController.text,
+
+          lowInput:
+          _lowController.text,
+
+          closeInput:
+          _closeController.text,
+
+          dataDate:
+          viewModel.dataDate,
         ),
       ),
     );
   }
-  // REFRESH
+
   Future<void> _refreshData() async {
-    if (_isRecalculate) return;
+
+    if(_isRecalculate)
+      return;
 
     await _loadHangsengData(
-      date: _selectedDate,
+      date:
+      _selectedDate,
     );
 
-    if (!mounted) return;
+    if(!mounted)
+      return;
 
-    if (_errorMessage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if(viewModel.errorMessage == null){
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
         const SnackBar(
-          content: Text(
-            'Data Hangseng berhasil diperbarui.',
+
+          content:
+          Text(
+            "Data Hangseng berhasil diperbarui.",
           ),
-          backgroundColor: orange,
+
+          backgroundColor:
+          orange,
         ),
       );
     }
   }
-
-  // ============================================================
-  // INPUT FIELD
-  // ============================================================
 
   Widget _buildInputField({
     required String label,
     required TextEditingController controller,
     required String hint,
-    bool readOnly = false,
-  }) {
+    bool readOnly=false,
+
+  }){
+
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 14,
+
+      padding:
+      const EdgeInsets.only(
+        bottom:14,
       ),
-      child: Column(
+
+      child:
+
+      Column(
         crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
+        CrossAxisAlignment.start,
+
+        children:[
+
           Text(
             label,
-            style: const TextStyle(
-              fontFamily: 'monospace',
+            style:
+            const TextStyle(
+
+              fontFamily:
+              'monospace',
               fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: darkText,
+              fontWeight:
+              FontWeight.w500,
+              color:
+              darkText,
             ),
           ),
-          const SizedBox(height: 5),
+
+          const SizedBox(
+            height:5,
+          ),
+
           Container(
             height: 52,
-            decoration: BoxDecoration(
-              color: readOnly
-                  ? const Color(0xFFF1EFED)
-                  : fieldColor,
-              border: Border(
-                bottom: BorderSide(
-                  color: readOnly
-                      ? orange
-                      : Colors.grey.shade600,
+
+            decoration:
+
+            BoxDecoration(
+              color:
+              readOnly ?
+
+              const Color(0xFFF1EFED) :
+              fieldColor,
+
+              border:
+
+              Border(
+                bottom:
+
+                BorderSide(
+                  color:
+                  readOnly ?
+                  orange :
+                  Colors.grey.shade600,
                   width: 1.2,
                 ),
               ),
             ),
-            child: TextField(
-              controller: controller,
-              readOnly: readOnly,
+
+            child:
+
+            TextField(
+              controller:
+              controller,
+              readOnly:
+              readOnly,
+
               keyboardType:
-                  const TextInputType.numberWithOptions(
-                decimal: true,
+
+              const TextInputType.numberWithOptions(
+
+                decimal:true,
               ),
-              inputFormatters: readOnly
-                  ? null
-                  : <TextInputFormatter>[
-                      _ThousandsFormatter(),
-                    ],
-              onChanged: (_) {
-                setState(() {});
+
+              inputFormatters:
+              readOnly ?
+              null :
+              [
+                _ThousandsFormatter(),
+              ],
+
+              onChanged:(value){
+
+                setState((){});
               },
-              style: TextStyle(
-                fontFamily: 'monospace',
+
+              style:
+
+              TextStyle(
+                fontFamily:
+                'monospace',
                 fontSize: 15,
-                color: readOnly
-                    ? Colors.black87
-                    : darkText,
-                fontWeight: readOnly
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+                fontWeight:
+                readOnly ?
+                FontWeight.w600 :
+                FontWeight.normal,
               ),
-              decoration: InputDecoration(
-                border: InputBorder.none,
+
+              decoration:
+
+              InputDecoration(
+                border:
+                InputBorder.none,
+
                 contentPadding:
-                    const EdgeInsets.symmetric(
+
+                const EdgeInsets.symmetric(
                   horizontal: 10,
                   vertical: 14,
                 ),
-                hintText: hint,
-                hintStyle: const TextStyle(
+
+                hintText:
+                hint,
+                hintStyle:
+
+                const TextStyle(
                   fontFamily: 'monospace',
-                  fontSize: 14,
-                  color: Colors.grey,
+                  fontSize:  14,
+                  color:
+                  Colors.grey,
                 ),
-                suffixIcon: readOnly
-                    ? const Padding(
-                        padding: EdgeInsets.only(
-                          right: 12,
-                        ),
-                        child: Icon(
-                          Icons.lock_outline,
-                          color: orange,
-                          size: 18,
-                        ),
-                      )
-                    : _isLoading
-                        ? const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: orange,
-                              ),
-                            ),
-                          )
-                        : null,
+
+                suffixIcon:
+                readOnly ?
+
+                const Padding(
+
+                  padding:
+                  EdgeInsets.only(
+                    right:12,
+                  ),
+
+                  child:
+
+                  Icon(
+                    Icons.lock_outline,
+                    color: orange,
+                    size: 18,
+
+                  ),
+                ) :
+                null,
               ),
             ),
           ),
@@ -695,343 +723,535 @@ Future<void> _saveToDatabase({
     );
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 4,
-        shadowColor:
-            Colors.black.withValues(alpha: 0.20),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: orange,
-            size: 21,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        titleSpacing: 0,
-        title: RichText(
-          text: const TextSpan(
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: darkText,
-            ),
-            children: [
-              TextSpan(
-                text: 'Kalkulator ',
+    Widget build(BuildContext context) {
+
+      return AnimatedBuilder(
+
+        animation:
+        viewModel,
+
+        builder:(context,child){
+
+          return Scaffold(
+            backgroundColor:
+            Colors.white,
+
+            appBar:
+            AppBar(
+
+              backgroundColor:
+              Colors.white,
+
+              surfaceTintColor:
+              Colors.white,
+
+              elevation: 4,
+
+              shadowColor:
+              Colors.black.withValues(
+                alpha:0.20,
               ),
-              TextSpan(
-                text: 'Hangseng',
-                style: TextStyle(
+
+              leading:
+              IconButton(
+                icon:
+                const Icon(
+
+                  Icons.arrow_back_ios_new,
                   color: orange,
+                  size: 21,
                 ),
+
+                onPressed:
+                ()=>Navigator.pop(context),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          if (!_isRecalculate)
-            IconButton(
-              tooltip: 'Refresh Data',
-              onPressed:
-                  _isLoading
-                      ? null
-                      : _refreshData,
-              icon: const Icon(
-                Icons.refresh,
-                color: orange,
-                size: 23,
-              ),
-            ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          12,
-          12,
-          12,
-          40,
-        ),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(
-                right: 10,
-              ),
-              child: Text(
-                'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan indeks Hangseng pada periode sebelumnya.',
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.45,
-                  color: darkText,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: IntrinsicWidth(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
+
+              titleSpacing: 0,
+
+              title:
+              RichText(
+
+                text:
+                const TextSpan(
+
+                  style:
+                  TextStyle(
+
+                    fontSize: 16,
+                    fontWeight:
+                    FontWeight.bold,
                     color:
-                        const Color(0xFFFFF7ED),
-                    borderRadius:
-                        BorderRadius.circular(7),
-                    border: Border.all(
-                      color:
-                          const Color(0xFFF3D2B0),
-                    ),
+                    darkText,
                   ),
-                  child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons
-                            .cloud_download_outlined,
-                        color: orange,
-                        size: 25,
+
+                  children:[
+                    TextSpan(
+
+                      text:
+                      "Kalkulator ",
+                    ),
+
+                    TextSpan(
+                      text:
+                      "Hangseng",
+                      style:
+                      TextStyle(
+
+                        color:
+                        orange,
                       ),
-                      const SizedBox(width: 8),
-                      Column(
-                        mainAxisSize:
-                            MainAxisSize.min,
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-                        children: [
-                          const Text(
-                            'Data Hangseng',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color: darkText,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 4,
-                          ),
-                          Row(
-                            mainAxisSize:
-                                MainAxisSize.min,
-                            children: [
-                              Text(
-                                _isRecalculate
-                                    ? 'Data dari riwayat'
-                                    : _isLoading
-                                        ? 'Mengambil data terbaru...'
-                                        : _errorMessage ??
-                                            'Tanggal: ${_formatDate(_dataDate)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color:
-                                      _errorMessage !=
-                                              null
-                                          ? Colors.red
-                                          : greyText,
-                                ),
-                              ),
-                              if (!_isRecalculate &&
-                                  !_isLoading &&
-                                  _errorMessage ==
-                                      null) ...[
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                GestureDetector(
-                                  onTap:
-                                      _selectDate,
-                                  child:
-                                      const Icon(
-                                    Icons
-                                        .calendar_month,
-                                    color: orange,
-                                    size: 20,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.fromLTRB(
-                10,
-                10,
-                8,
-                10,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    const Color(0xFFFFFCFA),
-                borderRadius:
-                    BorderRadius.circular(9),
-                border: Border.all(
-                  color:
-                      const Color(0xFFE6D7CA),
-                ),
-              ),
-              child: Container(
-                decoration:
-                    const BoxDecoration(
-                  border: Border(
-                    left: BorderSide(
-                      color: orange,
-                      width: 3,
-                    ),
-                  ),
-                ),
-                padding:
-                    const EdgeInsets.only(
-                  left: 9,
-                  right: 0,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.input,
-                          color: orange,
-                          size: 19,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Data Perhitungan',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:
-                                FontWeight.bold,
-                            color: darkText,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 18,
-                    ),
-                    _buildInputField(
-                      label: 'Harga Open',
-                      hint:
-                          'Mengambil data Open...',
-                      controller:
-                          _openController,
-                      readOnly: false,
-                    ),
-                    _buildInputField(
-                      label: 'Harga High',
-                      hint:
-                          'Menunggu data...',
-                      controller:
-                          _highController,
-                    ),
-                    _buildInputField(
-                      label: 'Harga Low',
-                      hint:
-                          'Menunggu data...',
-                      controller:
-                          _lowController,
-                    ),
-                    _buildInputField(
-                      label: 'Harga Close',
-                      hint:
-                          'Menunggu data...',
-                      controller:
-                          _closeController,
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 8,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 42,
-                child: ElevatedButton(
+
+              actions:[
+
+                if(!_isRecalculate)
+
+                IconButton(
+                  tooltip:
+                  "Refresh Data",
                   onPressed:
-                      _isLoading ||
-                              !_hasHangsengData
-                          ? null
-                          : _calculateHangseng,
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor: orange,
-                    disabledBackgroundColor:
-                        Colors.grey.shade300,
-                    disabledForegroundColor:
-                        Colors.grey.shade600,
-                    foregroundColor:
-                        Colors.white,
-                    elevation: 0,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        6,
+                  viewModel.isLoading ?
+                  null:
+                  _refreshData,
+
+                  icon:
+                  const Icon(
+                    Icons.refresh,
+                    color: orange,
+                    size: 23,
+
+                  ),
+                ),
+
+                const SizedBox(
+                  width:4,
+                ),
+              ],
+            ),
+
+            body:
+
+            SingleChildScrollView(
+              padding:
+              const EdgeInsets.fromLTRB(
+                12,
+                12,
+                12,
+                40,
+              ),
+
+              child:
+
+              Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children:[
+
+                  const Padding(
+
+                    padding:
+                    EdgeInsets.only(
+                      right:10,
+                    ),
+
+                    child:
+
+                    Text(
+                      "Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan indeks Hangseng pada periode sebelumnya.",
+
+                      style:
+
+                      TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: darkText,
                       ),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.calculate,
-                        size: 19,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Hitung',
-                        style: TextStyle(
-                          fontFamily:
-                              'monospace',
-                          fontSize: 17,
-                          fontWeight:
-                              FontWeight.bold,
+
+                  const SizedBox(
+                    height:18,
+                  ),
+
+                  Align(
+                    alignment:
+                    Alignment.centerLeft,
+
+                    child:
+                    IntrinsicWidth(
+                      child:
+
+                      Container(
+                        padding:
+                        const EdgeInsets.symmetric(
+                          horizontal:10,
+                          vertical:8,
+                        ),
+
+                        decoration:
+
+                        BoxDecoration(
+                          color:
+                          const Color(
+                            0xFFFFF7ED,
+                          ),
+
+                          borderRadius:
+                          BorderRadius.circular(7),
+                          border:
+
+                          Border.all(
+                            color:
+                            const Color(
+                              0xFFF3D2B0,
+                            ),
+                          ),
+                        ),
+
+                        child:
+
+                        Row(
+                          mainAxisSize:
+                          MainAxisSize.min,
+
+                          children:[
+                            const Icon(
+                              Icons.cloud_download_outlined,
+
+                              color: orange,
+                              size: 25,
+                            ),
+
+                            const SizedBox(
+                              width:8,
+                            ),
+
+                            Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+
+                              children:[
+
+                                const Text(
+                                  "Data Hangseng",
+                                  style:
+
+                                  TextStyle(
+                                    fontSize: 15,
+                                    
+                                    fontWeight:
+                                    FontWeight.bold,
+
+                                    color:
+                                    darkText,
+                                  ),
+                                ),
+
+                                const SizedBox(
+                                  height:4,
+                                ),
+
+                                Row(
+                                  children:[
+
+                                    Text(
+                                      _isRecalculate ?
+                                      "Data dari riwayat" :
+
+                                      viewModel.isLoading ?
+                                      "Mengambil data terbaru..." :
+
+                                      viewModel.errorMessage
+                                      ??
+                                      "Tanggal: ${_formatDate(viewModel.dataDate)}",
+
+                                      style:
+
+                                      TextStyle(
+                                        fontSize: 13,
+                                      
+                                        color:
+
+                                        viewModel.errorMessage != null ?
+
+                                        Colors.red :
+
+                                        greyText,
+                                      ),
+                                    ),
+
+                                    if(!_isRecalculate &&
+                                        !viewModel.isLoading &&
+                                        viewModel.errorMessage == null)
+
+                                    const SizedBox(
+                                      width:8,
+                                    ),
+
+                                    if(!_isRecalculate &&
+                                        !viewModel.isLoading &&
+                                        viewModel.errorMessage == null)
+
+                                    GestureDetector(
+                                      onTap: _selectDate,
+
+                                      child:
+
+                                      const Icon(
+                                        Icons.calendar_month,
+
+                                        color: orange,
+                                        size:20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+
+                  const SizedBox(
+                    height:10,
+                  ),
+
+                  Container(
+                    width:
+                    double.infinity,
+
+                    padding:
+                    const EdgeInsets.fromLTRB(
+                      10,
+                      10,
+                      8,
+                      10,
+                    ),
+
+                    decoration:
+
+                    BoxDecoration(
+
+                      color:
+                      const Color(
+                        0xFFFFFCFA,
+                      ),
+
+                      borderRadius:
+                      BorderRadius.circular(9),
+                      border:
+                      Border.all(
+                        color:
+                        const Color(
+                          0xFFE6D7CA,
+                        ),
+                      ),
+                    ),
+
+                    child:
+
+                    Container(
+                      decoration:
+                      const BoxDecoration(
+                        border:
+                        Border( left:
+                          BorderSide(
+                            color: orange,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+
+                      padding:
+                      const EdgeInsets.only(
+                        left:9,
+                      ),
+
+                      child:
+
+                      Column(
+
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children:[
+
+                          const Row(
+                            children:[
+
+                              Icon(
+                                Icons.input,
+                                color: orange,
+                                size: 19,
+
+                              ),
+
+                              SizedBox(
+                                width:8,
+                              ),
+
+                              Text(
+                                "Data Perhitungan",
+                                style:
+                                TextStyle(
+                                  fontSize: 18,
+                                  fontWeight:
+                                  FontWeight.bold,
+
+                                  color:
+                                  darkText,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(
+                            height:18,
+                          ),
+
+                          _buildInputField(
+                            label: "Harga Open",
+                            hint: "Masukkan harga Open",
+
+                            controller:
+                            _openController,
+
+                          ),
+
+                          _buildInputField(
+                            label: "Harga High",
+                            hint: "Menunggu data...",
+
+                            controller:
+                            _highController,
+
+                            readOnly: false,
+                          ),
+
+                          _buildInputField(
+                            label: "Harga Low",
+                            hint: "Menunggu data...",
+
+                            controller:
+                            _lowController,
+                            readOnly: false,
+                          ),
+
+                          _buildInputField(
+                            label: "Harga Close",
+                            hint: "Menunggu data...",
+                            controller:
+                            _closeController,
+
+                            readOnly: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height:20,
+                  ),
+
+                  Padding(
+                    padding:
+                    const EdgeInsets.symmetric(
+                      horizontal:8,
+                    ),
+
+                    child:
+
+                    SizedBox(
+                      width:
+                      double.infinity,
+
+                      height: 42,
+                      child:
+
+                      ElevatedButton(
+
+                        onPressed:
+                        viewModel.isLoading ||
+                        !_hasHangsengData ?
+
+                        null :
+                        _calculateHangseng,
+
+                        style:
+
+                        ElevatedButton.styleFrom(
+
+                          backgroundColor:
+                          orange,
+
+                          disabledBackgroundColor:
+                          Colors.grey.shade300,
+
+                          foregroundColor:
+                          Colors.white,
+
+                          elevation: 0,
+                          
+                          shape:
+                          RoundedRectangleBorder(
+
+                            borderRadius:
+                            BorderRadius.circular(6),
+                          ),
+                        ),
+
+                        child:
+
+                        const Row(
+
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
+
+                          children:[
+
+                            Icon(
+                              Icons.calculate,
+                              size: 19,
+                            
+                            ),
+
+                            SizedBox(
+                              width:8,
+                            ),
+
+                            Text(
+                              "Hitung",
+                              style:
+                              TextStyle(
+                                fontFamily:
+                                'monospace',
+
+                                fontSize: 17,
+                              
+                                fontWeight:
+                                FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height:30,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
+          );
+        },
+      );
+    }
   }
-}

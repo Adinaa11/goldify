@@ -17,6 +17,8 @@ class HistoryPage extends StatefulWidget {
   State<HistoryPage> createState() => _HistoryPageState();
 }
 
+
+
 class _HistoryPageState extends State<HistoryPage> {
   static const Color orange = Color(0xFFF7931E);
   static const Color background = Color(0xFFF5F6F8);
@@ -45,87 +47,15 @@ class _HistoryPageState extends State<HistoryPage> {
 
       if (!mounted) return;
 
+      debugPrint(response.toString());
+
       setState(() {
-        history = List<Map<String, dynamic>>.from(response);
-      });
+      history = List<Map<String, dynamic>>.from(response);
+
+    });
     } catch (e) {
       debugPrint('Error load history: $e');
     }
-  }
-
-  bool _isEmptyCalculation(
-    Map<String, dynamic> item,
-  ) {
-    final type =
-        item['type']?.toString().toLowerCase() ?? '';
-
-    final detail =
-        item['detail'] is Map
-            ? Map<String, dynamic>.from(
-                item['detail'],
-              )
-            : <String, dynamic>{};
-
-    final result =
-        item['result']?.toString().trim() ?? '';
-
-    if (type.contains('nest')) {
-      final open = _toDouble(
-        detail['open'] ??
-            item['open'],
-      );
-
-      final close = _toDouble(
-        detail['close'] ??
-            item['close'],
-      );
-
-      // Jika Open dan Close tidak ada
-      if (open == null && close == null) {
-        return true;
-      }
-
-      if ((open ?? 0) == 0 &&
-          (close ?? 0) == 0) {
-        return true;
-      }
-
-      if (result.isEmpty) {
-        return true;
-      }
-
-      return false;
-    }
-
-    if (type.contains('pivot') ||
-        type.contains('hangseng') ||
-        type.contains('hsi')) {
-      final pp = _toDouble(
-        detail['pp'],
-      );
-
-      if (pp == null) {
-        return true;
-      }
-
-      if (pp == 0) {
-        return true;
-      }
-
-      return false;
-    }
-
-    final amount =
-        _toDouble(
-      item['amount'] ??
-          detail['step5'],
-    );
-
-    if (amount == null || amount == 0) {
-      return true;
-    }
-
-    return false;
   }
 
   double? _toDouble(dynamic value) {
@@ -286,10 +216,7 @@ class _HistoryPageState extends State<HistoryPage> {
     return entries;
     } 
 
-
-  // ============================
   // OPEN DETAIL
-  // ============================
   void _openDetail(
     Map<String, dynamic> item,
   ) {
@@ -336,10 +263,6 @@ class _HistoryPageState extends State<HistoryPage> {
     });
   }
 
-
-  // ============================
-  // FORMAT RUPIAH
-  // ============================
   String _formatRupiah(dynamic value) {
     final number =
         double.tryParse(value?.toString() ?? '') ?? 0;
@@ -355,14 +278,9 @@ class _HistoryPageState extends State<HistoryPage> {
       }
       result += text[i];
     }
-
     return result;
   }
 
-
-  // ============================
-  // FORMAT PIVOT
-  // ============================
   String _formatPivot(dynamic value) {
     final number =
         double.tryParse(value?.toString() ?? '');
@@ -374,10 +292,6 @@ class _HistoryPageState extends State<HistoryPage> {
         .replaceAll('.', ',');
   }
 
-
-  // ============================
-  // FORMAT DATE TIME (DIPINDAH KE LUAR)
-  // ============================
   String _formatDateTime(dynamic value) {
     if (value == null) return '-';
 
@@ -394,38 +308,108 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
+  Color _getResultColor(
+    Map<String,dynamic> item,
+  ){
 
-  // ============================
-  // NEST SIGNAL
-  // ============================
-  String _getNestSignal(
-    Map<String, dynamic> item,
-  ) {
-    final detail =
-        item['detail'] is Map
-            ? Map<String, dynamic>.from(item['detail'])
-            : <String, dynamic>{};
+    final type =
+        item['type']
+        ?.toString()
+        .toLowerCase() ?? '';
 
-    final open =
-        _toDouble(detail['open'] ?? item['open']);
+    final result =
+        Map<String,dynamic>.from(
+          item['result'] ?? {},
+        );
 
-    final close =
-        _toDouble(detail['close'] ?? item['close']);
+    // EMAS FISIK
+    if(type.contains('emas')){
 
-    if (open == null || close == null) {
-      return item['result']?.toString() ?? '-';
+      final status =
+          result['status']
+          ?.toString()
+          .toLowerCase() ?? '';
+
+      if(status.contains('profit')){
+        return Colors.green;
+      }
+
+      if(status.contains('loss') ||
+        status.contains('rugi')){
+        return Colors.red;
+      }
     }
 
-    if (open < close) return 'BUY';
-    if (open > close) return 'SELL';
+    // NEST
+    if(type.contains('nest')){
+      final status =
+          result['status']
+          ?.toString()
+          .toLowerCase() ?? '';
 
-    return 'BUY / SELL';
+      if(status.contains('buy')){
+        return Colors.green;
+      }
+
+      if(status.contains('sell')){
+        return Colors.red;
+      }
+    }
+
+    // HANGSENG
+    if(type.contains('hangseng') ||
+      type.contains('hsi')){
+
+      final status =
+          result['status']
+          ?.toString()
+          .toLowerCase() ?? '';
+
+      if(status.contains('buy')){
+        return Colors.green;
+      }
+
+      if(status.contains('sell')){
+        return Colors.red;
+      }
+
+      final change =
+          _toDouble(
+            result['change'] ??
+            result['profit'] ??
+            result['value'],
+          );
+
+      if(change != null){
+
+        return change >= 0
+            ? Colors.green
+            : Colors.red;
+      }
+    }
+
+    // PIVOT
+    if(type.contains('pivot')){
+
+      final change =
+          _toDouble(
+            result['change'] ??
+            result['profit'] ??
+            result['value'],
+          );
+
+      if(change != null){
+
+        return change >= 0
+            ? Colors.green
+            : Colors.red;
+      }
+    }
+
+    return const Color.fromARGB(255, 245, 157, 33);
   }
 
 
-  // ============================
-  // BUILD
-  // ============================
  @override
   Widget build(BuildContext context) {
     final groups = groupedHistory;
@@ -605,9 +589,6 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  // ============================
-  // HISTORY CARD (FIX TOTAL)
-  // ============================
   Widget _buildHistoryCard(
     Map<String, dynamic> item,
   ) {
@@ -619,8 +600,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
     final amount = resultData['step5'] ?? 0;
 
-    final bool profit =
-        resultText.toLowerCase().contains("profit");
+    final resultColor =
+      _getResultColor(item);
 
     final type =
         item['type']?.toString().toLowerCase() ?? '';
@@ -629,9 +610,6 @@ class _HistoryPageState extends State<HistoryPage> {
     final bool hangseng =
         type.contains("hangseng") || type.contains("hsi");
     final bool nest = type.contains("nest");
-
-    final resultColor =
-        profit ? Colors.green : Colors.red;
 
     return GestureDetector(
       onTap: () {
@@ -649,7 +627,6 @@ class _HistoryPageState extends State<HistoryPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ================= HEADER =================
             Row(
               children: [
                 Container(
@@ -710,7 +687,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
             const SizedBox(height: 12),
 
-            // ================= DIVIDER =================
             Container(
               height: 1,
               color: const Color(0xFFE8E8E8),
@@ -718,7 +694,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
             const SizedBox(height: 10),
 
-            // ================= LABEL =================
             const Text(
               "Hasil Perhitungan",
               style: TextStyle(
@@ -729,7 +704,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
             const SizedBox(height: 5),
 
-            // ================= RESULT =================
             Row(
               children: [
                 Expanded(
