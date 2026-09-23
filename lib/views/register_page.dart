@@ -150,18 +150,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (!mounted) return;
 
-    /// ✅ NOTIF
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registrasi berhasil, silakan login'),
-      ),
-    );
-
-    /// ✅ PINDAH KE LOGIN
+    /// ✅ PINDAH KE HALAMAN SUCCESS DULU
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const LoginPage(),
+        builder: (_) => const VerificationSuccessPage(),
       ),
     );
   }
