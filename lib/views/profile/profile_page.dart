@@ -5,7 +5,6 @@ import '../../viewmodels/profile_viewmodel.dart';
 
 import 'personal_info_page.dart';
 import 'security_page.dart';
-import 'notification_page.dart';
 import 'app_version_page.dart';
 import 'terms_page.dart';
 import 'privacy_policy_page.dart';
@@ -207,23 +206,6 @@ class _ProfilePageState
                 MaterialPageRoute(
                   builder:(_) =>
                   const SecurityPage(),
-                ),
-              );
-            },
-          ),
-
-          _menuItem(
-            icon:
-            Icons.notifications_none,
-            title:
-            "Notifikasi",
-
-            onTap:(){
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:(_) =>
-                  const NotificationPage(),
                 ),
               );
             },

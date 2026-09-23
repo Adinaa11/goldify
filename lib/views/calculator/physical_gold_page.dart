@@ -1,10 +1,14 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'physical_gold_result_page.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart';
 
-class ThousandsSeparatorInputFormatter
-    extends TextInputFormatter {
+import '../../models/physical_gold_model.dart';
+import '../../repositories/physical_gold_repository.dart';
+import '../../viewmodels/physical_gold_viewmodel.dart';
+
+import 'physical_gold_result_page.dart';
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+
   final bool allowDecimal;
 
   ThousandsSeparatorInputFormatter({
@@ -16,13 +20,13 @@ class ThousandsSeparatorInputFormatter
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
+
     String text = newValue.text;
 
     if (text.isEmpty) {
       return newValue;
     }
 
-    // Ubah titik desimal menjadi koma
     if (allowDecimal) {
       text = text.replaceAll('.', ',');
     } else {
@@ -30,28 +34,29 @@ class ThousandsSeparatorInputFormatter
       text = text.replaceAll(',', '');
     }
 
-    // Hanya izinkan angka dan koma
     if (allowDecimal) {
+
       text = text.replaceAll(
         RegExp(r'[^0-9,]'),
         '',
       );
 
-      // Hanya boleh satu koma
-      final int firstComma = text.indexOf(',');
+      final comma = text.indexOf(',');
 
-      if (firstComma != -1) {
-        final String beforeComma =
-            text.substring(0, firstComma);
+      if (comma != -1) {
 
-        final String afterComma =
-            text
-                .substring(firstComma + 1)
-                .replaceAll(',', '');
+        final before =
+            text.substring(0, comma);
 
-        text = '$beforeComma,$afterComma';
+        final after =
+            text.substring(comma + 1)
+            .replaceAll(',', '');
+
+        text = '$before,$after';
       }
+
     } else {
+
       text = text.replaceAll(
         RegExp(r'[^0-9]'),
         '',
@@ -66,46 +71,48 @@ class ThousandsSeparatorInputFormatter
     String decimalPart = '';
 
     if (allowDecimal && text.contains(',')) {
-      final int commaIndex = text.indexOf(',');
 
-      integerPart = text.substring(0, commaIndex);
-      decimalPart = text.substring(commaIndex + 1);
+      final index = text.indexOf(',');
+      integerPart = text.substring(0,index);
+
+      decimalPart =
+          text.substring(index + 1);
     }
 
     if (integerPart.isEmpty) {
       integerPart = '0';
     }
 
-    // Hapus nol di depan jika bukan angka desimal
     if (integerPart.length > 1) {
+
       integerPart =
           integerPart.replaceFirst(
-        RegExp(r'^0+(?=\d)'),
-        '',
-      );
+            RegExp(r'^0+(?=\d)'),
+            '',
+          );
     }
 
-    // Tambahkan titik ribuan
-    final StringBuffer formattedInteger =
-        StringBuffer();
+    final buffer = StringBuffer();
 
-    for (int i = 0;
-        i < integerPart.length;
-        i++) {
-      if (i > 0 &&
-          (integerPart.length - i) % 3 == 0) {
-        formattedInteger.write('.');
+    for(
+      int i = 0;
+      i < integerPart.length;
+      i++
+    ) {
+
+      if(
+        i > 0 &&
+        (integerPart.length - i) % 3 == 0
+      ) {
+        buffer.write('.');
       }
-
-      formattedInteger.write(
-        integerPart[i],
-      );
+      buffer.write(integerPart[i]);
     }
 
     String formatted =
-        formattedInteger.toString();
+        buffer.toString();
 
-    if (allowDecimal && text.contains(',')) {
+    if(allowDecimal && text.contains(',')) {
       formatted += ',$decimalPart';
     }
 
@@ -119,7 +126,7 @@ class ThousandsSeparatorInputFormatter
 }
 
 class PhysicalGoldPage extends StatefulWidget {
-  final Map<String, dynamic>? initialData;
+  final Map<String,dynamic>? initialData;
 
   const PhysicalGoldPage({
     super.key,
@@ -127,384 +134,466 @@ class PhysicalGoldPage extends StatefulWidget {
   });
 
   @override
-  State<PhysicalGoldPage> createState() => _PhysicalGoldPageState();
+  State<PhysicalGoldPage> createState()
+      => _PhysicalGoldPageState();
 }
 
-class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
-  // CONTROLLER INPUT
-  final TextEditingController _modalController = TextEditingController();
-  final TextEditingController _kursController = TextEditingController();
-  final TextEditingController _hargaBeliController = TextEditingController();
-  final TextEditingController _hargaJualController = TextEditingController();
+class _PhysicalGoldPageState
+    extends State<PhysicalGoldPage> {
 
-  // TRAY OUNCE (TOz)
+  late PhysicalGoldViewModel viewModel;
+
+  final TextEditingController _modalController =
+      TextEditingController();
+  final TextEditingController _kursController =
+      TextEditingController();
+  final TextEditingController _hargaBeliController =
+      TextEditingController();
+  final TextEditingController _hargaJualController =
+      TextEditingController();
+
   static const double _toz = 31.1;
-
+  
   @override
   void initState() {
     super.initState();
+
+    viewModel =
+        PhysicalGoldViewModel(
+          PhysicalGoldRepository(),
+        );
+
+    viewModel.addListener(() {
+      if(!mounted) return;
+      setState((){});
+    });
     _loadInitialData();
   }
 
-  // ISI ULANG DATA DARI HISTORY
   void _loadInitialData() {
-    final data = widget.initialData;
+    final data =
+        widget.initialData;
 
-    if (data == null) return;
+    if(data == null) return;
 
-    _modalController.text = _formatInitialNumber(data['modal']);
-    _kursController.text = _formatInitialNumber(data['kurs']);
-    _hargaBeliController.text = _formatInitialNumber(data['hargaBeli']);
-    _hargaJualController.text = _formatInitialNumber(data['hargaJual']);
+    _modalController.text =
+        _formatInitialNumber(
+          data['modal'],
+        );
+
+    _kursController.text =
+        _formatInitialNumber(
+          data['kurs'],
+        );
+
+    _hargaBeliController.text =
+        _formatInitialNumber(
+          data['hargaBeli']
+          ??
+          data['harga_beli'],
+        );
+
+    _hargaJualController.text =
+        _formatInitialNumber(
+          data['hargaJual']
+          ??
+          data['harga_jual'],
+        );
   }
 
-  // FORMAT ANGKA UNTUK INPUT
   String _formatInitialNumber(dynamic value) {
-    if (value == null) return '';
-
-    if (value is int) {
-      return value.toString();
+    if(value == null) {
+      return '';
     }
 
-    if (value is double) {
-      if (value == value.truncateToDouble()) {
+    if(value is num) {
+      if(value == value.truncateToDouble()) {
         return value.toInt().toString();
+
       }
       return value.toString();
     }
 
-    final double? number = double.tryParse(value.toString());
+    final number =
+        double.tryParse(
+          value.toString(),
+        );
 
-    if (number == null) {
+    if(number == null) {
       return value.toString();
     }
 
-    if (number == number.truncateToDouble()) {
+    if(number == number.truncateToDouble()) {
       return number.toInt().toString();
-    }
 
+    }
     return number.toString();
   }
 
-  // SIMPAN HISTORY
-  Future<void> _saveToDatabase({
-    required double modal,
-    required double kurs,
-    required double hargaBeli,
-    required double hargaJual,
-    required double step1,
-    required double step2,
-    required double step3,
-    required double step4,
-    required double step5,
-  }) async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
+  @override
+  void dispose() {
 
-    print("USER LOGIN: ${user?.id}");
+    _modalController.dispose();
+    _kursController.dispose();
+    _hargaBeliController.dispose();
+    _hargaJualController.dispose();
 
-    if (user == null) {
-      print("❌ USER BELUM LOGIN");
-      return;
-    }
+    viewModel.dispose();
 
-    try {
-      final response = await supabase
-  .from('history')
-  .insert({
-    'user_id': user.id,
-    'type': 'emas_fisik',
-    'input': {
-      'modal': modal,
-      'kurs': kurs,
-      'harga_beli': hargaBeli,
-      'harga_jual': hargaJual,
-    },
-    'result': {
-      'step1': step1,
-      'step2': step2,
-      'step3': step3,
-      'step4': step4,
-      'step5': step5,
-      'status': step5 >= 0 ? 'profit' : 'loss',
-    },
-    'created_at': DateTime.now().toIso8601String(),
-    })
-    .select();
-
-      print("✅ RESPONSE: $response");
-    } catch (e) {
-      print("❌ ERROR: $e");
-    }
-  }
-  
-  // FORMAT ANGKA
-  static double _truncateInteger(double value) {
-    return value.truncateToDouble();
+    super.dispose();
   }
 
-  // POTONG MAKSIMAL 2 DESIMAL
-  static double _truncateTo2(double value) {
-    return (value * 100).truncateToDouble() / 100;
-  }
-
-  // FORMAT INTEGER DENGAN TITIK RIBUAN
-  static String _formatInteger(double value) {
-    final int number = value.truncate();
-    final bool negative = number < 0;
-    final String digits = number.abs().toString();
-    final StringBuffer result = StringBuffer();
-
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) {
-        result.write('.');
-      }
-
-      result.write(digits[i]);
-    }
-
-    return negative ? '-${result.toString()}' : result.toString();
-  }
-
-  // FORMAT 2 ANGKA DESIMAL
-  static String _formatTwoDecimals(double value) {
-    final double truncated = _truncateTo2(value);
-    final bool negative = truncated < 0;
-    final double absoluteValue = truncated.abs();
-    final int integerPart = absoluteValue.truncate();
-
-    final int decimalPart =
-        ((absoluteValue - integerPart) * 100).truncate();
-
-    final String decimalText =
-        decimalPart.toString().padLeft(2, '0');
-
-    final String result =
-        '${_formatInteger(integerPart.toDouble())},$decimalText';
-
-    return negative ? '-$result' : result;
-  }
-
-  // PARSE INPUT
-  double _parseNumber(String value) {
-    String text = value.trim();
-
-    if (text.isEmpty) {
-      return 0;
-    }
-
-    text = text
-        .replaceAll('Rp', '')
-        .replaceAll('rp', '')
-        .replaceAll(' ', '');
-
-    // Format Indonesia:
-    // 100.000.000 -> 100000000
-    if (text.contains('.')) {
-      text = text.replaceAll('.', '');
-    }
-
-    // Koma digunakan sebagai desimal
-    if (text.contains(',')) {
-      text = text.replaceAll(',', '.');
-    }
-
-    return double.tryParse(text) ?? 0;
-  }
-
-  // HITUNG
   Future<void> _calculate() async {
-    final double modal = _parseNumber(
-      _modalController.text,
-    );
 
-    final double kurs = _parseNumber(
-      _kursController.text,
-    );
+    final PhysicalGoldModel? result =
+        await viewModel.calculate(
+          modalText:
+          _modalController.text,
+          kursText:
+          _kursController.text,
+          hargaBeliText:
+          _hargaBeliController.text,
+          hargaJualText:
+          _hargaJualController.text,
+        );
 
-    final double hargaBeli = _parseNumber(
-      _hargaBeliController.text,
-    );
+    if(!mounted) return;
 
-    final double hargaJual = _parseNumber(
-      _hargaJualController.text,
-    );
+    if(result == null) {
 
-    // VALIDASI INPUT
-    if (modal <= 0 ||
-        kurs <= 0 ||
-        hargaBeli <= 0 ||
-        hargaJual <= 0) {
-      _showError(
-        'Silakan isi Modal, Kurs, Harga Beli, dan Harga Jual.',
+      ScaffoldMessenger.of(context)
+      .showSnackBar(
+
+        SnackBar(
+
+          content:
+          Text(
+            viewModel.errorMessage
+            ??
+            'Data tidak valid.',
+          ),
+
+          backgroundColor:
+          Colors.red,
+        ),
       );
       return;
     }
-
-    // STEP 1
-    // Harga Beli × Kurs ÷ TOz
-    final double rawStep1 =
-        (hargaBeli * kurs) / _toz;
-
-    final double step1 =
-        _truncateInteger(rawStep1);
-
-    if (step1 <= 0) {
-      _showError(
-        'Hasil Harga Beli tidak valid.',
-      );
-      return;
-    }
-
-    // STEP 2
-    // Harga Jual × Kurs ÷ TOz
-    final double rawStep2 =
-        (hargaJual * kurs) / _toz;
-
-    final double step2 =
-        _truncateInteger(rawStep2);
-
-    // STEP 3
-    // Step 2 − Step 1
-    final double step3 =
-        _truncateInteger(step2 - step1);
-
-    // STEP 4
-    // Modal ÷ Step 1
-    final double step4 =
-        _truncateTo2(modal / step1);
-
-    // STEP 5
-    // Step 3 × Step 4
-    final double rawStep5 =
-        step3 * step4;
-
-    final double step5 =
-        _truncateInteger(rawStep5);
-
-    // SIMPAN HISTORY OTOMATIS
-    await _saveToDatabase(
-      modal: modal,
-      kurs: kurs,
-      hargaBeli: hargaBeli,
-      hargaJual: hargaJual,
-      step1: step1,
-      step2: step2,
-      step3: step3,
-      step4: step4,
-      step5: step5,
-    );
-
-    // BUKA HALAMAN HASIL
-    if (!mounted) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) {
-          return PhysicalGoldResultPage(
-            // DATA INPUT
-            modal: modal,
-            kurs: kurs,
-            hargaBeli: hargaBeli,
-            hargaJual: hargaJual,
+        builder:(context)
 
-            // HASIL
-            step1: step1,
-            step2: step2,
-            step3: step3,
-            step4: step4,
-            step5: step5,
-          );
-        },
+        => PhysicalGoldResultPage(
+          modal:
+          result.modal,
+          kurs:
+          result.kurs,
+          hargaBeli:
+          result.hargaBeli,
+          hargaJual:
+          result.hargaJual,
+
+          step1:
+          result.step1,
+          step2:
+          result.step2,
+          step3:
+          result.step3,
+          step4:
+          result.step4,
+          step5:
+          result.step5,
+        ),
       ),
     );
   }
 
-  // ERROR SNACKBAR
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFD32F2F),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  // RESET INPUT
-  void _reset() {
-    setState(() {
+  void _reset(){
+    setState((){
       _modalController.clear();
       _kursController.clear();
       _hargaBeliController.clear();
       _hargaJualController.clear();
     });
 
-    FocusScope.of(context).unfocus();
+    FocusScope.of(context)
+        .unfocus();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+    .showSnackBar(
+
       const SnackBar(
-        content: Text(
+        content:
+        Text(
           'Semua input berhasil direset.',
         ),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
+
+        behavior:
+        SnackBarBehavior.floating,
+        duration:
+        Duration(seconds:1),
       ),
     );
   }
 
-  // DISPOSE CONTROLLER
-  @override
-  void dispose() {
-    _modalController.dispose();
-    _kursController.dispose();
-    _hargaBeliController.dispose();
-    _hargaJualController.dispose();
-    super.dispose();
+  static double _truncateTo2(
+    double value,
+  ){
+    return
+    (value * 100)
+        .truncateToDouble() / 100;
   }
 
-  // BUILD
+  static String _formatInteger(
+    double value,
+  ){
+
+    final int number =
+        value.truncate();
+
+    final String digits =
+        number.abs().toString();
+
+    final buffer =
+        StringBuffer();
+
+    for(
+      int i = 0;
+      i < digits.length;
+      i++
+    ){
+
+      if(
+        i > 0 &&
+        (digits.length - i) % 3 == 0
+      ){
+        buffer.write('.');
+      }
+      buffer.write(
+        digits[i],
+      );
+    }
+    return number < 0
+        ? '-${buffer.toString()}'
+        : buffer.toString();
+  }
+
+  static String _formatTwoDecimals(
+    double value,
+  ){
+
+    final double truncated =
+        _truncateTo2(value);
+
+    final int integerPart =
+        truncated.truncate();
+
+    final int decimalPart =
+        ((truncated - integerPart)
+        .abs()
+        *
+        100)
+        .truncate();
+
+    return
+    '${_formatInteger(
+      integerPart.toDouble(),
+    )},${decimalPart.toString().padLeft(2,'0')}';
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required TextInputType keyboardType,
+    required bool allowDecimal,
+
+  }){
+
+    return Column(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+
+      children:[
+        Text(
+          label,
+          style:
+
+          const TextStyle(
+            fontSize:15,
+            fontFamily:'monospace',
+            color:
+            Color(0xFF5A4638),
+          ),
+        ),
+
+        const SizedBox(
+          height:4,
+        ),
+
+        Container(
+          height:38,
+          decoration:
+
+          const BoxDecoration(
+            color:
+            Color(0xFFF6F4F3),
+
+            border:
+
+            Border(
+              bottom:
+
+              BorderSide(
+                color:
+                Color(0xFF777777),
+
+                width: 1.5,
+              ),
+            ),
+          ),
+
+          child:
+
+          TextField(
+            controller:
+            controller,
+
+            keyboardType:
+            keyboardType,
+
+            inputFormatters:[
+
+              ThousandsSeparatorInputFormatter(
+                allowDecimal:
+                allowDecimal,
+              ),
+            ],
+
+            style:
+            const TextStyle(
+
+              fontSize: 14,
+              fontFamily:
+              'monospace',
+              fontWeight:
+              FontWeight.w600,
+              color:
+              Color(0xFF222222),
+            ),
+
+            decoration:
+
+            InputDecoration(
+              hintText:
+              hint,
+
+              hintStyle:
+
+              TextStyle(
+
+                fontSize: 14,
+                fontFamily:
+                'monospace',
+                fontWeight:
+                FontWeight.w400,
+
+                color:
+                const Color(0xFF737987)
+                .withValues(alpha:0.55),
+              ),
+
+              border:
+              InputBorder.none,
+              contentPadding:
+
+              const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+      Colors.white,
 
-      // APP BAR
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+      appBar:
+
+      AppBar(
+        backgroundColor:
+        Colors.white,
+        surfaceTintColor:
+        Colors.white,
         elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.22),
 
-        leading: IconButton(
-          icon: const Icon(
+        shadowColor:
+        Colors.black.withValues(
+          alpha:0.22,
+        ),
+
+        leading:
+
+        IconButton(
+          icon:
+
+          const Icon(
             Icons.arrow_back_ios_new,
-            color: Color(0xFFF7931E),
+            color:
+            Color(0xFFF7931E),
             size: 20,
           ),
-          onPressed: () {
+
+          onPressed:(){
             Navigator.pop(context);
           },
         ),
 
-        title: RichText(
-          text: const TextSpan(
-            style: TextStyle(
+        title:
+
+        RichText(
+          text:
+
+          const TextSpan(
+            style:
+
+            TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
-            children: [
+
+            children:[
+
               TextSpan(
-                text: 'Kalkulator ',
-                style: TextStyle(
-                  color: Color(0xFF333333),
+                text:
+                'Kalkulator ',
+                style:
+
+                TextStyle(
+                  color:
+                  Color(0xFF333333),
                 ),
               ),
+
               TextSpan(
-                text: 'Emas Fisik',
-                style: TextStyle(
-                  color: Color(0xFFF7931E),
+                text:
+                'Emas Fisik',
+
+                style:
+
+                TextStyle(
+                  color:
+                  Color(0xFFF7931E),
                 ),
               ),
             ],
@@ -514,170 +603,282 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
         titleSpacing: 0,
       ),
 
-      // BODY
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
+      body:
+
+      SingleChildScrollView(
+        padding:
+
+        const EdgeInsets.fromLTRB(
           12,
           18,
           12,
           30,
         ),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // DESKRIPSI
+        child:
+
+        Column(
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
+
+          children:[
             const Padding(
-              padding: EdgeInsets.symmetric(
+              padding:
+
+              EdgeInsets.symmetric(
                 horizontal: 2,
               ),
-              child: Text(
-                'Hitung selisih harga beli dan harga jual '
-                'serta estimasi keuntungan atau kerugian '
-                'berdasarkan modal dan kurs.',
-                style: TextStyle(
+
+              child:
+
+              Text(
+                'Hitung selisih harga beli dan harga jual serta estimasi keuntungan atau kerugian berdasarkan modal dan kurs.',
+                style:
+
+                TextStyle(
                   fontSize: 15,
                   height: 1.45,
-                  color: Color(0xFF222222),
+
+                  color:
+                  Color(0xFF222222),
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(
+              height: 16,
+            ),
 
-            // INPUT PERHITUNGAN
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(
+              width:
+              double.infinity,
+
+              padding:
+
+              const EdgeInsets.fromLTRB(
                 10,
                 10,
                 10,
                 12,
               ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFCFA),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0xFFE6CBB8),
+
+              decoration:
+
+              BoxDecoration(
+                color:
+                const Color(0xFFFFFCFA),
+                borderRadius:
+                BorderRadius.circular(10),
+                border:
+
+                Border.all(
+                  color:
+                  const Color(0xFFE6CBB8),
                   width: 1,
                 ),
               ),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // JUDUL
+              child:
+
+              Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+                children:[
+
                   Row(
-                    children: [
+                    children:[
                       const Icon(
                         Icons.input_outlined,
-                        color: Color(0xFFF7931E),
+                        color:
+                        Color(0xFFF7931E),
                         size: 19,
                       ),
-                      const SizedBox(width: 8),
+
+                      const SizedBox(
+                        width: 8,
+                      ),
+
                       const Text(
                         'Input Perhitungan',
-                        style: TextStyle(
+                        style:
+
+                        TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF222222),
+                          fontWeight:
+                          FontWeight.bold,
+                          color:
+                          Color(0xFF222222),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // MODAL
-                  _buildInputField(
-                    controller: _modalController,
-                    label: 'Modal (IDR)',
-                    hint: 'Cnth : 100.000.000',
-                    keyboardType: TextInputType.number,
-                    allowDecimal: false,
+                  const SizedBox(
+                    height: 14,
                   ),
 
-                  const SizedBox(height: 12),
-
-                  // KURS
                   _buildInputField(
-                    controller: _kursController,
-                    label: 'Kurs (IDR)',
-                    hint: 'Cnth : 16.000',
-                    keyboardType: TextInputType.number,
-                    allowDecimal: false,
+                    controller:
+                    _modalController,
+
+                    label:
+                    'Modal (IDR)',
+                    hint:
+                    'Cnth : 100.000.000',
+
+                    keyboardType:
+                    TextInputType.number,
+                    allowDecimal:
+                    false,
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
-                  // HARGA BELI
                   _buildInputField(
-                    controller: _hargaBeliController,
-                    label: 'Harga Beli',
-                    hint: 'Cnth : 4.300',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    controller:
+                    _kursController,
+
+                    label:
+                    'Kurs (IDR)',
+                    hint:
+                    'Cnth : 16.000',
+
+                    keyboardType:
+                    TextInputType.number,
+
+                    allowDecimal:
+                    false,
+                  ),
+
+                  const SizedBox(
+                    height: 12,
+                  ),
+
+                  _buildInputField(
+                    controller:
+                    _hargaBeliController,
+
+                    label:
+                    'Harga Beli',
+                    hint:
+                    'Cnth : 4.300',
+
+                    keyboardType:
+
+                    const TextInputType.numberWithOptions(
+                      decimal:true,
                     ),
-                    allowDecimal: true,
+
+                    allowDecimal:
+                    true,
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
 
-                  // HARGA JUAL
                   _buildInputField(
-                    controller: _hargaJualController,
-                    label: 'Harga Jual',
-                    hint: 'Cnth: 4.302',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+
+                    controller:
+                    _hargaJualController,
+
+                    label:
+                    'Harga Jual',
+                    hint:
+                    'Cnth: 4.302',
+
+                    keyboardType:
+
+                    const TextInputType.numberWithOptions(
+                      decimal:true,
                     ),
-                    allowDecimal: true,
+
+                    allowDecimal:
+                    true,
+
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height:12,
+                  ),
 
-                  // TOz TETAP
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 9,
+                    width:
+                    double.infinity,
+
+                    padding:
+
+                    const EdgeInsets.symmetric(
+                      horizontal:10,
+                      vertical:9,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4E5),
-                      borderRadius: BorderRadius.circular(7),
-                      border: Border.all(
-                        color: const Color(0xFFF3C28D),
+
+                    decoration:
+
+                    BoxDecoration(
+                      color:
+                      const Color(0xFFFFF4E5),
+                      borderRadius:
+                      BorderRadius.circular(7),
+                      border:
+
+                      Border.all(
+                        color:
+                        const Color(0xFFF3C28D),
                       ),
                     ),
 
-                    child: Row(
-                      children: [
+                    child:
+
+                    Row(
+                      children:[
+
                         const Icon(
                           Icons.lock_outline,
-                          color: Color(0xFFF7931E),
-                          size: 18,
+                          color:
+                          Color(0xFFF7931E),
+                          size:18,
                         ),
 
-                        const SizedBox(width: 8),
+                        const SizedBox(
+                          width:8,
+                        ),
 
                         const Expanded(
-                          child: Text(
+                          child:
+
+                          Text(
                             'TOz',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5A4638),
+
+                            style:
+
+                            TextStyle(
+                              fontSize:14,
+                              fontWeight:
+                              FontWeight.bold,
+
+                              color:
+                              Color(0xFF5A4638),
                             ),
                           ),
                         ),
 
                         Text(
-                          _formatTwoDecimals(_toz),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFE47700),
+                          _formatTwoDecimals(
+                            _toz,
+                          ),
+                          style:
+
+                          const TextStyle(
+                            fontSize:14,
+                            fontWeight:
+                            FontWeight.bold,
+
+                            color:
+                            Color(0xFFE47700),
                           ),
                         ),
                       ],
@@ -687,40 +888,74 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height:10,
+            ),
 
-            // HITUNG
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
+              padding:
+              const EdgeInsets.symmetric(
+                horizontal:10,
               ),
-              child: SizedBox(
-                width: double.infinity,
+
+              child:
+
+              SizedBox(
+                width:
+                double.infinity,
                 height: 44,
-                child: ElevatedButton(
-                  onPressed: _calculate,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8C00),
-                    foregroundColor: Colors.white,
+
+                child:
+
+                ElevatedButton(
+                  onPressed:
+                  _calculate,
+
+                  style:
+
+                  ElevatedButton.styleFrom(
+                    backgroundColor:
+                    const Color(0xFFFF8C00),
+
+                    foregroundColor:
+                    Colors.white,
+
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(7),
+
+                    shape:
+
+                    RoundedRectangleBorder(
+                      borderRadius:
+
+                      BorderRadius.circular(7),
                     ),
                   ),
 
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                  child:
+
+                  const Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.center,
+                    children:[
+
                       Icon(
                         Icons.calculate_outlined,
-                        size: 19,
+                        size:19,
                       ),
-                      SizedBox(width: 8),
+
+                      SizedBox(
+                        width:8,
+                      ),
+
                       Text(
                         'Hitung',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                        style:
+
+                        TextStyle(
+                          fontSize:14,
+                          fontWeight:
+
+                          FontWeight.bold,
                         ),
                       ),
                     ],
@@ -729,107 +964,76 @@ class _PhysicalGoldPageState extends State<PhysicalGoldPage> {
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(
+              height:14,
+            ),
 
-  // RESET
-  Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 10,
-    ),
-    child: SizedBox(
-      width: double.infinity,
-      height: 34,
-      child: OutlinedButton(
-        onPressed: _reset,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF222222),
-          side: const BorderSide(
-            color: Color(0xFF666666),
-            width: 1,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(7),
-          ),
-        ),
-        child: const Text(
-          'Reset',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+            Padding(
+              padding:
+
+              const EdgeInsets.symmetric(
+                horizontal:10,
+              ),
+
+              child:
+
+              SizedBox(
+                width:
+                double.infinity,
+                height: 34,
+
+                child:
+                OutlinedButton(
+                  onPressed:
+                  _reset,
+
+                  style:
+
+                  OutlinedButton.styleFrom(
+                    foregroundColor:
+                    const Color(0xFF222222),
+                    side:
+
+                    const BorderSide(
+
+                      color:
+                      Color(0xFF666666),
+                      width: 1,
+                    ),
+
+                    shape:
+
+                    RoundedRectangleBorder(
+                      borderRadius:
+
+                      BorderRadius.circular(7),
+                    ),
+                  ),
+
+                  child:
+
+                  const Text(
+                    'Reset',
+                    style:
+
+                    TextStyle(
+                      fontSize:14,
+                      fontWeight:
+
+                      FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height:10,
+
+            ),
+          ],
         ),
       ),
-    ),
-  ),
-  const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // INPUT FIELD
-    Widget _buildInputField({
-      required TextEditingController controller,
-      required String label,
-      required String hint,
-      required TextInputType keyboardType,
-      required bool allowDecimal,
-    }) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 15,
-              fontFamily: 'monospace',
-              color: Color(0xFF5A4638),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF6F4F3),
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0xFF777777),
-                  width: 1.5,
-                ),
-              ),
-            ),
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              inputFormatters: [
-                ThousandsSeparatorInputFormatter(
-                  allowDecimal: allowDecimal,
-                ),
-              ],
-              style: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF222222),
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xFF737987).withValues(alpha: 0.55),
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    );
   }
+}
