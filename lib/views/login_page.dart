@@ -1,20 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+
+import '../repositories/login_repository.dart';
+import '../viewmodels/login_viewmodel.dart';
 
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 import 'home_page.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LoginViewModel>(
+      create: (_) => LoginViewModel(
+        LoginRepository(),
+      ),
+      child: const _LoginPageContent(),
+    );
+  }
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final SupabaseClient _supabase = Supabase.instance.client;
+class _LoginPageContent extends StatefulWidget {
+  const _LoginPageContent();
 
+  @override
+  State<_LoginPageContent> createState() =>
+      _LoginPageContentState();
+}
+
+class _LoginPageContentState
+    extends State<_LoginPageContent> {
   final TextEditingController _loginController =
       TextEditingController();
 
@@ -22,7 +39,6 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,18 +48,23 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (_isLoading) return;
+    final viewModel =
+        context.read<LoginViewModel>();
+
+    if (viewModel.isLoading) return;
 
     FocusScope.of(context).unfocus();
 
     final String email =
         _loginController.text.trim().toLowerCase();
+
     final String password =
         _passwordController.text;
 
     // CEK INPUT KOSONG
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context)
+          .hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -63,7 +84,8 @@ class _LoginPageState extends State<LoginPage> {
     ).hasMatch(email);
 
     if (!emailValid) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context)
+          .hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -77,91 +99,42 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final bool success =
+        await viewModel.login(
+      email: email,
+      password: password,
+    );
 
-    try {
-      // LOGIN KE SUPABASE
-      final response =
-          await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+    if (!mounted) return;
 
-      if (!mounted) return;
-
-      final user = response.user;
-
-      if (user == null) {
-        throw const AuthException(
-          'Login gagal. Silakan coba lagi.',
-        );
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // LOGIN BERHASIL
+    // LOGIN BERHASIL
+    if (success) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => const HomePage(),
+          builder: (context) =>
+              const HomePage(),
         ),
         (route) => false,
       );
-    } on AuthException catch (e) {
-      if (!mounted) return;
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      String message = e.message;
-
-      final String lowerMessage =
-          message.toLowerCase();
-
-      if (lowerMessage.contains('invalid login credentials') ||
-          lowerMessage.contains('invalid credentials')) {
-        message =
-            'Email atau password salah.';
-      } else if (lowerMessage.contains('email')) {
-        message = 'Email atau password tidak sesuai.';
-      } else if (lowerMessage.contains('email')) {
-        message =
-            'Email atau password tidak sesuai.';
-      }
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Terjadi kesalahan saat login. Silakan coba lagi.',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      return;
     }
+
+    // LOGIN GAGAL
+    final String message =
+        viewModel.errorMessage ??
+            'Terjadi kesalahan saat login. Silakan coba lagi.';
+
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   InputDecoration _inputDecoration({
@@ -178,19 +151,22 @@ class _LoginPageState extends State<LoginPage> {
       filled: true,
       fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12),
         borderSide: BorderSide(
           color: Colors.grey.shade300,
         ),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12),
         borderSide: BorderSide(
           color: Colors.grey.shade300,
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12),
         borderSide: const BorderSide(
           color: Color(0xFFF7931E),
           width: 2,
@@ -201,6 +177,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel =
+        context.watch<LoginViewModel>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -230,8 +209,10 @@ class _LoginPageState extends State<LoginPage> {
                         'MASUK',
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          fontWeight:
+                              FontWeight.bold,
+                          color:
+                              Color(0xFF333333),
                         ),
                       ),
                     ),
@@ -240,11 +221,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'Silakan masuk menggunakan akun '
                         'yang telah terdaftar.',
-                        textAlign: TextAlign.center,
+                        textAlign:
+                            TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
                           height: 1.5,
-                          color: Color(0xFF4B5563),
+                          color:
+                              Color(0xFF4B5563),
                         ),
                       ),
                     ),
@@ -254,18 +237,23 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       'Email',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight:
+                            FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
-                      controller: _loginController,
+                      controller:
+                          _loginController,
                       keyboardType:
-                          TextInputType.emailAddress,
+                          TextInputType
+                              .emailAddress,
                       textInputAction:
                           TextInputAction.next,
-                      enabled: !_isLoading,
-                      decoration: _inputDecoration(
+                      enabled:
+                          !viewModel.isLoading,
+                      decoration:
+                          _inputDecoration(
                         label: 'Email',
                         hint:
                             'Masukkan alamat email',
@@ -279,7 +267,8 @@ class _LoginPageState extends State<LoginPage> {
                     const Text(
                       'Password',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight:
+                            FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -288,15 +277,17 @@ class _LoginPageState extends State<LoginPage> {
                           _passwordController,
                       obscureText:
                           _obscurePassword,
-                      enabled: !_isLoading,
+                      enabled:
+                          !viewModel.isLoading,
                       textInputAction:
                           TextInputAction.done,
                       onSubmitted: (_) {
-                        if (!_isLoading) {
+                        if (!viewModel.isLoading) {
                           _login();
                         }
                       },
-                      decoration: _inputDecoration(
+                      decoration:
+                          _inputDecoration(
                         label: 'Password',
                         hint:
                             'Masukkan password',
@@ -327,17 +318,19 @@ class _LoginPageState extends State<LoginPage> {
                       alignment:
                           Alignment.centerRight,
                       child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ForgotPasswordPage(),
-                                  ),
-                                );
-                              },
+                        onTap:
+                            viewModel.isLoading
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) =>
+                                                const ForgotPasswordPage(),
+                                      ),
+                                    );
+                                  },
                         child: const Text(
                           'Lupa password?',
                           style: TextStyle(
@@ -358,7 +351,7 @@ class _LoginPageState extends State<LoginPage> {
                       height: 52,
                       child: ElevatedButton(
                         onPressed:
-                            _isLoading
+                            viewModel.isLoading
                                 ? null
                                 : _login,
                         style:
@@ -384,26 +377,28 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color:
-                                      Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Masuk',
-                                style:
-                                    TextStyle(
-                                  fontSize: 16,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
+                        child:
+                            viewModel.isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color:
+                                          Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Masuk',
+                                    style:
+                                        TextStyle(
+                                      fontSize: 16,
+                                      fontWeight:
+                                          FontWeight
+                                              .bold,
+                                    ),
+                                  ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -423,19 +418,23 @@ class _LoginPageState extends State<LoginPage> {
                             WidgetSpan(
                               child:
                                   GestureDetector(
-                                onTap: _isLoading
-                                    ? null
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const RegisterPage(),
-                                          ),
-                                        );
-                                      },
-                                child: const Text(
+                                onTap:
+                                    viewModel
+                                            .isLoading
+                                        ? null
+                                        : () {
+                                            Navigator
+                                                .push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        const RegisterPage(),
+                                              ),
+                                            );
+                                          },
+                                child:
+                                    const Text(
                                   'Daftar',
                                   style:
                                       TextStyle(

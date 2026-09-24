@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../viewmodels/register_viewmodel.dart';
+import '../repositories/register_repository.dart';
 import 'verification_success_page.dart';
 import 'login_page.dart';
 
@@ -14,20 +14,20 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final RegisterViewModel _viewModel = RegisterViewModel();
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final RegisterViewModel _viewModel =
+      RegisterViewModel(RegisterRepository());
 
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _whatsappController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordController =
+      TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeTerms = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -36,27 +36,12 @@ class _RegisterPageState extends State<RegisterPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
-  String? _validatePassword(String password) {
-    if (password.length < 8) {
-      return 'Password minimal 8 karakter.';
-    }
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 huruf besar.';
-    }
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 huruf kecil.';
-    }
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 angka.';
-    }
-    return null;
-  }
-
   Future<void> _register() async {
-    if (_isLoading) return;
+    if (_viewModel.isLoading) return;
 
     FocusScope.of(context).unfocus();
 
@@ -65,48 +50,6 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-
-    if (nama.isEmpty) {
-      _showMessage('Nama lengkap wajib diisi.');
-      return;
-    }
-
-    if (whatsapp.isEmpty) {
-      _showMessage('Nomor WhatsApp wajib diisi.');
-      return;
-    }
-
-    if (email.isEmpty) {
-      _showMessage('Email wajib diisi.');
-      return;
-    }
-
-    final emailValid =
-        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-
-    if (!emailValid) {
-      _showMessage('Format email tidak valid.');
-      return;
-    }
-
-    final passwordError = _validatePassword(password);
-
-    if (passwordError != null) {
-      _showMessage(passwordError);
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showMessage('Konfirmasi password tidak sama dengan password.');
-      return;
-    }
-
-    if (!_agreeTerms) {
-      _showMessage(
-        'Silakan setujui syarat dan ketentuan terlebih dahulu.',
-      );
-      return;
-    }
 
     final error = _viewModel.validateRegister(
       nama: nama,
@@ -122,68 +65,28 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() {});
 
-  try {
-    final AuthResponse res = await _supabase.auth.signUp(
+    final success = await _viewModel.register(
+      nama: nama,
+      whatsapp: whatsapp,
       email: email,
       password: password,
-      data: {
-        'name': nama,
-      },
     );
-
-    final user = res.user;
-
-    if (user == null) {
-      throw Exception('Pendaftaran gagal');
-    }
-
-    await _supabase.from('profiles').insert({
-      'id': user.id,
-      'name': nama,
-      'phone': whatsapp,
-      'email': email,
-    });
 
     if (!mounted) return;
 
-    /// ✅ PINDAH KE HALAMAN SUCCESS DULU
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const VerificationSuccessPage(),
-      ),
-    );
-  }
-    on AuthException catch (e) {
-      if (!mounted) return;
+    setState(() {});
 
-      String message = e.message;
-
-      if (message.toLowerCase().contains('already registered') ||
-          message.toLowerCase().contains('already exists') ||
-          message.toLowerCase().contains('already been registered')) {
-        message = 'Email tersebut sudah terdaftar. Silakan login.';
-      } else if (message.toLowerCase().contains('invalid')) {
-        message = 'Data pendaftaran tidak valid.';
-      }
-
-      _showMessage(message);
-    } catch (e) {
-      if (!mounted) return;
-
-      _showMessage(
-        'Terjadi kesalahan saat mendaftar. Silakan coba lagi.',
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const VerificationSuccessPage(),
+        ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    } else if (_viewModel.errorMessage != null) {
+      _showMessage(_viewModel.errorMessage!);
     }
   }
 
@@ -513,6 +416,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLoading = _viewModel.isLoading;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -574,7 +479,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _namaController,
                       textCapitalization: TextCapitalization.words,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       decoration: _inputDecoration(
                         label: 'Nama Lengkap',
                         hint: 'Masukkan nama lengkap',
@@ -592,7 +497,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _whatsappController,
                       keyboardType: TextInputType.phone,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       decoration: _inputDecoration(
                         label: 'Nomor WhatsApp',
                         hint: 'Contoh: 081234567890',
@@ -610,7 +515,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       decoration: _inputDecoration(
                         label: 'Email',
                         hint: 'Masukkan alamat email',
@@ -628,7 +533,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       decoration: _inputDecoration(
                         label: 'Password',
                         hint: 'Min. 8 karakter, huruf besar, kecil & angka',
@@ -658,7 +563,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
-                      enabled: !_isLoading,
+                      enabled: !isLoading,
                       decoration: _inputDecoration(
                         label: 'Konfirmasi Password',
                         hint: 'Masukkan kembali password',
@@ -701,7 +606,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         Checkbox(
                           value: _agreeTerms,
                           activeColor: const Color(0xFFF7931E),
-                          onChanged: _isLoading
+                          onChanged: isLoading
                               ? null
                               : (value) {
                                   setState(() {
@@ -731,7 +636,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                     recognizer: TapGestureRecognizer()
-                                      ..onTap = _isLoading
+                                      ..onTap = isLoading
                                           ? null
                                           : _showTermsDialog,
                                   ),
@@ -750,7 +655,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _register,
+                        onPressed: isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFF7931E),
                           foregroundColor: Colors.white,
@@ -762,7 +667,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: _isLoading
+                        child: isLoading
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,
@@ -792,7 +697,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           children: [
                             WidgetSpan(
                               child: GestureDetector(
-                                onTap: _isLoading
+                                onTap: isLoading
                                     ? null
                                     : () {
                                         Navigator.pushReplacement(

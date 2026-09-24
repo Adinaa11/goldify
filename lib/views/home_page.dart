@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../services/market_service.dart';
+import '../repositories/home_repository.dart';
+import '../viewmodels/home_viewmodel.dart';
 
 import 'calculator/calculator_page.dart';
 import 'calculator/physical_gold_page.dart';
@@ -23,7 +24,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
- late final List<Widget> _pages;
+  late final List<Widget> _pages;
 
   @override
   void initState() {
@@ -31,7 +32,6 @@ class _HomePageState extends State<HomePage> {
 
     _pages = [
       HomeContent(
-       
         onCalculatorTap: () {
           Navigator.push(
             context,
@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-    
+
         onPivotTap: () {
           Navigator.push(
             context,
@@ -106,35 +106,40 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _pages[_selectedIndex],
-            ),
+    return ChangeNotifierProvider<HomeViewModel>(
+      create: (_) => HomeViewModel(
+        HomeRepository(),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _pages[_selectedIndex],
+              ),
 
-            Positioned(
-              right: 7,
-              bottom: 3,
-              child: IgnorePointer(
-                child: ClipOval(
-                  child: SizedBox(
-                    width: 38,
-                    height: 38,
-                    child: Image.asset(
-                      'assets/images/kepompong.jpg',
-                      fit: BoxFit.cover,
+              Positioned(
+                right: 7,
+                bottom: 3,
+                child: IgnorePointer(
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 38,
+                      height: 38,
+                      child: Image.asset(
+                        'assets/images/kepompong.jpg',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        bottomNavigationBar: _buildBottomNavigation(),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -253,80 +258,21 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  String _userName = '';
-
-  late Future<List<Map<String, dynamic>>> _historicalGoldFuture;
-
   @override
   void initState() {
     super.initState();
 
-    _loadUserName();
-    _loadHistoricalData();
-  }
-
-  Future<void> _loadUserName() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    if (user == null) {
+    Future.microtask(() {
       if (!mounted) return;
 
-      setState(() {
-        _userName = '';
-      });
-
-      return;
-    }
-
-    try {
-      // Ambil nama TERBARU langsung dari tabel profiles
-      final profile = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user.id)
-          .maybeSingle();
-
-      String fullName = '';
-
-      if (profile != null &&
-          profile['name'] != null &&
-          profile['name'].toString().trim().isNotEmpty) {
-        fullName = profile['name'].toString().trim();
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        // Ambil nama pertama saja
-        _userName = fullName.isNotEmpty
-            ? fullName.split(RegExp(r'\s+')).first
-            : '';
-      });
-    } catch (e) {
-      debugPrint('Gagal mengambil nama dari profiles: $e');
-
-      if (!mounted) return;
-
-      setState(() {
-        _userName = '';
-      });
-    }
-  }
-
-  void _loadHistoricalData() {
-    _historicalGoldFuture =
-        MarketService.getHistoricalGoldData();
-  }
-
-  void _refreshHistoricalData() {
-    setState(() {
-      _loadHistoricalData();
+      context.read<HomeViewModel>().loadHomeData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<HomeViewModel>();
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Column(
@@ -343,10 +289,9 @@ class _HomeContentState extends State<HomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
                 Text(
-                  _userName.isNotEmpty
-                      ? 'Selamat Datang, $_userName 👋'
+                  viewModel.userName.isNotEmpty
+                      ? 'Selamat Datang, ${viewModel.userName} 👋'
                       : 'Selamat Datang 👋',
                   style: const TextStyle(
                     fontSize: 25,
@@ -738,8 +683,10 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildHistoricalSummaryCard() {
+    final viewModel = context.watch<HomeViewModel>();
+
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _historicalGoldFuture,
+      future: viewModel.historicalGoldFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState ==
             ConnectionState.waiting) {
@@ -797,7 +744,8 @@ class _HomeContentState extends State<HomeContent> {
                 const SizedBox(height: 12),
 
                 OutlinedButton.icon(
-                  onPressed: _refreshHistoricalData,
+                  onPressed:
+                      viewModel.refreshHistoricalData,
                   icon: const Icon(
                     Icons.refresh,
                     size: 17,
@@ -949,7 +897,8 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius:
+                          BorderRadius.circular(20),
                       border: Border.all(
                         color: const Color(0xFFE7D39A),
                       ),
@@ -960,7 +909,8 @@ class _HomeContentState extends State<HomeContent> {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
+                          decoration:
+                              const BoxDecoration(
                             color: Color(0xFF43A047),
                             shape: BoxShape.circle,
                           ),
@@ -986,7 +936,8 @@ class _HomeContentState extends State<HomeContent> {
 
               // CLOSE
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment:
+                    CrossAxisAlignment.end,
                 children: [
                   const Expanded(
                     child: Text(
@@ -1049,13 +1000,18 @@ class _HomeContentState extends State<HomeContent> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: widget.onHistoricalDataTap,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5AD17),
+                  onPressed:
+                      widget.onHistoricalDataTap,
+                  style:
+                      ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFFF5AD17),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(13),
                     ),
                   ),
                   child: Row(
@@ -1104,7 +1060,8 @@ class _HomeContentState extends State<HomeContent> {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -1137,7 +1094,8 @@ class _HomeContentState extends State<HomeContent> {
 
   String _formatTanggal(String value) {
     try {
-      final DateTime date = DateTime.parse(value);
+      final DateTime date =
+          DateTime.parse(value);
 
       final String day =
           date.day.toString().padLeft(2, '0');
@@ -1164,26 +1122,31 @@ class _HomeContentState extends State<HomeContent> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12),
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(
+          constraints:
+              const BoxConstraints(
             minHeight: 108,
           ),
-          padding: const EdgeInsets.symmetric(
+          padding:
+              const EdgeInsets.symmetric(
             horizontal: 13,
             vertical: 15,
           ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius:
+                BorderRadius.circular(12),
             border: Border.all(
               color: const Color(0xFFE8E8E8),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(
+                color:
+                    Colors.black.withValues(
                   alpha: 0.055,
                 ),
                 blurRadius: 9,
@@ -1192,18 +1155,22 @@ class _HomeContentState extends State<HomeContent> {
             ],
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment:
+                CrossAxisAlignment.center,
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F1F2),
-                  borderRadius: BorderRadius.circular(9),
+                  color:
+                      const Color(0xFFF0F1F2),
+                  borderRadius:
+                      BorderRadius.circular(9),
                 ),
                 child: Icon(
                   icon,
-                  color: const Color(0xFFC87800),
+                  color:
+                      const Color(0xFFC87800),
                   size: 25,
                 ),
               ),
@@ -1214,14 +1181,18 @@ class _HomeContentState extends State<HomeContent> {
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF292929),
+                        fontWeight:
+                            FontWeight.w700,
+                        color:
+                            Color(0xFF292929),
                       ),
                     ),
 
@@ -1229,10 +1200,12 @@ class _HomeContentState extends State<HomeContent> {
 
                     Text(
                       description,
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         fontSize: 12,
                         height: 1.4,
-                        color: Color(0xFF686868),
+                        color:
+                            Color(0xFF686868),
                       ),
                     ),
                   ],
