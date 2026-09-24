@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/market_service.dart';
+import 'package:provider/provider.dart';
+
+import '../models/historical_data_model.dart';
+import '../viewmodels/historical_data_viewmodel.dart';
 
 class HistoricalDataPage extends StatefulWidget {
   const HistoricalDataPage({super.key});
@@ -11,81 +14,26 @@ class HistoricalDataPage extends StatefulWidget {
 
 class _HistoricalDataPageState
     extends State<HistoricalDataPage> {
-  late Future<List<Map<String, dynamic>>>
-      _historicalFuture;
-
-  DateTime? _startDate;
-  DateTime? _endDate;
-
-  String _selectedCategory = 'LGD Daily';
-
-  int _currentPage = 1;
-
-  static const int _itemsPerPage = 10;
-
-  final List<String> _categories = [
-    'LGD Daily',
-    'SNI — Nikkei Jepang',
-    'HSI — Hang Seng Hong Kong',
-  ];
 
   @override
   void initState() {
     super.initState();
-    _loadHistoricalData();
-  }
 
-  Future<void> _loadHistoricalData() async {
-    setState(() {
-      _currentPage = 1;
-
-      _historicalFuture =
-          MarketService.getHistoricalMarketData(
-        category: _selectedCategory,
-        startDate: _formatDateForApi(
-          _startDate,
-        ),
-        endDate: _formatDateForApi(
-          _endDate,
-        ),
-      );
+    Future.microtask(() {
+      context
+          .read<HistoricalDataViewModel>()
+          .loadHistoricalData();
     });
-
-    try {
-      await _historicalFuture;
-    } catch (_) {}
   }
 
-  String? _formatDateForApi(
-    DateTime? date,
-  ) {
-    if (date == null) {
-      return null;
-    }
-
-    return '${date.year.toString().padLeft(4, '0')}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDateDisplay(
-    DateTime? date,
-  ) {
-    if (date == null) {
-      return 'dd/mm/yyyy';
-    }
-
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
-
-  Future<void> _selectStartDate() async {
+  Future<void> _selectStartDate(
+    HistoricalDataViewModel vm,
+  ) async {
     final DateTime? selected =
         await showDatePicker(
       context: context,
       initialDate:
-          _startDate ?? DateTime.now(),
+          vm.startDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
@@ -94,28 +42,23 @@ class _HistoricalDataPageState
       return;
     }
 
-    setState(() {
-      _startDate = selected;
+    vm.setStartDate(selected);
 
-      if (_endDate != null &&
-          _endDate!.isBefore(selected)) {
-        _endDate = null;
-      }
-    });
-
-    await _loadHistoricalData();
+    await vm.loadHistoricalData();
   }
 
-  Future<void> _selectEndDate() async {
+  Future<void> _selectEndDate(
+    HistoricalDataViewModel vm,
+  ) async {
     final DateTime? selected =
         await showDatePicker(
       context: context,
       initialDate:
-          _endDate ??
-              _startDate ??
+          vm.endDate ??
+              vm.startDate ??
               DateTime.now(),
       firstDate:
-          _startDate ?? DateTime(2000),
+          vm.startDate ?? DateTime(2000),
       lastDate: DateTime.now(),
     );
 
@@ -123,91 +66,20 @@ class _HistoricalDataPageState
       return;
     }
 
-    setState(() {
-      _endDate = selected;
-    });
+    vm.setEndDate(selected);
 
-    await _loadHistoricalData();
-  }
-
-  Future<void> _changeCategory(
-    String? value,
-  ) async {
-    if (value == null ||
-        value == _selectedCategory) {
-      return;
-    }
-
-    setState(() {
-      _selectedCategory = value;
-      _currentPage = 1;
-    });
-
-    await _loadHistoricalData();
-  }
-
-  String _getCategorySubtitle() {
-    switch (_selectedCategory) {
-      case 'SNI — Nikkei Jepang':
-        return 'Indeks Nikkei Jepang';
-
-      case 'HSI — Hang Seng Hong Kong':
-        return 'Indeks Hang Seng Hong Kong';
-
-      default:
-        return 'Harga emas LGD Daily';
-    }
-  }
-
-  String _getValue(
-    Map<String, dynamic> item,
-    String key,
-  ) {
-    final dynamic value = item[key];
-
-    if (value == null) {
-      return '-';
-    }
-
-    if (value.toString().trim().isEmpty) {
-      return '-';
-    }
-
-    return value.toString();
-  }
-
-  int _totalPages(
-    List<Map<String, dynamic>> data,
-  ) {
-    if (data.isEmpty) {
-      return 1;
-    }
-
-    return (data.length / _itemsPerPage).ceil();
-  }
-
-  List<Map<String, dynamic>> _getPageData(
-    List<Map<String, dynamic>> data,
-  ) {
-    final int start =
-        (_currentPage - 1) * _itemsPerPage;
-
-    if (start >= data.length) {
-      return [];
-    }
-
-    final int end =
-        (start + _itemsPerPage)
-            .clamp(0, data.length);
-
-    return data.sublist(start, end);
+    await vm.loadHistoricalData();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm =
+        context.watch<HistoricalDataViewModel>();
+
     return Scaffold(
       backgroundColor:
           const Color(0xFFF8F9FB),
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -231,56 +103,55 @@ class _HistoricalDataPageState
           ),
         ),
       ),
-      body: FutureBuilder<
-          List<Map<String, dynamic>>>(
-        future: _historicalFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
+
+      body: vm.loading && vm.historicalData.isEmpty
+          ? const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFFEFAE21),
               ),
-            );
-          }
+            )
+          : vm.error != null &&
+                  vm.historicalData.isEmpty
+              ? _buildError(
+                  vm.error,
+                  vm,
+                )
+              : RefreshIndicator(
+                  color: const Color(0xFFEFAE21),
+                  onRefresh: () async {
+                    await vm.loadHistoricalData();
+                  },
+                  child: ListView(
+                    padding:
+                        const EdgeInsets.fromLTRB(
+                      16,
+                      18,
+                      16,
+                      30,
+                    ),
+                    children: [
+                      _buildIntroCard(vm),
 
-          if (snapshot.hasError) {
-            return _buildError(
-              snapshot.error,
-            );
-          }
+                      const SizedBox(
+                        height: 14,
+                      ),
 
-          final List<Map<String, dynamic>> data =
-              snapshot.data ?? [];
+                      _buildFilterCard(vm),
 
-          return RefreshIndicator(
-            color: const Color(0xFFEFAE21),
-            onRefresh: () async {
-              await _loadHistoricalData();
-            },
-            child: ListView(
-              padding:
-                  const EdgeInsets.fromLTRB(
-                16,
-                18,
-                16,
-                30,
-              ),
-              children: [
-                _buildIntroCard(),
-                const SizedBox(height: 14),
-                _buildFilterCard(),
-                const SizedBox(height: 14),
-                _buildHistoricalTable(data),
-              ],
-            ),
-          );
-        },
-      ),
+                      const SizedBox(
+                        height: 14,
+                      ),
+
+                      _buildHistoricalTable(vm),
+                    ],
+                  ),
+                ),
     );
   }
 
-  Widget _buildIntroCard() {
+  Widget _buildIntroCard(
+    HistoricalDataViewModel vm,
+  ) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -299,7 +170,8 @@ class _HistoricalDataPageState
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF5DA),
+              color:
+                  const Color(0xFFFFF5DA),
               borderRadius:
                   BorderRadius.circular(11),
             ),
@@ -309,7 +181,9 @@ class _HistoricalDataPageState
               size: 23,
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -319,19 +193,24 @@ class _HistoricalDataPageState
                   'Data Historis Market',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF222222),
+                    fontWeight:
+                        FontWeight.w800,
+                    color:
+                        Color(0xFF222222),
                   ),
                 ),
+
                 const SizedBox(height: 5),
+
                 Text(
                   'Lihat pergerakan harga '
-                  '$_selectedCategory '
+                  '${vm.selectedCategory} '
                   'berdasarkan periode yang dipilih.',
                   style: const TextStyle(
                     fontSize: 12.5,
                     height: 1.45,
-                    color: Color(0xFF777777),
+                    color:
+                        Color(0xFF777777),
                   ),
                 ),
               ],
@@ -342,7 +221,9 @@ class _HistoricalDataPageState
     );
   }
 
-  Widget _buildFilterCard() {
+  Widget _buildFilterCard(
+    HistoricalDataViewModel vm,
+  ) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
@@ -361,46 +242,57 @@ class _HistoricalDataPageState
             'FILTER DATA',
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontWeight:
+                  FontWeight.w800,
               letterSpacing: 0.7,
               color: Color(0xFF999999),
             ),
           ),
+
           const SizedBox(height: 9),
-          _buildCategoryDropdown(),
+
+          _buildCategoryDropdown(vm),
+
           const SizedBox(height: 14),
+
           Row(
             children: [
               Expanded(
                 child: _buildDateField(
                   title: 'Tanggal Awal',
                   value:
-                      _formatDateDisplay(
-                    _startDate,
+                      vm.formatDateDisplay(
+                    vm.startDate,
                   ),
-                  onTap: _selectStartDate,
+                  onTap: () =>
+                      _selectStartDate(vm),
                 ),
               ),
+
               const SizedBox(width: 10),
+
               Expanded(
                 child: _buildDateField(
                   title: 'Tanggal Akhir',
                   value:
-                      _formatDateDisplay(
-                    _endDate,
+                      vm.formatDateDisplay(
+                    vm.endDate,
                   ),
-                  onTap: _selectEndDate,
+                  onTap: () =>
+                      _selectEndDate(vm),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           SizedBox(
             width: double.infinity,
             height: 44,
             child: ElevatedButton.icon(
               onPressed:
-                  _loadHistoricalData,
+                  vm.loadHistoricalData,
               style:
                   ElevatedButton.styleFrom(
                 backgroundColor:
@@ -422,7 +314,8 @@ class _HistoricalDataPageState
                 'Tampilkan Data',
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight:
+                      FontWeight.w700,
                 ),
               ),
             ),
@@ -432,7 +325,9 @@ class _HistoricalDataPageState
     );
   }
 
-  Widget _buildCategoryDropdown() {
+  Widget _buildCategoryDropdown(
+    HistoricalDataViewModel vm,
+  ) {
     return Column(
       crossAxisAlignment:
           CrossAxisAlignment.start,
@@ -441,11 +336,14 @@ class _HistoricalDataPageState
           'KATEGORI',
           style: TextStyle(
             fontSize: 10.5,
-            fontWeight: FontWeight.w800,
+            fontWeight:
+                FontWeight.w800,
             color: Color(0xFF888888),
           ),
         ),
+
         const SizedBox(height: 6),
+
         Container(
           height: 50,
           padding:
@@ -453,30 +351,48 @@ class _HistoricalDataPageState
             horizontal: 13,
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFBF2),
+            color:
+                const Color(0xFFFFFBF2),
             borderRadius:
                 BorderRadius.circular(10),
             border: Border.all(
-              color: const Color(0xFFF0D28A),
+              color:
+                  const Color(0xFFF0D28A),
             ),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedCategory,
+          child:
+              DropdownButtonHideUnderline(
+            child:
+                DropdownButton<String>(
+              value:
+                  vm.selectedCategory,
               isExpanded: true,
+
               icon: const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFFD88D00),
+                Icons
+                    .keyboard_arrow_down_rounded,
+                color:
+                    Color(0xFFD88D00),
               ),
-              dropdownColor: Colors.white,
+
+              dropdownColor:
+                  Colors.white,
+
               borderRadius:
-                  BorderRadius.circular(10),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF333333),
+                  BorderRadius.circular(
+                10,
               ),
-              items: _categories
+
+              style:
+                  const TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    FontWeight.w700,
+                color:
+                    Color(0xFF333333),
+              ),
+
+              items: vm.categories
                   .map(
                     (String category) {
                   return DropdownMenuItem<
@@ -487,32 +403,39 @@ class _HistoricalDataPageState
                         const Icon(
                           Icons.auto_awesome,
                           size: 16,
-                          color: Color(
+                          color:
+                              Color(
                             0xFFD88D00,
                           ),
                         ),
+
                         const SizedBox(
                           width: 8,
                         ),
+
                         Flexible(
                           child: Text(
                             category,
                             overflow:
-                                TextOverflow.ellipsis,
+                                TextOverflow
+                                    .ellipsis,
                           ),
                         ),
                       ],
                     ),
                   );
                 }).toList(),
+
               onChanged:
-                  _changeCategory,
+                  vm.changeCategory,
             ),
           ),
         ),
+
         const SizedBox(height: 5),
+
         Text(
-          _getCategorySubtitle(),
+          vm.getCategorySubtitle(),
           style: const TextStyle(
             fontSize: 10.5,
             color: Color(0xFF999999),
@@ -541,11 +464,13 @@ class _HistoricalDataPageState
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9F9F9),
+          color:
+              const Color(0xFFF9F9F9),
           borderRadius:
               BorderRadius.circular(10),
           border: Border.all(
-            color: const Color(0xFFE4E4E4),
+            color:
+                const Color(0xFFE4E4E4),
           ),
         ),
         child: Row(
@@ -555,7 +480,9 @@ class _HistoricalDataPageState
               size: 16,
               color: Color(0xFF999999),
             ),
+
             const SizedBox(width: 8),
+
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -563,12 +490,16 @@ class _HistoricalDataPageState
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 9.5,
-                      color: Color(0xFF999999),
+                      color:
+                          Color(0xFF999999),
                     ),
                   ),
+
                   const SizedBox(height: 2),
+
                   Text(
                     value,
                     style: TextStyle(
@@ -594,17 +525,22 @@ class _HistoricalDataPageState
   }
 
   Widget _buildHistoricalTable(
-    List<Map<String, dynamic>> data,
+    HistoricalDataViewModel vm,
   ) {
+    final data = vm.historicalData;
+
     if (data.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(30),
+        padding:
+            const EdgeInsets.all(30),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius:
+              BorderRadius.circular(14),
           border: Border.all(
-            color: const Color(0xFFEDEDED),
+            color:
+                const Color(0xFFEDEDED),
           ),
         ),
         child: const Column(
@@ -612,24 +548,33 @@ class _HistoricalDataPageState
             Icon(
               Icons.inbox_outlined,
               size: 42,
-              color: Color(0xFFBBBBBB),
+              color:
+                  Color(0xFFBBBBBB),
             ),
+
             SizedBox(height: 10),
+
             Text(
               'Tidak ada data',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF555555),
+                fontWeight:
+                    FontWeight.w700,
+                color:
+                    Color(0xFF555555),
               ),
             ),
+
             SizedBox(height: 4),
+
             Text(
               'Data tidak tersedia untuk filter yang dipilih.',
-              textAlign: TextAlign.center,
+              textAlign:
+                  TextAlign.center,
               style: TextStyle(
                 fontSize: 11.5,
-                color: Color(0xFF999999),
+                color:
+                    Color(0xFF999999),
               ),
             ),
           ],
@@ -637,14 +582,16 @@ class _HistoricalDataPageState
       );
     }
 
-    final List<Map<String, dynamic>> pageData =
-        _getPageData(data);
+    final List<HistoricalDataModel>
+        pageData = vm.pageData;
 
-    final int totalPages = _totalPages(data);
+    final int totalPages =
+        vm.totalPages;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
+      padding:
+          const EdgeInsets.fromLTRB(
         12,
         14,
         12,
@@ -652,13 +599,16 @@ class _HistoricalDataPageState
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius:
+            BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFFEDEDED),
+          color:
+              const Color(0xFFEDEDED),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -667,23 +617,31 @@ class _HistoricalDataPageState
                   'Data Historis',
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF222222),
+                    fontWeight:
+                        FontWeight.w800,
+                    color:
+                        Color(0xFF222222),
                   ),
                 ),
               ),
+
               Text(
                 '${data.length} data',
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   fontSize: 11,
-                  color: Color(0xFF999999),
+                  color:
+                      Color(0xFF999999),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           ClipRRect(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius:
+                BorderRadius.circular(9),
             child: SizedBox(
               width: double.infinity,
               child: Table(
@@ -694,72 +652,100 @@ class _HistoricalDataPageState
                   3: FlexColumnWidth(1),
                   4: FlexColumnWidth(1),
                 },
+
                 defaultVerticalAlignment:
-                    TableCellVerticalAlignment.middle,
+                    TableCellVerticalAlignment
+                        .middle,
+
                 children: [
                   TableRow(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFF8E8),
+                    decoration:
+                        const BoxDecoration(
+                      color:
+                          Color(0xFFFFF8E8),
                     ),
                     children: [
                       _buildTableHeader(
                         'Tanggal',
-                        alignment: Alignment.centerLeft,
+                        alignment:
+                            Alignment.centerLeft,
                       ),
-                      _buildTableHeader('Open'),
-                      _buildTableHeader('High'),
-                      _buildTableHeader('Low'),
-                      _buildTableHeader('Close'),
+                      _buildTableHeader(
+                        'Open',
+                      ),
+                      _buildTableHeader(
+                        'High',
+                      ),
+                      _buildTableHeader(
+                        'Low',
+                      ),
+                      _buildTableHeader(
+                        'Close',
+                      ),
                     ],
                   ),
+
                   ...pageData.map(
                     (item) {
                       return TableRow(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Color(0xFFE2E2E2),
+                        decoration:
+                            const BoxDecoration(
+                          border:
+                              Border(
+                            bottom:
+                                BorderSide(
+                              color:
+                                  Color(
+                                0xFFE2E2E2,
+                              ),
                             ),
                           ),
                         ),
                         children: [
                           _buildTableCell(
-                            _formatTableDate(
-                              _getValue(
+                            vm.formatTableDate(
+                              vm.getValue(
                                 item,
                                 'tanggal',
                               ),
                             ),
                             alignment:
-                                Alignment.centerLeft,
+                                Alignment
+                                    .centerLeft,
                             fontWeight:
-                                FontWeight.w600,
+                                FontWeight
+                                    .w600,
                           ),
+
                           _buildTableCell(
-                            _getValue(
+                            vm.getValue(
                               item,
                               'open',
                             ),
                           ),
+
                           _buildTableCell(
-                            _getValue(
+                            vm.getValue(
                               item,
                               'high',
                             ),
                           ),
+
                           _buildTableCell(
-                            _getValue(
+                            vm.getValue(
                               item,
                               'low',
                             ),
                           ),
+
                           _buildTableCell(
-                            _getValue(
+                            vm.getValue(
                               item,
                               'close',
                             ),
                             fontWeight:
-                                FontWeight.w700,
+                                FontWeight
+                                    .w700,
                           ),
                         ],
                       );
@@ -769,8 +755,13 @@ class _HistoricalDataPageState
               ),
             ),
           ),
+
           const SizedBox(height: 12),
-          _buildPagination(totalPages),
+
+          _buildPagination(
+            vm,
+            totalPages,
+          ),
         ],
       ),
     );
@@ -778,24 +769,29 @@ class _HistoricalDataPageState
 
   Widget _buildTableHeader(
     String text, {
-    Alignment alignment = Alignment.center,
+    Alignment alignment =
+        Alignment.center,
   }) {
     return Container(
       height: 46,
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 8,
       ),
       child: Text(
         text,
         textAlign:
-            alignment == Alignment.center
+            alignment ==
+                    Alignment.center
                 ? TextAlign.center
                 : TextAlign.left,
         style: const TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF555555),
+          fontWeight:
+              FontWeight.w800,
+          color:
+              Color(0xFF555555),
         ),
       ),
     );
@@ -803,52 +799,40 @@ class _HistoricalDataPageState
 
   Widget _buildTableCell(
     String text, {
-    Alignment alignment = Alignment.center,
-    FontWeight fontWeight = FontWeight.w500,
+    Alignment alignment =
+        Alignment.center,
+    FontWeight fontWeight =
+        FontWeight.w500,
   }) {
     return Container(
       height: 58,
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 8,
       ),
       child: Text(
         text,
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        overflow:
+            TextOverflow.ellipsis,
         textAlign:
-            alignment == Alignment.center
+            alignment ==
+                    Alignment.center
                 ? TextAlign.center
                 : TextAlign.left,
         style: TextStyle(
           fontSize: 11,
           fontWeight: fontWeight,
-          color: const Color(0xFF444444),
+          color:
+              const Color(0xFF444444),
         ),
       ),
     );
   }
 
-  String _formatTableDate(
-    String value,
-  ) {
-    if (value == '-') {
-      return '-';
-    }
-
-    try {
-      final DateTime date =
-          DateTime.parse(value);
-
-      return '${date.day.toString().padLeft(2, '0')}/'
-          '${date.month.toString().padLeft(2, '0')}/'
-          '${date.year}';
-    } catch (_) {
-      return value;
-    }
-  }
-
   Widget _buildPagination(
+    HistoricalDataViewModel vm,
     int totalPages,
   ) {
     return Row(
@@ -857,20 +841,16 @@ class _HistoricalDataPageState
       children: [
         IconButton(
           onPressed:
-              _currentPage > 1
-                  ? () {
-                      setState(() {
-                        _currentPage--;
-                      });
-                    }
+              vm.currentPage > 1
+                  ? vm.previousPage
                   : null,
           icon: const Icon(
             Icons.chevron_left_rounded,
           ),
-          color: const Color(
-            0xFFD99100,
-          ),
+          color:
+              const Color(0xFFD99100),
         ),
+
         Container(
           padding:
               const EdgeInsets.symmetric(
@@ -878,36 +858,35 @@ class _HistoricalDataPageState
             vertical: 7,
           ),
           decoration: BoxDecoration(
-            color: const Color(
-              0xFFFFF5DA,
-            ),
+            color:
+                const Color(0xFFFFF5DA),
             borderRadius:
                 BorderRadius.circular(8),
           ),
           child: Text(
-            '$_currentPage / $totalPages',
-            style: const TextStyle(
+            '${vm.currentPage} / $totalPages',
+            style:
+                const TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFFD88D00),
+              fontWeight:
+                  FontWeight.w800,
+              color:
+                  Color(0xFFD88D00),
             ),
           ),
         ),
+
         IconButton(
           onPressed:
-              _currentPage < totalPages
-                  ? () {
-                      setState(() {
-                        _currentPage++;
-                      });
-                    }
+              vm.currentPage <
+                      totalPages
+                  ? vm.nextPage
                   : null,
           icon: const Icon(
             Icons.chevron_right_rounded,
           ),
-          color: const Color(
-            0xFFD99100,
-          ),
+          color:
+              const Color(0xFFD99100),
         ),
       ],
     );
@@ -915,6 +894,7 @@ class _HistoricalDataPageState
 
   Widget _buildError(
     Object? error,
+    HistoricalDataViewModel vm,
   ) {
     return Center(
       child: Padding(
@@ -924,14 +904,14 @@ class _HistoricalDataPageState
           width: double.infinity,
           padding:
               const EdgeInsets.all(22),
-          decoration: BoxDecoration(
+          decoration:
+              BoxDecoration(
             color: Colors.white,
             borderRadius:
                 BorderRadius.circular(14),
             border: Border.all(
-              color: const Color(
-                0xFFEDEDED,
-              ),
+              color:
+                  const Color(0xFFEDEDED),
             ),
           ),
           child: Column(
@@ -939,21 +919,28 @@ class _HistoricalDataPageState
                 MainAxisSize.min,
             children: [
               const Icon(
-                Icons.error_outline_rounded,
+                Icons
+                    .error_outline_rounded,
                 size: 44,
-                color: Color(0xFFD9534F),
+                color:
+                    Color(0xFFD9534F),
               ),
+
               const SizedBox(height: 12),
+
               const Text(
                 'Gagal Memuat Data',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight:
                       FontWeight.w800,
-                  color: Color(0xFF333333),
+                  color:
+                      Color(0xFF333333),
                 ),
               ),
+
               const SizedBox(height: 7),
+
               Text(
                 error
                         ?.toString()
@@ -964,20 +951,26 @@ class _HistoricalDataPageState
                     'Terjadi kesalahan.',
                 textAlign:
                     TextAlign.center,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   fontSize: 11.5,
                   height: 1.4,
-                  color: Color(0xFF888888),
+                  color:
+                      Color(0xFF888888),
                 ),
               ),
+
               const SizedBox(height: 16),
+
               SizedBox(
                 height: 40,
-                child: ElevatedButton(
+                child:
+                    ElevatedButton(
                   onPressed:
-                      _loadHistoricalData,
+                      vm.loadHistoricalData,
                   style:
-                      ElevatedButton.styleFrom(
+                      ElevatedButton
+                          .styleFrom(
                     backgroundColor:
                         const Color(
                       0xFFEFAE21,
