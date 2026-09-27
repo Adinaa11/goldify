@@ -27,22 +27,15 @@ class ChangePasswordViewModel extends ChangeNotifier {
   }
 
   void toggleConfirmPassword(){
-
     isConfirmHidden = !isConfirmHidden;
     notifyListeners();
   }
 
   ChangePasswordModel get passwordData {
     return ChangePasswordModel(
-
-      oldPassword:
-          oldPasswordController.text,
-
-      newPassword:
-          newPasswordController.text,
-
-      confirmPassword:
-          confirmPasswordController.text,
+      oldPassword: oldPasswordController.text,
+      newPassword: newPasswordController.text,
+      confirmPassword: confirmPasswordController.text,
     );
   }
 
@@ -50,36 +43,44 @@ class ChangePasswordViewModel extends ChangeNotifier {
     final data = passwordData;
 
     final passwordRegex =
-        RegExp(
-          r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$'
-        );
+        RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$');
 
     if(
       data.oldPassword.isEmpty ||
       data.newPassword.isEmpty ||
       data.confirmPassword.isEmpty
     ){
-
       return "Semua field harus diisi";
     }
 
     if(!passwordRegex.hasMatch(data.newPassword)){
-
-      return
-      "Password minimal 8 karakter, ada huruf besar, kecil, angka, dan simbol";
+      return "Password minimal 8 karakter, ada huruf besar, kecil, angka, dan simbol";
     }
 
     if(data.newPassword != data.confirmPassword){
-
-      return
-      "Konfirmasi password tidak sama";
+      return "Konfirmasi password tidak sama";
     }
+
     return null;
   }
-  void disposeController(){
+  
+  Future<String?> changePassword() async {
+    final validation = validatePassword();
 
+    if (validation != null) return validation;
+
+    try {
+      await Future.delayed(const Duration(seconds: 1));
+      return null;
+    } catch (e) {
+      return "Terjadi kesalahan. Silakan coba lagi.";
+    }
+  }
+
+  void disposeController(){
     oldPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
   }
-}
+
+} 
