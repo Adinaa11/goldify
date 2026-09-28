@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../viewmodels/new_password_viewmodel.dart';
 import 'login_page.dart';
 
 class NewPasswordPage extends StatefulWidget {
   const NewPasswordPage({super.key});
 
   @override
-  State<NewPasswordPage> createState() =>
-      _NewPasswordPageState();
+  State<NewPasswordPage> createState() => _NewPasswordPageState();
 }
 
 class _NewPasswordPageState extends State<NewPasswordPage> {
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  final NewPasswordViewModel _viewModel = NewPasswordViewModel();
 
   final TextEditingController _passwordController =
       TextEditingController();
@@ -32,26 +29,6 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
     super.dispose();
   }
 
-  String? _validatePassword(String password) {
-    if (password.length < 8) {
-      return 'Password minimal 8 karakter.';
-    }
-
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 huruf besar.';
-    }
-
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 huruf kecil.';
-    }
-
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return 'Password harus memiliki minimal 1 angka.';
-    }
-
-    return null;
-  }
-
   Future<void> _savePassword() async {
     if (_isLoading) return;
 
@@ -62,14 +39,12 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
         _confirmPasswordController.text;
 
     if (password.isEmpty || confirmPassword.isEmpty) {
-      _showMessage(
-        'Password wajib diisi.',
-      );
+      _showMessage('Password wajib diisi.');
       return;
     }
 
     final passwordError =
-        _validatePassword(password);
+        _viewModel.validatePassword(password);
 
     if (passwordError != null) {
       _showMessage(passwordError);
@@ -83,39 +58,24 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
       return;
     }
 
-    // CEK SESSION RESET PASSWORD
-    final user = _supabase.auth.currentUser;
-
-    if (user == null) {
-      _showMessage(
-        'Sesi reset password tidak ditemukan. '
-        'Silakan lakukan proses lupa password kembali.',
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
-    try {
-      // UPDATE PASSWORD DI SUPABASE
-      await _supabase.auth.updateUser(
-        UserAttributes(
-          password: password,
-        ),
-      );
+    final error = await _viewModel.updatePassword(
+      password: password,
+      confirmPassword: confirmPassword,
+    );
 
-      // LOGOUT SETELAH PASSWORD BERHASIL DIUBAH
-      await _supabase.auth.signOut();
+    if (!mounted) return;
 
-      if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      // KEMBALI KE LOGIN
+    if (error != null) {
+      _showMessage(error);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -131,27 +91,6 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
           builder: (context) => const LoginPage(),
         ),
         (route) => false,
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      _showMessage(
-        e.message,
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      _showMessage(
-        'Terjadi kesalahan saat memperbarui password. '
-        'Silakan coba lagi.',
       );
     }
   }

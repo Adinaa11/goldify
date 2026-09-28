@@ -164,76 +164,57 @@ class _ChangePasswordPageState
             const SizedBox(height:20),
 
             Padding(
-
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal:16,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
               ),
-
-              child:
-              SizedBox(
-                width:double.infinity,
-
-                child:
-                ElevatedButton(
-
-                  onPressed: (){
-
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
                     final message =
-                    viewModel.validatePassword();
+                        await viewModel.changePassword();
 
-                    if(message == null){
+                    if (!mounted) return;
 
+                    if (message == null) {
                       _showMessage(
-                        "Kata sandi berhasil diperbarui",
+                        "Kata sandi berhasil diperbarui, silakan login ulang",
                         true,
                       );
-                    }
-                    else{
 
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (route) => false,
+                      );
+                    } else {
                       _showMessage(
                         message,
                         false,
                       );
                     }
                   },
-
-                  style:
-                  ElevatedButton.styleFrom(
-
-                    backgroundColor:
-                    const Color(0xFFF7931E),
-
-                    padding:
-                    const EdgeInsets.symmetric(
-                      vertical:14,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF7931E),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
                     ),
-
-                    shape:
-                    RoundedRectangleBorder(
-
-                      borderRadius:
-                      BorderRadius.circular(12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-
-                  child:
-                  const Text(
-
+                  child: const Text(
                     "Simpan Perubahan",
-
-                    style:
-                    TextStyle(
-                      color:Colors.white,
-                      fontWeight:
-                      FontWeight.w600,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-            ),
+            ), // 🔥 INI YANG TADI KURANG
 
-            const SizedBox(height:20),
+            const SizedBox(height: 20),
 
             Container(
               margin:
@@ -349,7 +330,11 @@ class _ChangePasswordPageState
               : Icons.visibility,
             ),
 
-            onPressed:onToggle,
+            onPressed: () {
+              setState(() {
+                onToggle();
+              });
+            },
           ),
         ),
       ),
