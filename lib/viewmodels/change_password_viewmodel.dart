@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/change_password_model.dart';
 
 class ChangePasswordViewModel extends ChangeNotifier {
@@ -16,6 +17,7 @@ class ChangePasswordViewModel extends ChangeNotifier {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
+  // 👁️ toggle visibility
   void toggleOldPassword(){
     isOldHidden = !isOldHidden;
     notifyListeners();
@@ -31,6 +33,7 @@ class ChangePasswordViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 📦 ambil data
   ChangePasswordModel get passwordData {
     return ChangePasswordModel(
       oldPassword: oldPasswordController.text,
@@ -39,6 +42,7 @@ class ChangePasswordViewModel extends ChangeNotifier {
     );
   }
 
+  // ✅ validasi input
   String? validatePassword(){
     final data = passwordData;
 
@@ -63,24 +67,44 @@ class ChangePasswordViewModel extends ChangeNotifier {
 
     return null;
   }
-  
+
+  // 🔥 FIX UTAMA (UPDATE + LOGOUT)
   Future<String?> changePassword() async {
     final validation = validatePassword();
 
     if (validation != null) return validation;
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      return null;
+      final supabase = Supabase.instance.client;
+
+      // 🔍 pastikan user login
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        return "Session habis, silakan login ulang";
+      }
+
+      // 🔐 update password ke supabase
+      await supabase.auth.updateUser(
+        UserAttributes(
+          password: newPasswordController.text,
+        ),
+      );
+
+      // 🔥 logout otomatis
+      await supabase.auth.signOut();
+
+      return null; // sukses
+    } on AuthException catch (e) {
+      return e.message;
     } catch (e) {
       return "Terjadi kesalahan. Silakan coba lagi.";
     }
   }
 
+  // 🧹 dispose
   void disposeController(){
     oldPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
   }
-
-} 
+}

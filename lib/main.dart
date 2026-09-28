@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'views/splash_screen.dart';
 import 'views/new_password_page.dart';
+import 'views/login_page.dart';
 
 final GlobalKey<NavigatorState> navigatorKey =
     GlobalKey<NavigatorState>();
@@ -118,7 +119,7 @@ class _GoldifyAppState extends State<GoldifyApp> {
     super.dispose();
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
@@ -127,6 +128,11 @@ class _GoldifyAppState extends State<GoldifyApp> {
       theme: ThemeData(
         useMaterial3: true,
       ),
+
+      routes: {
+        '/login': (context) => const LoginPage(),
+      },
+
       home: const SplashScreen(),
     );
   }
