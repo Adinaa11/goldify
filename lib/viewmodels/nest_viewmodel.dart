@@ -96,6 +96,18 @@ class NestViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateManualInput({
+    required String openValue,
+    required String closeValue,
+  }) {
+    open = _parseNumber(openValue);
+    close = _parseNumber(closeValue);
+
+    errorMessage = null;
+
+    notifyListeners();
+  }
+
   NestModel calculate(){
     String status;
 

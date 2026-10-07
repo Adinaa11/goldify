@@ -236,7 +236,7 @@ Map<String, dynamic> get result =>
             bottom: -5,
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.60,
+                opacity: 0.15,
                 child: Image.asset(
                   'assets/images/ewf.jpg',
                   fit: BoxFit.contain,

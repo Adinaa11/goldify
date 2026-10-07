@@ -252,7 +252,7 @@ class _HistoryDetailNestPageState
           child: IgnorePointer(
             child: Center(
               child: Opacity(
-                opacity: 0.16,
+                opacity: 0.15,
                 child: Image.asset(
                   'assets/images/ewf.jpg',
                   width: 190,
@@ -995,7 +995,7 @@ class _HistoryDetailNestPageState
               child: IgnorePointer(
                 child: Center(
                   child: Opacity(
-                    opacity: 0.09,
+                    opacity: 0.10,
                     child: Image.asset(
                       'assets/images/ewf.jpg',
                       width: 270,

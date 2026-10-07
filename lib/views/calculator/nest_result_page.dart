@@ -211,7 +211,7 @@ class _NestResultPageState extends State<NestResultPage> {
               offset: const Offset(0, -35),
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: 0.20,
+                  opacity: 0.15,
                   child: Image.asset(
                     'assets/images/ewf.jpg',
                     width: 180,
@@ -640,7 +640,7 @@ class _NestResultPageState extends State<NestResultPage> {
       child: IgnorePointer(
         child: Center(
           child: Opacity(
-            opacity: 0.20,
+            opacity: 0.15,
             child: Image.asset(
               'assets/images/ewf.jpg',
               width: 180,

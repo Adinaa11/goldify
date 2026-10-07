@@ -298,7 +298,7 @@ class _HistoryDetailHangsengPageState
                 child: IgnorePointer(
                   child: Center(
                     child: Opacity(
-                      opacity: 0.40,
+                      opacity: 0.15,
                       child: Image.asset(
                         'assets/images/ewf.jpg',
                         width: 270,
@@ -1105,7 +1105,7 @@ class _HistoryDetailHangsengPageState
           alignment: Alignment.center,
           children: [
             Opacity(
-              opacity: 0.70,
+              opacity: 0.15,
               child: Image.asset(
                 'assets/images/ewf.jpg',
                 width: 330,

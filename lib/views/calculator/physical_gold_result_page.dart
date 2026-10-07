@@ -238,7 +238,7 @@ class _PhysicalGoldResultPageState
                           child: IgnorePointer(
                             child: Center(
                               child: Opacity(
-                                opacity: 0.50,
+                                opacity: 0.15,
                                 child: Image.asset(
                                   'assets/images/ewf.jpg',
                                   width: 200,

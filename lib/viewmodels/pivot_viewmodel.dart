@@ -115,6 +115,22 @@ class PivotViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateManualInput({
+    required String openValue,
+    required String highValue,
+    required String lowValue,
+    required String closeValue,
+  }) {
+    open = _toDouble(openValue);
+    high = _toDouble(highValue);
+    low = _toDouble(lowValue);
+    close = _toDouble(closeValue);
+
+    errorMessage = null;
+
+    notifyListeners();
+  }
+
   PivotModel? calculate(){
 
     if(

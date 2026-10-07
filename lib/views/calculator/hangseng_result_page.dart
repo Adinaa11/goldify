@@ -394,7 +394,7 @@ class _HangsengResultPageState
               offset: const Offset(0, -35),
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: 0.40,
+                  opacity: 0.10,
                   child: Image.asset(
                     'assets/images/ewf.jpg',
                     width: 180,
@@ -1361,7 +1361,7 @@ class _HangsengResultPageState
       child: IgnorePointer(
         child: Center(
           child: Opacity(
-            opacity: 0.20,
+            opacity: 0.10,
             child: Image.asset(
               'assets/images/ewf.jpg',
               width: 180,

@@ -291,7 +291,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
               offset: const Offset(0, -35),
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: 0.20,
+                  opacity: 0.10,
                   child: Image.asset(
                     'assets/images/ewf.jpg',
                     width: 180,
@@ -1213,7 +1213,7 @@ class _PivotResultPageState extends State<PivotResultPage> {
       child: IgnorePointer(
         child: Center(
           child: Opacity(
-            opacity: 0.20,
+            opacity: 0.15,
             child: Image.asset(
               'assets/images/ewf.jpg',
               width: 180,

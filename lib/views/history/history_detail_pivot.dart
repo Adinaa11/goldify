@@ -234,7 +234,7 @@ class _HistoryDetailPivotPageState
             child: IgnorePointer(
               child: Center(
                 child: Opacity(
-                  opacity: 0.40,
+                  opacity: 0.15,
                   child: Image.asset(
                     'assets/images/ewf.jpg',
                     width: 290,
@@ -1056,7 +1056,7 @@ class _HistoryDetailPivotPageState
           alignment: Alignment.center,
           children: [
             Opacity(
-              opacity: 0.70,
+              opacity: 0.15,
               child: Image.asset(
                 'assets/images/ewf.jpg',
                 width: 330,

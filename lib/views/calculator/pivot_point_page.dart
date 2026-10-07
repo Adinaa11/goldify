@@ -6,335 +6,205 @@ import '../../viewmodels/pivot_viewmodel.dart';
 
 import 'pivot_result_page.dart';
 
-
-
 class PivotPointPage extends StatefulWidget {
 
   final Map<String,dynamic>? initialData;
-
 
   const PivotPointPage({
     super.key,
     this.initialData,
   });
 
-
-
   @override
   State<PivotPointPage> createState()
       => _PivotPointPageState();
-
 }
-
-
-
 
 class _PivotPointPageState
     extends State<PivotPointPage>{
 
-
-
   late PivotViewModel viewModel;
-
-
 
   final TextEditingController _openController =
       TextEditingController();
 
-
   final TextEditingController _highController =
       TextEditingController();
-
 
   final TextEditingController _lowController =
       TextEditingController();
 
-
   final TextEditingController _closeController =
       TextEditingController();
-
-
-
 
   static const Color orange =
       Color(0xFFF7931E);
 
-
   static const Color darkText =
       Color(0xFF222222);
-
 
   static const Color greyText =
       Color(0xFF555555);
 
-
   static const Color fieldColor =
       Color(0xFFF7F5F3);
 
-
-
-
   String? _selectedDate;
-
-
 
   bool get _isRecalculate =>
       widget.initialData != null;
 
-
-
-
-
-
   @override
   void initState(){
-
     super.initState();
-
 
     viewModel =
         PivotViewModel(
           PivotRepository(),
         );
 
-
     viewModel.addListener((){
-
       if(!mounted) return;
-
       setState((){});
-
     });
 
-
-
     if(_isRecalculate){
-
       _loadInitialData();
-
     }
     else{
 
       _loadGoldData();
-
     }
-
   }
-
-
-
-
-
 
   void _loadInitialData(){
 
-
     final data =
         widget.initialData!;
-
-
 
     _openController.text =
         _formatInitialNumber(
           data['open'],
         );
 
-
     _highController.text =
         _formatInitialNumber(
           data['high'],
         );
-
 
     _lowController.text =
         _formatInitialNumber(
           data['low'],
         );
 
-
     _closeController.text =
         _formatInitialNumber(
           data['close'],
         );
 
-
-
     viewModel.loadInitialData(
       data,
     );
-
-
   }
-
-
-
-
-
 
   Future<void> _loadGoldData({
     String? date,
   }) async {
 
-
     await viewModel.loadData(
       date: date,
     );
 
-
-
     if(!mounted) return;
-
-
 
     _openController.text =
         _formatInitialNumber(
           viewModel.open,
         );
 
-
     _highController.text =
         _formatInitialNumber(
           viewModel.high,
         );
-
 
     _lowController.text =
         _formatInitialNumber(
           viewModel.low,
         );
 
-
     _closeController.text =
         _formatInitialNumber(
           viewModel.close,
         );
-
   }
-
-
-
-
-
-
 
   String _formatInitialNumber(
     dynamic value,
   ){
 
-
     if(value == null){
 
       return '';
-
     }
 
-
-
     if(value is num){
-
 
       if(value ==
           value.truncateToDouble()){
 
-
         return value
             .toInt()
             .toString();
-
-
       }
 
-
       return value.toString();
-
     }
-
-
-
 
     final number =
         double.tryParse(
           value.toString(),
         );
 
-
-
     if(number == null){
-
       return value.toString();
-
     }
-
-
 
     if(number ==
         number.truncateToDouble()){
 
-
       return number
           .toInt()
           .toString();
-
     }
 
-
-
     return number.toString();
-
   }
-
-
-
-
-
 
   @override
   void dispose(){
 
-
     _openController.dispose();
-
     _highController.dispose();
-
     _lowController.dispose();
-
     _closeController.dispose();
-
 
     viewModel.dispose();
 
-
     super.dispose();
-
   }
 
-
-
-
-
-
-
   Future<void> _selectDate() async {
-
 
     if(viewModel.isLoading ||
         _isRecalculate){
 
       return;
-
     }
-
-
-
 
     DateTime initialDate =
         DateTime.now();
 
-
-
-
     if(viewModel.dataDate != null){
-
 
       try{
 
@@ -390,7 +260,6 @@ class _PivotPointPageState
               darkText,
             ),
           ),
-
           child:
           child!,
         );
@@ -432,14 +301,9 @@ class _PivotPointPageState
       return date;
     }
 
-
     return
         '${parts[2]}/${parts[1]}/${parts[0]}';
-
   }
-
-
-
 
   bool get _hasGoldData{
 
@@ -449,181 +313,92 @@ class _PivotPointPageState
 
   }
 
-
-
-
-
   Future<void> _calculatePivot() async {
-
+    
+    viewModel.updateManualInput(
+      openValue: _openController.text,
+      highValue: _highController.text,
+      lowValue: _lowController.text,
+      closeValue: _closeController.text,
+    );
 
     final PivotModel? result =
         viewModel.calculate();
 
+    if (result == null) {
+      if (!mounted) return;
 
-
-    if(result == null){
-
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-
-          content:
-
-          Text(
+          content: Text(
             viewModel.errorMessage ??
-            'Data tidak valid.',
+                'Data tidak valid.',
           ),
-
-          backgroundColor:
-          orange,
-
+          backgroundColor: orange,
         ),
-
       );
 
-
       return;
-
     }
 
-
-
-
+    // Simpan hasil perhitungan ke history
     final bool saved =
-        await viewModel.saveHistory(
-          result,
-        );
+        await viewModel.saveHistory(result);
 
+    if (!mounted) return;
 
-
-
-    if(!mounted) return;
-
-
-
-
-    if(!saved){
-
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-
-          content:
-          Text(
+          content: Text(
             'Gagal menyimpan data ke database',
           ),
-
-          backgroundColor:
-          Colors.red,
-
+          backgroundColor: Colors.red,
         ),
-
       );
 
-
       return;
-
     }
 
-
-
-
-
     final bool hasDecimalInput =
-
         _openController.text.contains('.') ||
         _openController.text.contains(',') ||
-
         _highController.text.contains('.') ||
         _highController.text.contains(',') ||
-
         _lowController.text.contains('.') ||
         _lowController.text.contains(',') ||
-
         _closeController.text.contains('.') ||
         _closeController.text.contains(',');
 
-
-
-
-
     Navigator.push(
-
       context,
-
-
       MaterialPageRoute(
-
-        builder:(context)
-
-        => PivotResultPage(
-
-          open:
-          result.open,
-
-
-          high:
-          result.high,
-
-
-          low:
-          result.low,
-
-
-          close:
-          result.close,
-
-
-          hasDecimalInput:
-          hasDecimalInput,
-
-
-          dataDate:
-          result.date,
-
-
+        builder: (context) => PivotResultPage(
+          open: result.open,
+          high: result.high,
+          low: result.low,
+          close: result.close,
+          hasDecimalInput: hasDecimalInput,
+          dataDate: result.date,
         ),
-
       ),
-
     );
-
-
   }
-
-
-
-
-
 
   Future<void> _refreshData() async {
 
-
     if(_isRecalculate){
-
       return;
-
     }
-
-
 
     await _loadGoldData(
       date:
       _selectedDate,
     );
 
-
-
     if(!mounted) return;
 
-
-
     if(viewModel.errorMessage == null){
-
 
       ScaffoldMessenger.of(context)
           .showSnackBar(
@@ -637,58 +412,34 @@ class _PivotPointPageState
 
           backgroundColor:
           orange,
-
         ),
-
       );
-
     }
-
   }
-
-
-
-
-
 
   Widget _buildInputField({
 
     required String label,
-
     required TextEditingController controller,
-
     required String hint,
-
   }){
 
-
     return Padding(
-
       padding:
-
       const EdgeInsets.only(
         bottom:14,
       ),
 
-
       child:
-
       Column(
-
         crossAxisAlignment:
         CrossAxisAlignment.start,
 
-
         children:[
 
-
           Text(
-
             label,
-
-
             style:
-
             const TextStyle(
 
               fontFamily:
@@ -702,63 +453,39 @@ class _PivotPointPageState
 
               color:
               darkText,
-
             ),
-
           ),
-
-
 
           const SizedBox(
             height:5,
           ),
 
-
-
           Container(
-
             height:
             52,
 
-
             decoration:
-
             BoxDecoration(
-
               color:
               fieldColor,
 
-
               border:
-
               Border(
-
                 bottom:
-
                 BorderSide(
-
                   color:
                   Colors.grey.shade600,
-
                   width:
                   1.2,
-
                 ),
-
               ),
-
             ),
-
-
 
             child:
 
             TextField(
-
               controller:
               controller,
-
-
               keyboardType:
 
               const TextInputType
@@ -766,15 +493,11 @@ class _PivotPointPageState
                 decimal:true,
               ),
 
-
-
               onChanged:(value){
 
                 setState((){});
 
               },
-
-
 
               style:
 
@@ -791,8 +514,6 @@ class _PivotPointPageState
 
               ),
 
-
-
               decoration:
 
               InputDecoration(
@@ -800,47 +521,29 @@ class _PivotPointPageState
                 border:
                 InputBorder.none,
 
-
                 contentPadding:
 
                 const EdgeInsets.symmetric(
 
-                  horizontal:
-                  10,
-
-                  vertical:
-                  14,
+                  horizontal: 10,
+                  vertical: 14,
 
                 ),
 
-
-
                 hintText:
                 hint,
-
-
                 hintStyle:
-
                 const TextStyle(
-
-                  fontFamily:
-                  'monospace',
-
-                  fontSize:
-                  14,
-
+                  fontFamily: 'monospace',
+                  fontSize: 14,
                   color:
                   Colors.grey,
 
                 ),
 
-
                 suffixIcon:
 
-                viewModel.isLoading
-
-                ?
-
+                viewModel.isLoading ?
                 const Padding(
 
                   padding:
@@ -850,27 +553,18 @@ class _PivotPointPageState
 
                   SizedBox(
 
-                    width:
-                    16,
-
-                    height:
-                    16,
-
-
+                    width: 16,
+                    height: 16,
                     child:
 
                     CircularProgressIndicator(
 
-                      strokeWidth:
-                      2,
-
+                      strokeWidth: 2,
                       color:
                       orange,
 
                     ),
-
                   ),
-
                 ):
                 null,
               ),
@@ -889,30 +583,24 @@ class _PivotPointPageState
       backgroundColor:
       Colors.white,
 
-
       appBar:
-
       AppBar(
-
         backgroundColor:
         Colors.white,
 
         surfaceTintColor:
         Colors.white,
 
-        elevation:
-        4,
+        elevation: 4,
 
         shadowColor:
         Colors.black.withValues(
           alpha:0.20,
         ),
 
-
         leading:
 
         IconButton(
-
           icon:
 
           const Icon(
@@ -922,86 +610,53 @@ class _PivotPointPageState
             color:
             orange,
 
-            size:
-            21,
-
+            size: 21,
           ),
-
-
           onPressed:(){
 
             Navigator.pop(context);
-
           },
-
         ),
 
-
-        titleSpacing:
-        0,
-
+        titleSpacing: 0,
 
         title:
-
         RichText(
 
           text:
 
           const TextSpan(
-
             style:
 
             TextStyle(
-
-              fontSize:
-              16,
-
+              fontSize: 16,
               fontWeight:
               FontWeight.bold,
-
               color:
               darkText,
-
             ),
 
-
             children:[
-
-
               TextSpan(
-
                 text:
                 'Kalkulator ',
-
               ),
 
-
               TextSpan(
-
                 text:
                 'Pivot',
-
                 style:
 
                 TextStyle(
-
                   color:
                   orange,
-
                 ),
-
               ),
-
             ],
-
           ),
-
         ),
 
-
-
         actions:[
-
 
           if(!_isRecalculate)
 
@@ -1010,139 +665,82 @@ class _PivotPointPageState
             tooltip:
             'Refresh Data',
 
-
             onPressed:
-
-            viewModel.isLoading
-
-            ?
-
-            null
-
-            :
-
+            viewModel.isLoading ?
+            null :
             _refreshData,
 
-
             icon:
-
             const Icon(
-
               Icons.refresh,
-
               color:
               orange,
-
               size:
               23,
-
             ),
-
           ),
-
-
 
           const SizedBox(
             width:4,
           ),
-
-
         ],
-
       ),
 
-
-
-
       body:
-
       SingleChildScrollView(
 
         padding:
 
         const EdgeInsets.fromLTRB(
-
           12,
           12,
           12,
           40,
-
         ),
 
-
-
         child:
-
         Column(
 
           crossAxisAlignment:
           CrossAxisAlignment.start,
 
-
           children:[
 
-
-
             const Padding(
-
               padding:
-
               EdgeInsets.only(
                 right:10,
               ),
 
-
-
               child:
 
               Text(
-
                 'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan harga pada periode sebelumnya.',
 
-
                 style:
-
                 TextStyle(
-
-                  fontSize:
-                  14,
-
-                  height:
-                  1.45,
-
+                  fontSize: 14,
+                  height: 1.45,
                   color:
                   darkText,
-
                 ),
-
               ),
-
             ),
-
-
-
-
 
             const SizedBox(
               height:18,
             ),
-
-
-
-
 
             Align(
 
               alignment:
               Alignment.centerLeft,
 
-
               child:
 
               IntrinsicWidth(
 
                 child:
-
                 Container(
                   padding:
 

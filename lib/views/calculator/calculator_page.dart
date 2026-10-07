@@ -39,7 +39,7 @@ class CalculatorPage extends StatelessWidget {
         ),
 
         title: const Text(
-          'Kalkulator',
+          'Perhitungan',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -73,7 +73,7 @@ class CalculatorPage extends StatelessWidget {
                       text: 'Pilih Jenis ',
                     ),
                     TextSpan(
-                      text: 'Kalkulator',
+                      text: 'Perhitungan',
                       style: TextStyle(
                         color: Color(0xFFF7931E),
                       ),
@@ -97,7 +97,7 @@ class CalculatorPage extends StatelessWidget {
                       text: 'Silakan pilih jenis ',
                     ),
                     TextSpan(
-                      text: 'kalkulator',
+                      text: 'perhitungan',
                       style: TextStyle(
                         color: Color(0xFFF7931E),
                         fontWeight: FontWeight.w600,
@@ -105,7 +105,7 @@ class CalculatorPage extends StatelessWidget {
                     ),
                     TextSpan(
                       text:
-                          ' yang ingin Anda gunakan untuk memulai perhitungan.',
+                          ' yang ingin Anda gunakan.',
                     ),
                   ],
                 ),

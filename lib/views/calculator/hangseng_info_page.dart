@@ -273,7 +273,7 @@ class HangsengInfoDialog extends StatelessWidget {
                                 // BUY
                                 _buildSignal(
                                   isBull: true,
-                                  text: 'Jika Open > Hangseng',
+                                  text: 'Jika Open > Pivot Point',
                                   label: 'BUY',
                                 ),
 
@@ -282,7 +282,7 @@ class HangsengInfoDialog extends StatelessWidget {
                                 // SELL
                                 _buildSignal(
                                   isBull: false,
-                                  text: 'Jika Open < Hangseng',
+                                  text: 'Jika Open < Pivot Point',
                                   label: 'SELL',
                                 ),
 
@@ -291,7 +291,7 @@ class HangsengInfoDialog extends StatelessWidget {
                                 // NETRAL
                                 _buildSignal(
                                   isBull: null,
-                                  text: 'Jika Open = Hangseng',
+                                  text: 'Jika Open = Pivot Point',
                                   label: 'BUY or SELL',
                                 ),
                               ],

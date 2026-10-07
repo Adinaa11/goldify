@@ -287,43 +287,47 @@ class _NestPageState extends State<NestPage> {
 
   // HITUNG NEST
   Future<void> _calculateNest() async {
-    final result =
 
-    viewModel.calculate();
+    viewModel.updateManualInput(
+      openValue: _openController.text,
+      closeValue: _closeController.text,
+    );
+
+    final result =
+        viewModel.calculate();
 
     await viewModel.saveHistory(
       result,
     );
 
-    if(!mounted)
-    return;
+    if(!mounted) {
+      return;
+    }
 
     final bool hasDecimalInput =
-
-    _openController.text.contains('.') ||
-    _openController.text.contains(',') ||
-    _closeController.text.contains('.') ||
-    _closeController.text.contains(',');
+        _openController.text.contains('.') ||
+        _openController.text.contains(',') ||
+        _closeController.text.contains('.') ||
+        _closeController.text.contains(',');
 
     Navigator.push(
       context,
 
       MaterialPageRoute(
 
-        builder:(context)
-        => NestResultPage(
+        builder:(context) => NestResultPage(
 
           open:
-          result.open,
+              result.open,
 
           close:
-          result.close,
+              result.close,
 
           hasDecimalInput:
-          hasDecimalInput,
-          dataDate:
+              hasDecimalInput,
 
-          result.date,
+          dataDate:
+              result.date,
         ),
       ),
     );
