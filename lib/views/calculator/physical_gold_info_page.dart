@@ -124,6 +124,76 @@ class PhysicalGoldInfoDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // INFORMASI TOz DAN KURS
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFAF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFF3D4B0),
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Informasi Perhitungan',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE47700),
+                            ),
+                          ),
+
+                          SizedBox(height: 8),
+
+                          // PENJELASAN TOz DAN KURS
+                          Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.5,
+                                color: Color(0xFF4B5563),
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: '• Troy Ounce (TOz)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF333333),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text:
+                                      ' adalah satuan berat emas yang digunakan dalam '
+                                      'pasar internasional. 1 TOz setara dengan 31,1 gram emas. '
+                                      'Angka 31,1 pada rumus digunakan untuk mengonversi '
+                                      'harga emas per gram menjadi harga per Troy Ounce.\n\n',
+                                ),
+                                TextSpan(
+                                  text: '• Kurs',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF333333),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text:
+                                      ' adalah nilai tukar mata uang yang digunakan untuk '
+                                      'menyesuaikan harga emas dalam Rupiah dengan mata uang '
+                                      'acuan internasional (USD).',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // DESKRIPSI
                     Container(
                       width: double.infinity,

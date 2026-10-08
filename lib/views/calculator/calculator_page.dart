@@ -119,7 +119,7 @@ class CalculatorPage extends StatelessWidget {
                 icon: Icons.calculate_outlined,
                 title: 'Kalkulator Emas Fisik',
                 description:
-                    'Platform kalkulator emas yang membantu Anda melakukan perhitungan potensi keuntungan atau kerugian emas fisik dengan lebih mudah dan informatif.',
+                    'Membantu menghitung potensi keuntungan atau kerugian emas fisik berdasarkan harga beli, harga jual, kurs, dan modal.',
                 gradientColors: const [
                   Color(0xFFFFF8F0),
                   Color(0xFFFFE6C9),
@@ -155,7 +155,7 @@ class CalculatorPage extends StatelessWidget {
                 icon: Icons.show_chart,
                 title: 'Kalkulator Pivot Point',
                 description:
-                    'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
+                    'Membantu menentukan level Pivot Point, Support, dan Resistance untuk menganalisis pergerakan harga emas.',
                 gradientColors: const [
                   Color(0xFFFFFCF8),
                   Color(0xFFFFF0DF),
@@ -227,7 +227,7 @@ class CalculatorPage extends StatelessWidget {
                 icon: Icons.trending_up,
                 title: 'Kalkulator Hangseng',
                 description:
-                    'Platform kalkulator Hangseng yang membantu Anda melakukan perhitungan level harga berdasarkan pergerakan indeks Hangseng.',
+                     'Membantu menghitung level harga Hangseng untuk melihat area Support dan Resistance berdasarkan pergerakan indeks.',
                 gradientColors: const [
                   Color(0xFFFFFCF8),
                   Color(0xFFFFF0DF),
