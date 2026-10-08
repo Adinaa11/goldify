@@ -622,33 +622,7 @@ class _PhysicalGoldPageState
           CrossAxisAlignment.start,
 
           children:[
-            const Padding(
-              padding:
-
-              EdgeInsets.symmetric(
-                horizontal: 2,
-              ),
-
-              child:
-
-              Text(
-                'Hitung selisih harga beli dan harga jual serta estimasi keuntungan atau kerugian berdasarkan modal dan kurs.',
-                style:
-
-                TextStyle(
-                  fontSize: 15,
-                  height: 1.45,
-
-                  color:
-                  Color(0xFF222222),
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
+            
             Container(
               width:
               double.infinity,
@@ -889,141 +863,99 @@ class _PhysicalGoldPageState
             ),
 
             const SizedBox(
-              height:10,
-            ),
-
-            Padding(
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal:10,
-              ),
-
-              child:
-
-              SizedBox(
-                width:
-                double.infinity,
-                height: 44,
-
-                child:
-
-                ElevatedButton(
-                  onPressed:
-                  _calculate,
-
-                  style:
-
-                  ElevatedButton.styleFrom(
-                    backgroundColor:
-                    const Color(0xFFFF8C00),
-
-                    foregroundColor:
-                    Colors.white,
-
-                    elevation: 0,
-
-                    shape:
-
-                    RoundedRectangleBorder(
-                      borderRadius:
-
-                      BorderRadius.circular(7),
-                    ),
-                  ),
-
-                  child:
-
-                  const Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
-                    children:[
-
-                      Icon(
-                        Icons.calculate_outlined,
-                        size:19,
-                      ),
-
-                      SizedBox(
-                        width:8,
-                      ),
-
-                      Text(
-                        'Hitung',
-                        style:
-
-                        TextStyle(
-                          fontSize:14,
-                          fontWeight:
-
-                          FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(
               height:14,
             ),
 
             Padding(
-              padding:
-
-              const EdgeInsets.symmetric(
-                horizontal:10,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
               ),
+              child: Row(
+                children: [
 
-              child:
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: _reset,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                              const Color(0xFF222222),
 
-              SizedBox(
-                width:
-                double.infinity,
-                height: 34,
+                          side: const BorderSide(
+                            color: Color(0xFF666666),
+                            width: 1,
+                          ),
 
-                child:
-                OutlinedButton(
-                  onPressed:
-                  _reset,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(7),
+                          ),
+                        ),
 
-                  style:
-
-                  OutlinedButton.styleFrom(
-                    foregroundColor:
-                    const Color(0xFF222222),
-                    side:
-
-                    const BorderSide(
-
-                      color:
-                      Color(0xFF666666),
-                      width: 1,
-                    ),
-
-                    shape:
-
-                    RoundedRectangleBorder(
-                      borderRadius:
-
-                      BorderRadius.circular(7),
-                    ),
-                  ),
-
-                  child:
-
-                  const Text(
-                    'Reset',
-                    style:
-
-                    TextStyle(
-                      fontSize:14,
-                      fontWeight:
-
-                      FontWeight.w600,
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: _calculate,
+                        style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color(0xFFFF8C00),
+
+                          foregroundColor:
+                              Colors.white,
+
+                          elevation: 0,
+
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(7),
+                          ),
+                        ),
+
+                        child: const Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+
+                            Icon(
+                              Icons.calculate_outlined,
+                              size: 19,
+                            ),
+
+                            SizedBox(width: 8),
+
+                            Text(
+                              'Hitung',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 

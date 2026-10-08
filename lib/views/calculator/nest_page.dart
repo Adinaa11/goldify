@@ -4,7 +4,6 @@ import '../../repositories/nest_repository.dart';
 import '../../viewmodels/nest_viewmodel.dart';
 
 import 'nest_result_page.dart';
-import 'nest_info_page.dart';
 
 class NestPage extends StatefulWidget {
 
@@ -333,13 +332,30 @@ class _NestPageState extends State<NestPage> {
     );
   }
 
+  void _reset() {
+    setState(() {
+      _openController.clear();
+      _closeController.clear();
+    });
+
+    FocusScope.of(context).unfocus();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Semua input berhasil direset.',
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> _refreshData() async {
     if(_isRecalculate)
 
     return;
-
     await _loadNestData(
-
       date: _selectedDate,
     );
 
@@ -639,32 +655,6 @@ class _NestPageState extends State<NestPage> {
         ),
 
         actions:[
-          IconButton(
-
-            tooltip: 'Info NEST',
-
-            onPressed:(){
-
-              showDialog(
-
-                context:
-                context,
-
-                builder:(context) =>
-
-                const NestInfoDialog(),
-              );
-            },
-
-            icon:
-
-            const Icon(
-              Icons.info_outline,
-              color: orange,
-              size: 23,
-            ),
-          ),
-
           if(!_isRecalculate)
 
           IconButton(
@@ -709,44 +699,10 @@ class _NestPageState extends State<NestPage> {
         child:
 
         Column(
-
           crossAxisAlignment:
           CrossAxisAlignment.start,
 
           children:[
-
-            const Padding(
-
-              padding:
-
-              EdgeInsets.only(
-
-                right:10,
-              ),
-
-              child:
-
-              Text(
-
-                'Menentukan indikator arah berdasarkan perbandingan harga Open hari ini dengan harga Close pada periode sebelumnya.',
-                style:
-
-                TextStyle(
-
-                  fontSize: 14,
-                  height: 1.45,
-
-                  color:
-                  darkText,
-                ),
-              ),
-            ),
-
-            const SizedBox(
-
-              height:18,
-            ),
-
             Align(
 
               alignment:
@@ -1050,87 +1006,108 @@ class _NestPageState extends State<NestPage> {
               height:20,
             ),
 
+            // TOMBOL RESET & HITUNG
             Padding(
-              padding:
-
-              const EdgeInsets.symmetric(
-
-                horizontal:8,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
               ),
+              child: Row(
+                children: [
 
-              child:
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: OutlinedButton(
+                        onPressed: _reset,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                              const Color(0xFF222222),
 
-              SizedBox(
-                width: double.infinity,
+                          side: const BorderSide(
+                            color: Color(0xFF666666),
+                            width: 1,
+                          ),
 
-                height: 42,
-                child:
-
-                ElevatedButton(
-
-                  onPressed:
-                   viewModel.isLoading ||
-
-                  !_hasNestData ?
-                  null :
-                  _calculateNest,
-
-                  style:
-
-                  ElevatedButton.styleFrom(
-                    backgroundColor:
-                    orange,
-
-                    disabledBackgroundColor:
-                    Colors.grey.shade300,
-
-                    disabledForegroundColor:
-                    Colors.grey.shade600,
-
-                    foregroundColor:
-                    Colors.white,
-
-                    elevation: 0,
-                    shape:
-                    RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.circular(6),
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
-                  child:
-                  const Row(
+                  const SizedBox(width: 10),
 
-                    mainAxisAlignment:
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed:
+                            viewModel.isLoading ||
+                                    !_hasNestData
+                                ? null
+                                : _calculateNest,
 
-                    MainAxisAlignment.center,
-
-                    children:[
-
-                      Icon(
-                        Icons.calculate,
-                        size: 19,
-                      ),
-
-                      SizedBox(
-                        width:8,
-                      ),
-
-                      Text(
-                        'Hitung',
                         style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor: orange,
 
-                        TextStyle(
+                          disabledBackgroundColor:
+                              Colors.grey.shade300,
 
-                          fontFamily: 'monospace',
-                          fontSize: 17,
-                          fontWeight:
-                          FontWeight.bold,
+                          disabledForegroundColor:
+                              Colors.grey.shade600,
+
+                          foregroundColor:
+                              Colors.white,
+
+                          elevation: 0,
+
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(6),
+                          ),
+                        ),
+
+                        child: const Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+
+                            Icon(
+                              Icons.calculate,
+                              size: 19,
+                            ),
+
+                            SizedBox(width: 8),
+
+                            Text(
+                              'Hitung',
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 14,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
 

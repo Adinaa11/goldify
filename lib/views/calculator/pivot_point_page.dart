@@ -385,6 +385,27 @@ class _PivotPointPageState
     );
   }
 
+  void _reset() {
+    setState(() {
+      _openController.clear();
+      _highController.clear();
+      _lowController.clear();
+      _closeController.clear();
+    });
+
+    FocusScope.of(context).unfocus();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Semua input berhasil direset.',
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> _refreshData() async {
 
     if(_isRecalculate){
@@ -705,39 +726,12 @@ class _PivotPointPageState
           CrossAxisAlignment.start,
 
           children:[
-
-            const Padding(
-              padding:
-              EdgeInsets.only(
-                right:10,
-              ),
-
-              child:
-
-              Text(
-                'Hitung titik keseimbangan atau level harga acuan berdasarkan pergerakan harga pada periode sebelumnya.',
-
-                style:
-                TextStyle(
-                  fontSize: 14,
-                  height: 1.45,
-                  color:
-                  darkText,
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height:18,
-            ),
-
             Align(
 
               alignment:
               Alignment.centerLeft,
 
               child:
-
               IntrinsicWidth(
 
                 child:
@@ -945,44 +939,107 @@ class _PivotPointPageState
               height:20,
             ),
 
-            SizedBox(
-              width:
-              double.infinity,
-              height: 42, 
-      
-              child:
-
-              ElevatedButton(
-                onPressed:
-                viewModel.isLoading ||
-                !_hasGoldData ?
-
-                null :
-                _calculatePivot,
-
-                style:
-
-                ElevatedButton.styleFrom(
-                  backgroundColor:
-                  orange,
-                  foregroundColor:
-                  Colors.white,
-
-                  elevation: 0,
-                ),
-
-                child:
-
-                const Text(
-                  'Hitung',
-                  style:
-
-                  TextStyle(
-                    fontWeight:
-                    FontWeight.bold,
-                  ),
-                ),
+            // TOMBOL RESET & HITUNG
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 0,
               ),
+              child: Row(
+                children: [
+
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: OutlinedButton(
+                        onPressed: _reset,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                              const Color(0xFF222222),
+
+                          side: const BorderSide(
+                            color: Color(0xFF666666),
+                            width: 1,
+                          ),
+
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(7),
+                          ),
+                        ),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight:
+                                FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: SizedBox(
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed:
+                            viewModel.isLoading ||
+                                    !_hasGoldData
+                                ? null
+                                : _calculatePivot,
+
+                        style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor: orange,
+                          foregroundColor:
+                              Colors.white,
+                          disabledBackgroundColor:
+                              Colors.grey.shade300,
+                          disabledForegroundColor:
+                              Colors.grey.shade600,
+                          elevation: 0,
+
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(7),
+                          ),
+                        ),
+
+                        child: const Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+
+                            Icon(
+                              Icons.calculate_outlined,
+                              size: 19,
+                            ),
+
+                            SizedBox(width: 8),
+
+                            Text(
+                              'Hitung',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(
+              height: 10,
             ),
           ],
         ),

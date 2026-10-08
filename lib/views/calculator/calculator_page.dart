@@ -189,7 +189,7 @@ class CalculatorPage extends StatelessWidget {
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.swap_vert,
-                title: 'Kalkulator NEST',
+                title: 'Indikator NEST',
                 description:
                     'Indikator sederhana yang membandingkan harga Close kemarin dengan harga Open hari ini untuk memberikan sinyal BUY atau SELL.',
                 gradientColors: const [

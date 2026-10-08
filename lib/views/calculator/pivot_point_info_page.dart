@@ -28,9 +28,7 @@ class PivotPointInfoDialog extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // =========================================================
-            // HEADER
-            // =========================================================
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(
@@ -55,6 +53,7 @@ class PivotPointInfoDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
+
                   // ICON CALCULATOR
                   Container(
                     width: 44,
@@ -89,6 +88,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
+
                         Text(
                           'Kalkulator Pivot',
                           style: TextStyle(
@@ -97,7 +97,9 @@ class PivotPointInfoDialog extends StatelessWidget {
                             color: Color(0xFF222222),
                           ),
                         ),
+
                         SizedBox(height: 3),
+
                         Text(
                           'Panduan Perhitungan',
                           style: TextStyle(
@@ -113,9 +115,6 @@ class PivotPointInfoDialog extends StatelessWidget {
               ),
             ),
 
-            // =========================================================
-            // CONTENT
-            // =========================================================
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -128,9 +127,84 @@ class PivotPointInfoDialog extends StatelessWidget {
                   crossAxisAlignment:
                       CrossAxisAlignment.start,
                   children: [
-                    // =================================================
-                    // JUDUL RUMUS
-                    // =================================================
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(
+                        14,
+                        14,
+                        14,
+                        14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8EF),
+                        borderRadius:
+                            BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFF3C28D),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration:
+                                const BoxDecoration(
+                              color: Color(0xFFFFE9CC),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFFE47700),
+                              size: 21,
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+
+                                Text(
+                                  'Apa itu Pivot Point?',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    color:
+                                        Color(0xFFC86B00),
+                                  ),
+                                ),
+
+                                SizedBox(height: 5),
+
+                                Text(
+                                  'Pivot Point adalah harga wajar atau harga pasaran '
+                                  'untuk menentukan aksi beli (buy) atau jual (sell) '
+                                  'yang mengacu pada harga pembukaan (open).',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.5,
+                                    color:
+                                        Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
                     const Text(
                       'Rumus Pivot Point',
                       style: TextStyle(
@@ -140,24 +214,10 @@ class PivotPointInfoDialog extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      'Perhitungan titik keseimbangan pasar.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // =================================================
-                    // FORMULA
-                    // =================================================
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
+                      padding:
+                          const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 20,
                       ),
@@ -171,6 +231,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
+
                           const Text(
                             'TITIK PIVOT (P)',
                             style: TextStyle(
@@ -187,15 +248,18 @@ class PivotPointInfoDialog extends StatelessWidget {
                             textAlign: TextAlign.center,
                             text: const TextSpan(
                               children: [
+
                                 TextSpan(
                                   text: 'P',
                                   style: TextStyle(
                                     fontSize: 25,
                                     fontWeight:
                                         FontWeight.bold,
-                                    color: Color(0xFFC86B00),
+                                    color:
+                                        Color(0xFFC86B00),
                                   ),
                                 ),
+
                                 TextSpan(
                                   text:
                                       ' = (H + L + C) / 3',
@@ -203,7 +267,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                     fontSize: 25,
                                     fontWeight:
                                         FontWeight.bold,
-                                    color: Color(0xFF222222),
+                                    color:
+                                        Color(0xFF222222),
                                   ),
                                 ),
                               ],
@@ -215,9 +280,6 @@ class PivotPointInfoDialog extends StatelessWidget {
 
                     const SizedBox(height: 18),
 
-                    // =================================================
-                    // PENJELASAN KOMPONEN
-                    // =================================================
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -231,6 +293,7 @@ class PivotPointInfoDialog extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
+
                           // HEADER KOMPONEN
                           Container(
                             width: double.infinity,
@@ -241,19 +304,23 @@ class PivotPointInfoDialog extends StatelessWidget {
                               14,
                               14,
                             ),
-                            decoration: const BoxDecoration(
+                            decoration:
+                                const BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(
-                                  color: Color(0xFFE5E7EB),
+                                  color:
+                                      Color(0xFFE5E7EB),
                                 ),
                               ),
                             ),
                             child: Row(
                               children: [
+
                                 Container(
                                   width: 36,
                                   height: 36,
-                                  decoration: BoxDecoration(
+                                  decoration:
+                                      BoxDecoration(
                                     color: const Color(
                                       0xFFFFF4E5,
                                     ),
@@ -295,15 +362,15 @@ class PivotPointInfoDialog extends StatelessWidget {
                             ),
                             child: Column(
                               children: [
+
                                 // HIGH
                                 _buildComponent(
                                   letter: 'H',
-                                  title: 'High (Tertinggi)',
+                                  title:
+                                      'High (Harga Tertinggi)',
                                   description:
-                                      'Harga tertinggi yang dicapai oleh aset '
-                                      '(seperti saham, pasangan mata uang, '
-                                      'komoditas, dll) pada periode '
-                                      'perdagangan sebelumnya.',
+                                      'Harga tertinggi yang dicapai oleh '
+                                      'pada periode perdagangan sebelumnya.',
                                 ),
 
                                 const SizedBox(height: 14),
@@ -311,7 +378,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 // LOW
                                 _buildComponent(
                                   letter: 'L',
-                                  title: 'Low (Terendah)',
+                                  title:
+                                      'Low (Harga Terendah)',
                                   description:
                                       'Harga terendah yang disentuh oleh '
                                       'aset selama periode perdagangan '
@@ -323,7 +391,8 @@ class PivotPointInfoDialog extends StatelessWidget {
                                 // CLOSE
                                 _buildComponent(
                                   letter: 'C',
-                                  title: 'Close (Penutupan)',
+                                  title:
+                                      'Close (Harga Penutupan)',
                                   description:
                                       'Harga terakhir pada saat sesi '
                                       'perdagangan sebelumnya ditutup.',
@@ -366,7 +435,6 @@ class PivotPointInfoDialog extends StatelessWidget {
               ),
             ),
 
-            // TUTUP
             Container(
               padding: const EdgeInsets.fromLTRB(
                 18,
@@ -410,6 +478,7 @@ class PivotPointInfoDialog extends StatelessWidget {
   // =============================================================
   // COMPONENT H / L / C
   // =============================================================
+
   static Widget _buildComponent({
     required String letter,
     required String title,
@@ -419,6 +488,7 @@ class PivotPointInfoDialog extends StatelessWidget {
       crossAxisAlignment:
           CrossAxisAlignment.start,
       children: [
+
         // BULATAN H/L/C
         Container(
           width: 40,
@@ -447,6 +517,7 @@ class PivotPointInfoDialog extends StatelessWidget {
             crossAxisAlignment:
                 CrossAxisAlignment.start,
             children: [
+
               Text(
                 title,
                 style: const TextStyle(
@@ -473,9 +544,6 @@ class PivotPointInfoDialog extends StatelessWidget {
     );
   }
 
-  // =============================================================
-  // SIGNAL BUY / SELL / NETRAL
-  // =============================================================
   static Widget _buildSignal({
     required bool? isBull,
     required String text,
@@ -521,6 +589,7 @@ class PivotPointInfoDialog extends StatelessWidget {
       ),
       child: Row(
         children: [
+
           const SizedBox(width: 10),
 
           // ICON
@@ -554,7 +623,8 @@ class PivotPointInfoDialog extends StatelessWidget {
 
           // LABEL
           Container(
-            margin: const EdgeInsets.only(right: 10),
+            margin:
+                const EdgeInsets.only(right: 10),
             padding: const EdgeInsets.symmetric(
               horizontal: 13,
               vertical: 6,
