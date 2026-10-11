@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const marketRoutes = require('./routes/marketRoutes');
+const newsRoutes = require('./routes/newsRoutes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/market', marketRoutes);
+app.use('/api/news', newsRoutes);
 
 const PORT = process.env.PORT || 3000;
 

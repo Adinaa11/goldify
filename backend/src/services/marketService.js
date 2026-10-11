@@ -10,9 +10,6 @@ async function getGoldHistoricalData() {
     JSON.stringify(response.data, null, 2)
   );
 
-  // NEWSMAKER BISA MENGEMBALIKAN DATA DALAM BEBERAPA BENTUK.
-  // Kita cek satu per satu supaya backend tetap aman.
-
   let allData = [];
 
   if (Array.isArray(response.data)) {

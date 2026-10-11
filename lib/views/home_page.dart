@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../repositories/home_repository.dart';
 import '../viewmodels/home_viewmodel.dart';
-
+import 'news_section.dart';
+import 'news_page.dart';
 import 'calculator/calculator_page.dart';
 import 'calculator/physical_gold_page.dart';
 import 'profile/profile_page.dart';
@@ -14,22 +14,17 @@ import 'calculator/nest_page.dart';
 import 'history/history_page.dart';
 import 'historical_data_page.dart';
 import 'login_page.dart';
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
-
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
-
   @override
   void initState() {
     super.initState();
-
     _pages = [
       HomeContent(
         onCalculatorTap: () {
@@ -40,7 +35,6 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-
         onPivotTap: () {
           Navigator.push(
             context,
@@ -49,7 +43,6 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-
         onNestTap: () {
           Navigator.push(
             context,
@@ -58,7 +51,6 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-
         onHangsengTap: () {
           Navigator.push(
             context,
@@ -67,13 +59,11 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-
         onHistoryTap: () {
           setState(() {
-            _selectedIndex = 2;
+            _selectedIndex = 3;
           });
         },
-
         onHistoricalDataTap: () {
           Navigator.push(
             context,
@@ -82,8 +72,16 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+        onNewsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NewsPage(),
+            ),
+          );
+        },
       ),
-
+      const NewsPage(),
       CalculatorPage(
         onBack: () {
           setState(() {
@@ -91,7 +89,6 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
-
       HistoryPage(
         onBack: () {
           setState(() {
@@ -99,11 +96,9 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
-
       const ProfilePage(),
     ];
   }
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<HomeViewModel>(
@@ -118,7 +113,6 @@ class _HomePageState extends State<HomePage> {
               Positioned.fill(
                 child: _pages[_selectedIndex],
               ),
-
               Positioned(
                 right: 7,
                 bottom: 3,
@@ -142,99 +136,87 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildBottomNavigation() {
     return Container(
-      height: 70,
+      height: 82,
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey.shade300,
-          ),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(
-            icon: Icons.home,
-            label: 'Beranda',
-            index: 0,
+          _buildNavItem(icon: Icons.home_outlined, label: 'Beranda', index: 0),
+          _buildNavItem(icon: Icons.newspaper_outlined, label: 'Berita', index: 1),
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _selectedIndex = 2),
+              child: SizedBox(
+                height: 82,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: _selectedIndex == 2 ? const Color(0xFFF7931E) : const Color(0xFF252525),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 6, offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: const Icon(Icons.calculate_rounded, color: Colors.white, size: 26),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Kalkulator',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: _selectedIndex == 2 ? FontWeight.bold : FontWeight.normal,
+                        color: _selectedIndex == 2 ? const Color(0xFFF7931E) : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-
-          _buildNavItem(
-            icon: Icons.calculate_outlined,
-            label: 'Kalkulator',
-            index: 1,
-          ),
-
-          _buildNavItem(
-            icon: Icons.history,
-            label: 'Riwayat',
-            index: 2,
-          ),
-
-          _buildNavItem(
-            icon: Icons.person_outline,
-            label: 'Profil',
-            index: 3,
-          ),
+          _buildNavItem(icon: Icons.history, label: 'Riwayat', index: 3),
+          _buildNavItem(icon: Icons.person_outline, label: 'Profil', index: 4),
         ],
       ),
     );
   }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  Widget _buildNavItem({required IconData icon, required String label, required int index}) {
     final bool isActive = _selectedIndex == index;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isActive
-                  ? const Color(0xFFF7931E)
-                  : Colors.grey,
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: isActive
-                    ? const Color(0xFFF7931E)
-                    : Colors.grey,
-                fontWeight: isActive
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedIndex = index),
+        child: SizedBox(
+          height: 82,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: isActive ? const Color(0xFFF7931E) : Colors.grey),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isActive ? const Color(0xFFF7931E) : Colors.grey,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 class HomeContent extends StatefulWidget {
   final VoidCallback onCalculatorTap;
   final VoidCallback onPivotTap;
@@ -242,7 +224,7 @@ class HomeContent extends StatefulWidget {
   final VoidCallback onHangsengTap;
   final VoidCallback onHistoryTap;
   final VoidCallback onHistoricalDataTap;
-
+  final VoidCallback onNewsTap;
   const HomeContent({
     super.key,
     required this.onCalculatorTap,
@@ -251,34 +233,28 @@ class HomeContent extends StatefulWidget {
     required this.onHangsengTap,
     required this.onHistoryTap,
     required this.onHistoricalDataTap,
+    required this.onNewsTap,
   });
-
   @override
   State<HomeContent> createState() => _HomeContentState();
 }
-
 class _HomeContentState extends State<HomeContent> {
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() {
       if (!mounted) return;
-
       context.read<HomeViewModel>().loadHomeData();
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HomeViewModel>();
-
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
           _buildHeader(),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(
               25,
@@ -300,9 +276,7 @@ class _HomeContentState extends State<HomeContent> {
                     height: 1.15,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
                   'Hitung nilai emas dengan mudah',
                   style: TextStyle(
@@ -312,7 +286,6 @@ class _HomeContentState extends State<HomeContent> {
                     height: 1.35,
                   ),
                 ),
-
                 const Text(
                   'dan akurat',
                   style: TextStyle(
@@ -322,18 +295,18 @@ class _HomeContentState extends State<HomeContent> {
                     height: 1.35,
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
                 _buildAboutCard(),
-
-                const SizedBox(height: 28),
-
-                _buildHistoricalSection(),
-
+                  const SizedBox(height: 28),
+                  // MARKET NEWS ditampilkan sebelum Historical Data.
+                  NewsSection(
+                    onSeeAllTap: widget.onNewsTap,
+                  ),
+                  const SizedBox(height: 28),
+                  _buildHistoricalSection(),
                 const SizedBox(height: 32),
-
                 // FITUR
+                // FITUR UTAMA
                 const Text(
                   'Fitur Utama',
                   style: TextStyle(
@@ -342,70 +315,18 @@ class _HomeContentState extends State<HomeContent> {
                     color: Color(0xFF333333),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                // EMAS FISIK
-                _buildFeatureCard(
-                  icon: Icons.calculate_outlined,
-                  title: 'Kalkulator Emas Fisik',
-                  description:
-                      'Konversi dan perhitungan akurat berdasarkan '
-                      'Harga Beli (HB), Harga Jual (HJ), dan Modal Anda.',
-                  onTap: widget.onCalculatorTap,
-                ),
-
+                // DROPDOWN KALKULATOR
+                _buildCalculatorDropdown(),
                 const SizedBox(height: 12),
-
-                // PIVOT
-                _buildFeatureCard(
-                  icon: Icons.show_chart,
-                  title: 'Kalkulator Pivot Point',
-                  description:
-                      'Strategi trading yang lebih baik dengan '
-                      'kalkulasi level support dan resistance '
-                      'harian secara otomatis.',
-                  onTap: widget.onPivotTap,
-                ),
-
-                const SizedBox(height: 12),
-
-                // NEST
-                _buildFeatureCard(
-                  icon: Icons.swap_vert,
-                  title: 'Kalkulator NEST',
-                  description:
-                      'Indikator sederhana yang membandingkan '
-                      'harga Close kemarin dengan Open hari ini '
-                      'untuk menampilkan indikator BUY atau SELL.',
-                  onTap: widget.onNestTap,
-                ),
-
-                const SizedBox(height: 12),
-
-                // HANGSENG
-                _buildFeatureCard(
-                  icon: Icons.candlestick_chart_outlined,
-                  title: 'Kalkulator Hangseng',
-                  description:
-                      'Menghitung indeks Hangseng berdasarkan '
-                      'Open, High, Low, dan Close untuk '
-                      'menentukan level support dan resistance.',
-                  onTap: widget.onHangsengTap,
-                ),
-
-                const SizedBox(height: 12),
-
-                // HISTORY
+                // RIWAYAT PERHITUNGAN
                 _buildFeatureCard(
                   icon: Icons.history,
                   title: 'Riwayat Perhitungan',
                   description:
-                      'Simpan dan organisir hasil perhitungan '
-                      'Anda sebelumnya untuk referensi di masa mendatang.',
+                      'Lihat kembali hasil perhitungan yang telah disimpan.',
                   onTap: widget.onHistoryTap,
                 ),
-
                 const SizedBox(height: 8),
               ],
             ),
@@ -414,7 +335,6 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
   Widget _buildHeader() {
     return Container(
       height: 62,
@@ -430,11 +350,8 @@ class _HomeContentState extends State<HomeContent> {
               onTap: () async {
                 final prefs =
                     await SharedPreferences.getInstance();
-
                 await prefs.remove('isLoggedIn');
-
                 if (!mounted) return;
-
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (context) => const LoginPage(),
@@ -453,18 +370,14 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
           ),
-
           const SizedBox(width: 2),
-
           Image.asset(
             'assets/images/ewf.jpg',
             width: 35,
             height: 35,
             fit: BoxFit.contain,
           ),
-
           const SizedBox(width: 12),
-
           const Expanded(
             child: Text(
               'EQUITYWORLD FUTURES',
@@ -476,17 +389,10 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
           ),
-
-          const Icon(
-            Icons.notifications_none_outlined,
-            size: 27,
-            color: Color(0xFF777777),
-          ),
         ],
       ),
     );
   }
-
   Widget _buildAboutCard() {
     return Container(
       width: double.infinity,
@@ -517,7 +423,6 @@ class _HomeContentState extends State<HomeContent> {
               fit: BoxFit.contain,
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(
               20,
@@ -544,9 +449,7 @@ class _HomeContentState extends State<HomeContent> {
                         size: 20,
                       ),
                     ),
-
                     const SizedBox(width: 10),
-
                     const Text(
                       'Tentang Goldify',
                       style: TextStyle(
@@ -557,9 +460,7 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 9),
-
                 const Padding(
                   padding: EdgeInsets.only(
                     right: 2,
@@ -580,25 +481,19 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 Row(
                   children: [
                     _buildTag(
                       icon: Icons.verified_user_outlined,
                       text: 'Aman',
                     ),
-
                     const SizedBox(width: 6),
-
                     _buildTag(
                       icon: Icons.visibility_outlined,
                       text: 'Transparan',
                     ),
-
                     const SizedBox(width: 6),
-
                     _buildTag(
                       icon: Icons.bolt_outlined,
                       text: 'Cepat',
@@ -612,7 +507,6 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
   Widget _buildTag({
     required IconData icon,
     required String text,
@@ -636,9 +530,7 @@ class _HomeContentState extends State<HomeContent> {
             size: 14,
             color: const Color(0xFF555555),
           ),
-
           const SizedBox(width: 4),
-
           Text(
             text,
             style: const TextStyle(
@@ -651,7 +543,6 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
   Widget _buildHistoricalSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,9 +555,7 @@ class _HomeContentState extends State<HomeContent> {
             color: Color(0xFF333333),
           ),
         ),
-
         const SizedBox(height: 5),
-
         const Text(
           'Ringkasan harga emas LGD Daily terbaru.',
           style: TextStyle(
@@ -674,17 +563,13 @@ class _HomeContentState extends State<HomeContent> {
             color: Color(0xFF777777),
           ),
         ),
-
         const SizedBox(height: 15),
-
         _buildHistoricalSummaryCard(),
       ],
     );
   }
-
   Widget _buildHistoricalSummaryCard() {
     final viewModel = context.watch<HomeViewModel>();
-
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: viewModel.historicalGoldFuture,
       builder: (context, snapshot) {
@@ -708,7 +593,6 @@ class _HomeContentState extends State<HomeContent> {
             ),
           );
         }
-
         // ERROR
         if (snapshot.hasError) {
           return Container(
@@ -728,9 +612,7 @@ class _HomeContentState extends State<HomeContent> {
                   size: 35,
                   color: Color(0xFFD28A00),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
                   'Data historis belum tersedia.',
                   textAlign: TextAlign.center,
@@ -740,9 +622,7 @@ class _HomeContentState extends State<HomeContent> {
                     color: Color(0xFF444444),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 OutlinedButton.icon(
                   onPressed:
                       viewModel.refreshHistoricalData,
@@ -756,11 +636,9 @@ class _HomeContentState extends State<HomeContent> {
             ),
           );
         }
-
         // DATA
         final List<Map<String, dynamic>> data =
             snapshot.data ?? [];
-
         if (data.isEmpty) {
           return Container(
             width: double.infinity,
@@ -779,9 +657,7 @@ class _HomeContentState extends State<HomeContent> {
                   size: 38,
                   color: Color(0xFFD39A25),
                 ),
-
                 SizedBox(height: 10),
-
                 Text(
                   'Data LGD Daily tidak ditemukan.',
                   style: TextStyle(
@@ -794,25 +670,18 @@ class _HomeContentState extends State<HomeContent> {
             ),
           );
         }
-
         // DATA SUDAH DI-SORTING DARI SERVICE
         final Map<String, dynamic> latest = data.first;
-
         final String tanggal =
             latest['tanggal']?.toString() ?? '-';
-
         final String open =
             latest['open']?.toString() ?? '-';
-
         final String high =
             latest['high']?.toString() ?? '-';
-
         final String low =
             latest['low']?.toString() ?? '-';
-
         final String close =
             latest['close']?.toString() ?? '-';
-
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -858,9 +727,7 @@ class _HomeContentState extends State<HomeContent> {
                       size: 26,
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
@@ -874,9 +741,7 @@ class _HomeContentState extends State<HomeContent> {
                             color: Color(0xFF252525),
                           ),
                         ),
-
                         const SizedBox(height: 4),
-
                         Text(
                           'Data terbaru • ${_formatTanggal(tanggal)}',
                           style: const TextStyle(
@@ -888,7 +753,6 @@ class _HomeContentState extends State<HomeContent> {
                       ],
                     ),
                   ),
-
                   // STATUS
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -915,9 +779,7 @@ class _HomeContentState extends State<HomeContent> {
                             shape: BoxShape.circle,
                           ),
                         ),
-
                         const SizedBox(width: 6),
-
                         const Text(
                           'Terbaru',
                           style: TextStyle(
@@ -931,9 +793,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
               // CLOSE
               Row(
                 crossAxisAlignment:
@@ -950,7 +810,6 @@ class _HomeContentState extends State<HomeContent> {
                       ),
                     ),
                   ),
-
                   Text(
                     close,
                     style: const TextStyle(
@@ -961,9 +820,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 15),
-
               // OHLC
               Row(
                 children: [
@@ -973,18 +830,14 @@ class _HomeContentState extends State<HomeContent> {
                       value: open,
                     ),
                   ),
-
                   const SizedBox(width: 8),
-
                   Expanded(
                     child: _buildPriceBox(
                       label: 'HIGH',
                       value: high,
                     ),
                   ),
-
                   const SizedBox(width: 8),
-
                   Expanded(
                     child: _buildPriceBox(
                       label: 'LOW',
@@ -993,9 +846,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -1025,9 +876,7 @@ class _HomeContentState extends State<HomeContent> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-
                       const SizedBox(width: 10),
-
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 21,
@@ -1042,7 +891,6 @@ class _HomeContentState extends State<HomeContent> {
       },
     );
   }
-
   Widget _buildPriceBox({
     required String label,
     required String value,
@@ -1072,9 +920,7 @@ class _HomeContentState extends State<HomeContent> {
               color: Color(0xFF999999),
             ),
           ),
-
           const SizedBox(height: 5),
-
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -1091,27 +937,106 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
   String _formatTanggal(String value) {
     try {
       final DateTime date =
           DateTime.parse(value);
-
       final String day =
           date.day.toString().padLeft(2, '0');
-
       final String month =
           date.month.toString().padLeft(2, '0');
-
       final String year =
           date.year.toString();
-
       return '$day/$month/$year';
     } catch (_) {
       return value;
     }
   }
-
+  Widget _buildCalculatorDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8E8E8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 9,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          leading: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F1F2),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(
+              Icons.calculate_outlined,
+              color: Color(0xFFC87800),
+              size: 25,
+            ),
+          ),
+          title: const Text(
+            'Kalkulator',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF292929)),
+          ),
+          subtitle: const Text(
+            'Pilih kalkulator yang ingin digunakan',
+            style: TextStyle(fontSize: 12, color: Color(0xFF686868)),
+          ),
+          iconColor: const Color(0xFFC87800),
+          collapsedIconColor: const Color(0xFF999999),
+          children: [
+            _buildCalculatorOption(icon: Icons.calculate_outlined, title: 'Kalkulator Emas Fisik', onTap: widget.onCalculatorTap),
+            _buildCalculatorOption(icon: Icons.show_chart, title: 'Kalkulator Pivot Point', onTap: widget.onPivotTap),
+            _buildCalculatorOption(icon: Icons.swap_vert, title: 'Indikator NEST', onTap: widget.onNestTap),
+            _buildCalculatorOption(icon: Icons.bar_chart, title: 'Kalkulator Hangseng', onTap: widget.onHangsengTap),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _buildCalculatorOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Material(
+        color: const Color(0xFFFFFBF3),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            child: Row(
+              children: [
+                Icon(icon, size: 21, color: const Color(0xFFC87800)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, size: 21, color: Color(0xFF999999)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   Widget _buildFeatureCard({
     required IconData icon,
     required String title,
@@ -1174,9 +1099,7 @@ class _HomeContentState extends State<HomeContent> {
                   size: 25,
                 ),
               ),
-
               const SizedBox(width: 14),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment:
@@ -1195,9 +1118,7 @@ class _HomeContentState extends State<HomeContent> {
                             Color(0xFF292929),
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       description,
                       style:
@@ -1211,9 +1132,7 @@ class _HomeContentState extends State<HomeContent> {
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
               const Icon(
                 Icons.chevron_right,
                 size: 27,
