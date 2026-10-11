@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'physical_gold_page.dart';
 import 'pivot_point_page.dart';
+import 'hangseng_page.dart';
+import 'nest_page.dart';
+
 import 'physical_gold_info_page.dart';
 import 'pivot_point_info_page.dart';
+import 'hangseng_info_page.dart';
+import 'nest_info_page.dart';
 
 class CalculatorPage extends StatelessWidget {
   final VoidCallback onBack;
@@ -18,9 +23,6 @@ class CalculatorPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ==============================================================
-      // HEADER
-      // ==============================================================
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -37,7 +39,7 @@ class CalculatorPage extends StatelessWidget {
         ),
 
         title: const Text(
-          'Kalkulator',
+          'Perhitungan',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -48,9 +50,6 @@ class CalculatorPage extends StatelessWidget {
         titleSpacing: 0,
       ),
 
-      // ==============================================================
-      // BODY
-      // ==============================================================
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -60,9 +59,7 @@ class CalculatorPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ========================================================
-              // JUDUL
-              // ========================================================
+              
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -76,7 +73,7 @@ class CalculatorPage extends StatelessWidget {
                       text: 'Pilih Jenis ',
                     ),
                     TextSpan(
-                      text: 'Kalkulator',
+                      text: 'Perhitungan',
                       style: TextStyle(
                         color: Color(0xFFF7931E),
                       ),
@@ -87,9 +84,6 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // ========================================================
-              // SUBJUDUL
-              // ========================================================
               RichText(
                 textAlign: TextAlign.center,
                 text: const TextSpan(
@@ -103,7 +97,7 @@ class CalculatorPage extends StatelessWidget {
                       text: 'Silakan pilih jenis ',
                     ),
                     TextSpan(
-                      text: 'kalkulator',
+                      text: 'perhitungan',
                       style: TextStyle(
                         color: Color(0xFFF7931E),
                         fontWeight: FontWeight.w600,
@@ -111,7 +105,7 @@ class CalculatorPage extends StatelessWidget {
                     ),
                     TextSpan(
                       text:
-                          ' yang ingin Anda gunakan untuk memulai perhitungan.',
+                          ' yang ingin Anda gunakan.',
                     ),
                   ],
                 ),
@@ -119,24 +113,20 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // ========================================================
               // KALKULATOR EMAS FISIK
-              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.calculate_outlined,
                 title: 'Kalkulator Emas Fisik',
                 description:
-                    'Platform kalkulator emas yang membantu Anda melakukan perhitungan potensi keuntungan atau kerugian emas fisik dengan lebih mudah dan informatif.',
+                    'Membantu menghitung potensi keuntungan atau kerugian emas fisik berdasarkan harga beli, harga jual, kurs, dan modal.',
                 gradientColors: const [
                   Color(0xFFFFF8F0),
                   Color(0xFFFFE6C9),
                   Color(0xFFFFF3E6),
                 ],
 
-                // ------------------------------------------------------
-                // INFORMASI EMAS FISIK
-                // ------------------------------------------------------
+                // INFO EMAS FISIK
                 onInformation: () {
                   showDialog(
                     context: context,
@@ -146,9 +136,7 @@ class CalculatorPage extends StatelessWidget {
                   );
                 },
 
-                // ------------------------------------------------------
                 // HITUNG EMAS FISIK
-                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
@@ -161,24 +149,20 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ========================================================
               // KALKULATOR PIVOT POINT
-              // ========================================================
               _buildCalculatorCard(
                 context: context,
                 icon: Icons.show_chart,
                 title: 'Kalkulator Pivot Point',
                 description:
-                    'Platform kalkulator emas dan analisis pasar yang membantu Anda melakukan perhitungan dengan lebih mudah dan informatif.',
+                    'Membantu menentukan level Pivot Point, Support, dan Resistance untuk menganalisis pergerakan harga emas.',
                 gradientColors: const [
                   Color(0xFFFFFCF8),
                   Color(0xFFFFF0DF),
                   Color(0xFFFFF7ED),
                 ],
 
-                // ------------------------------------------------------
-                // INFORMASI PIVOT POINT
-                // ------------------------------------------------------
+                // INFO PIVOT POINT
                 onInformation: () {
                   showDialog(
                     context: context,
@@ -188,14 +172,84 @@ class CalculatorPage extends StatelessWidget {
                   );
                 },
 
-                // ------------------------------------------------------
                 // HITUNG PIVOT POINT
-                // ------------------------------------------------------
                 onCalculate: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const PivotPointPage(),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // KALKULATOR NEST
+              _buildCalculatorCard(
+                context: context,
+                icon: Icons.swap_vert,
+                title: 'Indikator NEST',
+                description:
+                    'Indikator sederhana yang membandingkan harga Close kemarin dengan harga Open hari ini untuk memberikan sinyal BUY atau SELL.',
+                gradientColors: const [
+                  Color(0xFFFFFCF8),
+                  Color(0xFFFFF0DF),
+                  Color(0xFFFFF7ED),
+                ],
+
+                // INFO NEST
+                onInformation: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const NestInfoDialog();
+                    },
+                  );
+                },
+
+                // HITUNG NEST
+                onCalculate: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NestPage(),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // KALKULATOR HANGSENG
+              _buildCalculatorCard(
+                context: context,
+                icon: Icons.trending_up,
+                title: 'Kalkulator Hangseng',
+                description:
+                     'Membantu menghitung level harga Hangseng untuk melihat area Support dan Resistance berdasarkan pergerakan indeks.',
+                gradientColors: const [
+                  Color(0xFFFFFCF8),
+                  Color(0xFFFFF0DF),
+                  Color(0xFFFFF7ED),
+                ],
+
+                // INFO HANGSENG
+                onInformation: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return const HangsengInfoDialog();
+                    },
+                  );
+                },
+
+                // HITUNG HANGSENG
+                onCalculate: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HangsengPage(),
                     ),
                   );
                 },
@@ -209,9 +263,6 @@ class CalculatorPage extends StatelessWidget {
     );
   }
 
-  // ================================================================
-  // CARD KALKULATOR
-  // ================================================================
   Widget _buildCalculatorCard({
     required BuildContext context,
     required IconData icon,
@@ -226,9 +277,6 @@ class CalculatorPage extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        // ------------------------------------------------------------
-        // GRADASI CARD
-        // ------------------------------------------------------------
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -237,17 +285,11 @@ class CalculatorPage extends StatelessWidget {
 
         borderRadius: BorderRadius.circular(12),
 
-        // ------------------------------------------------------------
-        // BORDER
-        // ------------------------------------------------------------
         border: Border.all(
           color: const Color(0xFFE8B77D),
           width: 1.2,
         ),
 
-        // ------------------------------------------------------------
-        // SHADOW
-        // ------------------------------------------------------------
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -260,15 +302,10 @@ class CalculatorPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ==========================================================
-          // ICON + JUDUL
-          // ==========================================================
+          
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ------------------------------------------------------
-              // ICON
-              // ------------------------------------------------------
               Container(
                 width: 42,
                 height: 42,
@@ -301,9 +338,6 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-              // ------------------------------------------------------
-              // JUDUL
-              // ------------------------------------------------------
               Expanded(
                 child: RichText(
                   text: TextSpan(
@@ -324,7 +358,11 @@ class CalculatorPage extends StatelessWidget {
                             ? 'Emas Fisik'
                             : title == 'Kalkulator Pivot Point'
                                 ? 'Pivot Point'
-                                : '',
+                                : title == 'Kalkulator NEST'
+                                    ? 'NEST'
+                                    : title == 'Kalkulator Hangseng'
+                                        ? 'Hangseng'
+                                        : '',
                         style: const TextStyle(
                           color: Color(0xFFF7931E),
                         ),
@@ -338,9 +376,6 @@ class CalculatorPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ==========================================================
-          // DESKRIPSI
-          // ==========================================================
           Padding(
             padding: const EdgeInsets.only(
               left: 54,
@@ -357,14 +392,9 @@ class CalculatorPage extends StatelessWidget {
 
           const SizedBox(height: 15),
 
-          // ==========================================================
-          // TOMBOL
-          // ==========================================================
           Row(
             children: [
-              // ------------------------------------------------------
               // INFORMASI
-              // ------------------------------------------------------
               Expanded(
                 child: SizedBox(
                   height: 42,
@@ -401,9 +431,7 @@ class CalculatorPage extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              // ------------------------------------------------------
               // HITUNG
-              // ------------------------------------------------------
               Expanded(
                 child: SizedBox(
                   height: 42,
