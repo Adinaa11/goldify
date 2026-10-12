@@ -197,13 +197,13 @@ class _LoginPageContentState
                   children: [
                     Center(
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/logo.jpg',
                         width: 90,
                         height: 90,
                         fit: BoxFit.contain,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 3),
                     const Center(
                       child: Text(
                         'MASUK',

@@ -40,7 +40,7 @@ class AppVersionPage extends StatelessWidget {
                 children: [
 
                   Image.asset(
-                    'assets/images/logo.png',
+                    'assets/images/logo.jpg',
                     width: 80,
                   ),
 

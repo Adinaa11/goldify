@@ -57,7 +57,7 @@ class _VerificationSuccessPageState
                           Transform.translate(
                             offset: const Offset(0, -65),
                             child: Image.asset(
-                              'assets/images/logo.png',
+                              'assets/images/logo.jpg',
                               width: 110,
                               height: 110,
                               fit: BoxFit.contain,
