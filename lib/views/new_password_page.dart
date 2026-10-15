@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../viewmodels/new_password_viewmodel.dart';
 import 'login_page.dart';
 
 class NewPasswordPage extends StatefulWidget {
@@ -9,6 +10,8 @@ class NewPasswordPage extends StatefulWidget {
 }
 
 class _NewPasswordPageState extends State<NewPasswordPage> {
+  final NewPasswordViewModel _viewModel = NewPasswordViewModel();
+
   final TextEditingController _passwordController =
       TextEditingController();
 
@@ -17,6 +20,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -25,48 +29,80 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
     super.dispose();
   }
 
-  void _savePassword() {
+  Future<void> _savePassword() async {
+    if (_isLoading) return;
+
+    FocusScope.of(context).unfocus();
+
     final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
+    final confirmPassword =
+        _confirmPasswordController.text;
 
     if (password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Password wajib diisi.',
-          ),
-        ),
-      );
+      _showMessage('Password wajib diisi.');
+      return;
+    }
 
+    final passwordError =
+        _viewModel.validatePassword(password);
+
+    if (passwordError != null) {
+      _showMessage(passwordError);
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Konfirmasi password tidak sesuai.',
-          ),
-        ),
+      _showMessage(
+        'Konfirmasi password tidak sesuai.',
       );
-
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Password berhasil diperbarui.',
-        ),
-      ),
+    setState(() {
+      _isLoading = true;
+    });
+
+    final error = await _viewModel.updatePassword(
+      password: password,
+      confirmPassword: confirmPassword,
     );
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (error != null) {
+      _showMessage(error);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password berhasil diperbarui. Silakan login kembali.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(),
+        ),
+        (route) => false,
+      );
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
       ),
-      (route) => false,
     );
   }
 
@@ -110,6 +146,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -120,7 +157,8 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                   right: 24,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     // LOGO
                     Center(
@@ -176,17 +214,29 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: _inputDecoration(
-                        label: 'Kata Sandi Baru',
-                        hint: 'Masukkan kata sandi baru',
-                        icon: Icons.lock_outline,
-                        suffixIcon: IconButton(
+                      controller:
+                          _passwordController,
+                      obscureText:
+                          _obscurePassword,
+                      enabled: !_isLoading,
+                      textInputAction:
+                          TextInputAction.next,
+                      decoration:
+                          _inputDecoration(
+                        label:
+                            'Kata Sandi Baru',
+                        hint:
+                            'Masukkan kata sandi baru',
+                        icon:
+                            Icons.lock_outline,
+                        suffixIcon:
+                            IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                                ? Icons
+                                    .visibility_off_outlined
+                                : Icons
+                                    .visibility_outlined,
                           ),
                           onPressed: () {
                             setState(() {
@@ -194,6 +244,23 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                                   !_obscurePassword;
                             });
                           },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    const Padding(
+                      padding: EdgeInsets.only(
+                        left: 4,
+                      ),
+                      child: Text(
+                        'Minimal 8 karakter, 1 huruf besar, '
+                        '1 huruf kecil, dan 1 angka.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          height: 1.4,
                         ),
                       ),
                     ),
@@ -211,17 +278,34 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                     const SizedBox(height: 8),
 
                     TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: _inputDecoration(
-                        label: 'Konfirmasi Kata Sandi',
-                        hint: 'Masukkan kembali kata sandi',
-                        icon: Icons.lock_outline,
-                        suffixIcon: IconButton(
+                      controller:
+                          _confirmPasswordController,
+                      obscureText:
+                          _obscureConfirmPassword,
+                      enabled: !_isLoading,
+                      textInputAction:
+                          TextInputAction.done,
+                      onSubmitted: (_) {
+                        if (!_isLoading) {
+                          _savePassword();
+                        }
+                      },
+                      decoration:
+                          _inputDecoration(
+                        label:
+                            'Konfirmasi Kata Sandi',
+                        hint:
+                            'Masukkan kembali kata sandi',
+                        icon:
+                            Icons.lock_outline,
+                        suffixIcon:
+                            IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                                ? Icons
+                                    .visibility_off_outlined
+                                : Icons
+                                    .visibility_outlined,
                           ),
                           onPressed: () {
                             setState(() {
@@ -240,28 +324,56 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _savePassword,
-                        style: ElevatedButton.styleFrom(
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : _savePassword,
+                        style:
+                            ElevatedButton.styleFrom(
                           backgroundColor:
-                              const Color(0xFFF7931E),
-                          foregroundColor: Colors.white,
+                              const Color(
+                            0xFFF7931E,
+                          ),
+                          foregroundColor:
+                              Colors.white,
+                          disabledBackgroundColor:
+                              const Color(
+                            0xFFF7931E,
+                          ).withOpacity(0.6),
+                          disabledForegroundColor:
+                              Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(
+                          shape:
+                              RoundedRectangleBorder(
                             borderRadius:
-                                BorderRadius.circular(12),
+                                BorderRadius.circular(
+                              12,
+                            ),
                           ),
                         ),
-                        child: const Text(
-                          'Simpan Kata Sandi',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child:
+                                    CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color:
+                                      Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Simpan Kata Sandi',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
 
-                    const SizedBox(height: 200),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
