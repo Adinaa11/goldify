@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class NewsService {
   static const String _baseUrl =
-      'http://192.168.1.47:3000/api/news';
+      'https://goldify-backend.onrender.com/api/news';
 
   static Future<List<Map<String, dynamic>>> getMarketNews() async {
     try {

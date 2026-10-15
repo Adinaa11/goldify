@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
@@ -6,30 +6,24 @@ class MarketService {
   static const String liveQuotesUrl =
       'https://www.newsmaker.id/api/live-quotes';
 
-  static String _normalizeCategory(String category) {
-    final String value =
-        category.trim().toLowerCase();
+static String _normalizeCategory(String category) {
+    final value = category.trim().toLowerCase();
 
     // GOLD
-    if (value == 'lgd daily') {
+    if (value.contains('lgd') || value == 'gold') {
       return 'lgd daily';
     }
 
     // HANG SENG
-    if (value == 'hsi daily' ||
-        value == 'hsi — hang seng hong kong' ||
-        value == 'hsi - hang seng hong kong' ||
-        value == 'hang seng hong kong') {
+    if (value.contains('hsi') ||
+        value.contains('hang seng')) {
       return 'hsi daily';
     }
 
-    if (value == 'sni — nikkei jepang' ||
-        value == 'sni - nikkei jepang' ||
-        value == 'sni daily' ||
-        value == 'nikkei daily' ||
-        value == 'nikkei jepang' ||
-        value == 'nikkei') {
-      return 'sni';
+    // NIKKEI / SNI
+    if (value.contains('sni') ||
+        value.contains('nikkei')) {
+      return 'sni daily';
     }
 
     return value;
@@ -60,7 +54,7 @@ class MarketService {
     }
 
     // NIKKEI / SNI
-    if (normalizedRequested == 'sni') {
+    if (normalizedRequested == 'sni daily') {
       return apiCategory == 'sni' ||
           apiCategory == 'sni daily' ||
           apiCategory == 'nikkei' ||
@@ -117,49 +111,71 @@ class MarketService {
       rethrow;
     }
   }
-
   // HISTORICAL DATA
   static Future<List<Map<String, dynamic>>>
       _fetchHistoricalData() async {
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-              ApiConfig.historicalGold,
-            ),
-            headers: const {
-              'Accept': 'application/json',
-            },
-          )
-          .timeout(
-            const Duration(seconds: 15),
+      final baseUrl = ApiConfig.baseUrl;
+
+      final responses = await Future.wait([
+        http.get(
+          Uri.parse('$baseUrl/api/market/gold?all=true'),
+          headers: const {'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 20)),
+
+        http.get(
+          Uri.parse('$baseUrl/api/market/hangseng?all=true'),
+          headers: const {'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 20)),
+
+        http.get(
+          Uri.parse('$baseUrl/api/market/sni?all=true'),
+          headers: const {'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 20)),
+      ]);
+
+      final List<Map<String, dynamic>> allData = [];
+
+      for (final response in responses) {
+        print('HISTORICAL URL: ${response.request?.url}');
+        print('HISTORICAL STATUS: ${response.statusCode}');
+
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Gagal mengambil historical data '
+            '(HTTP ${response.statusCode}).',
           );
+        }
 
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Gagal mengambil historical data.',
-        );
+        final decoded =
+            jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (decoded['success'] != true) {
+          throw Exception('Respons historical data tidak berhasil.');
+        }
+
+        final raw = decoded['data'];
+
+        if (raw is List) {
+          allData.addAll(
+            raw.map(
+              (item) => Map<String, dynamic>.from(item as Map),
+            ),
+          );
+        } else if (raw is Map) {
+          allData.add(Map<String, dynamic>.from(raw));
+        }
       }
 
-      final decoded = jsonDecode(response.body);
+      allData.sort((a, b) {
+        final dateA = a['tanggal']?.toString() ?? '';
+        final dateB = b['tanggal']?.toString() ?? '';
+        return dateB.compareTo(dateA);
+      });
 
-      dynamic raw = decoded['data'];
+      print('TOTAL HISTORICAL DATA: ${allData.length}');
 
-      if (raw is Map) {
-        raw = raw['data'];
-      }
-
-      if (raw is! List) {
-        throw Exception(
-          'Format historical tidak valid.',
-        );
-      }
-
-      return raw
-          .map(
-            (item) => Map<String, dynamic>.from(item),
-          )
-          .toList();
+      return allData;
     } catch (e) {
       print('ERROR HISTORICAL: $e');
       rethrow;
@@ -623,7 +639,7 @@ class MarketService {
     String? endDate,
   }) async {
     return getHistoricalMarketData(
-      category: 'SNI — Nikkei Jepang',
+      category: 'SNI â€” Nikkei Jepang',
       startDate: startDate,
       endDate: endDate,
     );
