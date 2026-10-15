@@ -39,6 +39,14 @@ const RSS_FEEDS = [
     source: 'Google News - Reuters',
     url: 'https://news.google.com/rss/search?q=site%3Areuters.com+gold+OR+forex+OR+stock+index&hl=en-US&gl=US&ceid=US:en',
   },
+  {
+    source: 'CNBC Indonesia',
+    url: 'https://www.cnbcindonesia.com/market/rss',
+  },
+  {
+    source: 'CNN Indonesia',
+    url: 'https://www.cnnindonesia.com/ekonomi/rss',
+  },
 ];
 
 const MARKET_KEYWORDS = [
@@ -55,6 +63,23 @@ const MARKET_KEYWORDS = [
   'nasdaq composite', 'nasdaq 100', 's&p 500',
   'dow jones', 'nikkei 225', 'kospi index', 'ihsg',
   'idx composite', 'ftse 100', 'dax index',
+  'harga emas',
+  'emas antam',
+  'emas dunia',
+  'logam mulia',
+  'harga emas hari ini',
+  'harga emas naik',
+  'harga emas turun',
+  'kurs rupiah',
+  'nilai tukar',
+  'dolar as',
+  'mata uang',
+  'pasar valuta asing',
+  'pasar saham',
+  'indeks saham',
+  'indeks harga saham gabungan',
+  'bursa saham',
+  'harga komoditas',
 ];
 
 // Gambar alternatif berdasarkan kategori.
