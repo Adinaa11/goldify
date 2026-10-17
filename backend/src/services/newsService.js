@@ -55,6 +55,14 @@ const RSS_FEEDS = [
     source: 'Google News - Ekonomi Indonesia',
     url: 'https://news.google.com/rss/search?q=(ekonomi+OR+investasi+OR+pasar+modal+OR+kurs+rupiah)+when:7d&hl=id&gl=ID&ceid=ID:id',
   },
+   {
+    source: 'Kontan',
+    url: 'https://news.google.com/rss/search?q=site%3Akontan.co.id+(emas+OR+forex+OR+saham)&hl=id&gl=ID&ceid=ID:id',
+  },
+  {
+    source: 'Bisnis Indonesia',
+    url: 'https://news.google.com/rss/search?q=site%3Abisnis.com+(emas+OR+rupiah+OR+saham)&hl=id&gl=ID&ceid=ID:id',
+  },
 ];
 
 const MARKET_KEYWORDS = [
@@ -372,6 +380,8 @@ function getNewsRegion(article) {
     'cnn indonesia',
     'google news - indonesia',
     'google news - ekonomi indonesia',
+    'kontan',
+    'bisnis indonesia',
   ];
 
   const indonesiaDomains = [
