@@ -26,12 +26,12 @@ class TermsPage extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          // ================= LOGO =================
+          // LOGO
           Center(
             child: Column(
               children: [
                 Image.asset(
-                  'assets/images/logo.png', // pastikan ada
+                  'assets/images/logo.jpg',
                   width: 80,
                 ),
 

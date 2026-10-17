@@ -96,11 +96,11 @@ class _SplashScreenState extends State<SplashScreen>
                       SlideTransition(
                         position: _slideAnimation,
                         child: Image.asset(
-                          'assets/images/logo.png',
-                          width: 180,
+                          'assets/images/logo.jpg',
+                          width: 230,
                         ),
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 5),
                       RichText(
                         text: const TextSpan(
                           children: [

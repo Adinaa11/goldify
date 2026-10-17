@@ -163,7 +163,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                     // LOGO
                     Center(
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/logo.jpg',
                         width: 90,
                         height: 90,
                         fit: BoxFit.contain,
