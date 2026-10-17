@@ -25,19 +25,19 @@ const RSS_FEEDS = [
   },
   {
     source: 'Google News - Emas',
-    url: 'https://news.google.com/rss/search?q=gold+OR+XAU+OR+bullion&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=gold+OR+XAU+OR+bullion+when:7d&hl=en-US&gl=US&ceid=US:en',
   },
   {
     source: 'Google News - Forex',
-    url: 'https://news.google.com/rss/search?q=forex+OR+currency+OR+exchange+rate&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=forex+OR+currency+OR+exchange+rate+when:7d&hl=en-US&gl=US&ceid=US:en',
   },
   {
     source: 'Google News - Indeks Saham',
-    url: 'https://news.google.com/rss/search?q=stock+index+OR+Nasdaq+OR+Hang+Seng+OR+Nikkei+OR+S%26P+500&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=stock+index+OR+Nasdaq+OR+Hang+Seng+OR+Nikkei+OR+S%26P+500+when:7d&hl=en-US&gl=US&ceid=US:en',
   },
   {
     source: 'Google News - Reuters',
-    url: 'https://news.google.com/rss/search?q=site%3Areuters.com+gold+OR+forex+OR+stock+index&hl=en-US&gl=US&ceid=US:en',
+    url: 'https://news.google.com/rss/search?q=site%3Areuters.com+gold+OR+forex+OR+stock+index+when:7d&hl=en-US&gl=US&ceid=US:en',
   },
   {
     source: 'CNBC Indonesia',
@@ -46,6 +46,14 @@ const RSS_FEEDS = [
   {
     source: 'CNN Indonesia',
     url: 'https://www.cnnindonesia.com/ekonomi/rss',
+  },
+    {
+    source: 'Google News - Indonesia',
+    url: 'https://news.google.com/rss/search?q=(IHSG+OR+rupiah+OR+%22harga+emas%22+OR+%22bursa+saham%22)+when:7d&hl=id&gl=ID&ceid=ID:id',
+  },
+  {
+    source: 'Google News - Ekonomi Indonesia',
+    url: 'https://news.google.com/rss/search?q=(ekonomi+OR+investasi+OR+pasar+modal+OR+kurs+rupiah)+when:7d&hl=id&gl=ID&ceid=ID:id',
   },
 ];
 
@@ -352,9 +360,67 @@ function isRelevantMarketNews(article) {
   return hasRelevantKeyword && !hasExcludedKeyword;
 }
 
+
+function getNewsRegion(article) {
+  const source = (article.source || '').toLowerCase();
+  const link = (article.link || '').toLowerCase();
+  const text =
+    `${article.title || ''} ${article.summary || ''}`.toLowerCase();
+
+  const indonesiaSources = [
+    'cnbc indonesia',
+    'cnn indonesia',
+    'google news - indonesia',
+    'google news - ekonomi indonesia',
+  ];
+
+  const indonesiaDomains = [
+    'cnnindonesia.com',
+    'detik.com',
+    'kompas.com',
+    'kontan.co.id',
+    'bisnis.com',
+    'cnbcindonesia.com',
+    'tempo.co',
+    'liputan6.com',
+    'antaranews.com',
+    'idxchannel.com',
+    'investor.id',
+    'idnfinancials.com',
+    'republika.co.id',
+  ];
+
+  if (
+    indonesiaSources.some((name) => source.includes(name)) ||
+    indonesiaDomains.some(
+      (domain) =>
+        source.includes(domain) || link.includes(domain),
+    )
+  ) {
+    return 'indonesia';
+  }
+
+  const indonesiaKeywords = [
+    'ihsg',
+    'rupiah',
+    'bursa efek indonesia',
+    'indeks harga saham gabungan',
+    'bank indonesia',
+    'ekonomi indonesia',
+    'saham indonesia',
+    'emas antam',
+  ];
+
+  if (indonesiaKeywords.some((keyword) => text.includes(keyword))) {
+    return 'indonesia';
+  }
+
+  return 'global';
+}
+
 async function getMarketNews() {
   const results = await Promise.all(
-    RSS_FEEDS.map((feed) => fetchFeed(feed))
+    RSS_FEEDS.map((feed) => fetchFeed(feed)),
   );
 
   const allNews = results.flat();
@@ -364,10 +430,11 @@ async function getMarketNews() {
     new Map(
       filteredNews
         .filter((article) => article.link)
-        .map((article) => [article.link, article])
-    ).values()
+        .map((article) => [article.link, article]),
+    ).values(),
   );
 
+  // Urutkan berita terbaru terlebih dahulu.
   uniqueNews.sort((a, b) => {
     const dateA = a.publishedAt
       ? new Date(a.publishedAt).getTime()
@@ -380,10 +447,34 @@ async function getMarketNews() {
     return dateB - dateA;
   });
 
-  const newsToReturn = uniqueNews.slice(0, 30);
+  // Maksimal 8 berita per tanggal untuk setiap kategori.
+  const MAX_NEWS_PER_DAY = 8;
+  const newsPerDay = new Map();
+  const newsToReturn = [];
 
-  // Cari gambar artikel secara berkelompok agar tidak terlalu banyak
-  // permintaan dilakukan sekaligus.
+  for (const article of uniqueNews) {
+    if (!article.publishedAt) continue;
+
+    const date = new Date(article.publishedAt);
+
+    if (Number.isNaN(date.getTime())) continue;
+
+    const dayKey = date.toISOString().slice(0, 10);
+    const region = getNewsRegion(article);
+    const counterKey = `${region}:${dayKey}`;
+    const currentCount = newsPerDay.get(counterKey) || 0;
+
+    if (currentCount >= MAX_NEWS_PER_DAY) continue;
+
+    newsPerDay.set(counterKey, currentCount + 1);
+
+    newsToReturn.push({
+      ...article,
+      region,
+    });
+  }
+
+  // Ambil gambar asli secara bertahap.
   for (let i = 0; i < newsToReturn.length; i += 5) {
     const batch = newsToReturn.slice(i, i + 5);
 
@@ -394,16 +485,26 @@ async function getMarketNews() {
         if (isUsableImageUrl(originalImage)) {
           article.imageUrl = originalImage;
         }
-      })
+      }),
     );
   }
 
-  // Jika gambar asli tidak ditemukan, pakai gambar kategori.
+  // Gunakan gambar alternatif jika gambar asli tidak tersedia.
   for (const article of newsToReturn) {
     if (!isUsableImageUrl(article.imageUrl)) {
       article.imageUrl = getFallbackImage(article);
     }
   }
+
+  console.log('Total berita:', newsToReturn.length);
+  console.log(
+    'Jumlah Global:',
+    newsToReturn.filter((item) => item.region === 'global').length,
+  );
+  console.log(
+    'Jumlah Indonesia:',
+    newsToReturn.filter((item) => item.region === 'indonesia').length,
+  );
 
   return newsToReturn;
 }
