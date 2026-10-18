@@ -327,10 +327,10 @@ async function fetchFeed(feedConfig) {
       publishedAt: item.isoDate || item.pubDate || null,
       source: feedConfig.source,
     }));
-  } catch (error) {
+    } catch (error) {
     console.error(
       `Gagal mengambil RSS ${feedConfig.source}:`,
-      error.message
+      error
     );
 
     return [];
